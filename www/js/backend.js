@@ -1,0 +1,64 @@
+// Oyunun sunucuyla konuştuğu tek yer. İki uygulama, aynı arayüz: rpc(ad, argümanlar).
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+
+export async function createBackend() {
+  return SUPABASE_URL ? supabaseBackend() : localBackend();
+}
+
+async function supabaseBackend() {
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) {
+    const { error } = await client.auth.signInAnonymously();
+    if (error) throw error;
+  }
+  return {
+    mode: 'online',
+    async rpc(name, args = {}) {
+      const { data, error } = await client.rpc(name, args);
+      if (error) throw error;
+      return data;
+    },
+  };
+}
+
+// Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
+const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
+const MIGRATIONS = ['001_core.sql'];
+
+const IDB_NAME = '/pglite/kabadayi-dev';
+const deleteLocalDb = () => new Promise(r => {
+  const q = indexedDB.deleteDatabase(IDB_NAME); q.onsuccess = q.onerror = q.onblocked = r;
+});
+
+async function localBackend() {
+  const { PGlite } = await import('/node_modules/@electric-sql/pglite/dist/index.js');
+  const load = async (p) => (await fetch(p)).text();
+  const sql = [await load('/supabase/local-shim.sql'), ...await Promise.all(MIGRATIONS.map(m => load('/supabase/migrations/' + m)))];
+  const version = String(sql.join('').split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0));
+
+  let db = new PGlite('idb://kabadayi-dev');
+  // SQL kuralları değiştiyse yerel veritabanını baştan kur (sadece geliştirme modu)
+  if (localStorage.getItem('kabadayi-sql-version') !== version) {
+    await db.close();
+    await deleteLocalDb();
+    db = new PGlite('idb://kabadayi-dev');
+    for (const s of sql) await db.exec(s);
+    await db.exec(`insert into auth.users values ('${LOCAL_UID}')`);
+    localStorage.setItem('kabadayi-sql-version', version);
+  }
+  await db.query(`select set_config('test.uid', $1, false)`, [LOCAL_UID]);
+  return {
+    mode: 'local',
+    async rpc(name, args = {}) {
+      const keys = Object.keys(args);
+      const sql = `select ${name}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')}) r`;
+      return (await db.query(sql, keys.map(k => args[k]))).rows[0].r;
+    },
+    async reset() {
+      await db.close();
+      await deleteLocalDb();
+      localStorage.removeItem('kabadayi-sql-version');
+    },
+  };
+}

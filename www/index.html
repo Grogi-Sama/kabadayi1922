@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15110d">
+  <title>Kabadayı</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="vendor/supabase.js"></script>
+</head>
+<body>
+  <div id="loading" class="screen center"><div class="logo">KABADAYI</div><p class="muted">İstanbul, 1922…</p></div>
+
+  <div id="onboard" class="screen center hidden">
+    <div class="logo">KABADAYI</div>
+    <p class="lead">Men-i Müskirat yürürlükte. İçki yasak, sokaklar aç.<br>Adını söyle, delikanlı.</p>
+    <form id="nick-form">
+      <input id="nick" maxlength="16" placeholder="Takma adın" autocomplete="off" autocapitalize="off">
+      <button class="btn primary">Şehre in</button>
+    </form>
+    <p id="nick-err" class="err"></p>
+  </div>
+
+  <div id="game" class="hidden">
+    <header>
+      <div class="row">
+        <div><div id="h-nick" class="nick"></div><div id="h-rank" class="muted small"></div></div>
+        <div class="right"><div id="h-cash" class="cash"></div><div id="h-city" class="muted small"></div></div>
+      </div>
+      <div id="xpbar" class="xpbar"><div></div></div>
+      <div class="timers">
+        <span class="chip" id="t-crime">İş</span>
+        <span class="chip" id="t-car">Araba</span>
+        <span class="chip" id="t-travel">Vapur</span>
+      </div>
+      <div id="jail" class="jail hidden"></div>
+    </header>
+
+    <main>
+      <section data-tab="crime"></section>
+      <section data-tab="car" class="hidden"></section>
+      <section data-tab="market" class="hidden"></section>
+      <section data-tab="travel" class="hidden"></section>
+      <section data-tab="log" class="hidden"></section>
+    </main>
+
+    <nav>
+      <button data-go="crime" class="on"><b>🕶</b>İşler</button>
+      <button data-go="car"><b>🚗</b>Araba</button>
+      <button data-go="market"><b>📦</b>Kaçak Mal</button>
+      <button data-go="travel"><b>⚓</b>Liman</button>
+      <button data-go="log"><b>📜</b>Defter</button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
