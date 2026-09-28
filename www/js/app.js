@@ -5,7 +5,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
 
 let api, S, clockOffset = 0, busy = false, tab = 'crime', qty = 1;
-const extra = { jail: [], players: null, family: null, families: [], hitlist: [] };   // sekmeye girince çekilen listeler
+const extra = { jail: [], players: null, family: null, families: [], hitlist: [], crews: null, casino: null };   // sekmeye girince çekilen listeler
 
 // Sunucu saatine göre kalan saniye (telefon saati yanlış olsa da doğru sayar)
 const left = (iso) => Math.max(0, Math.ceil((new Date(iso) - (Date.now() + clockOffset)) / 1000));
@@ -18,6 +18,7 @@ async function refresh() {
   if (S.player && tab === 'log') extra.players = await api.rpc('get_players');
   if (S.player && tab === 'arms') extra.hitlist = await api.rpc('get_hitlist');
   if (S.player && tab === 'family') await loadFamily();
+  if (S.player && tab === 'crime') extra.crews = await api.rpc('get_crews');
   render();
 }
 
@@ -113,10 +114,57 @@ function crimeTab() {
   `<h2>Araba Hırsızlığı</h2>` +
   card('Sokaktan araba çal', 'Yakalanırsan kısa süre hapis.',
     `<button class="btn sm primary" data-act="car" ${dis(waiting(S.player.car_ready_at))}>Çal</button>`) +
-  (here.length ? here.map(c => card(esc(c.name), money(c.value),
-    `<button class="btn sm" data-act="sell" data-id="${c.id}">Sat</button>`)).join('')
+  (here.length ? here.map(c => card(esc(c.name), `${money(c.value)} · hurdası ${Math.max(1, Math.floor(c.value / S.settings.crusher_divisor))} kurşun`,
+    `<div class="market-actions"><button class="btn sm" data-act="sell" data-id="${c.id}">Sat</button>
+     <button class="btn sm" data-act="crush" data-id="${c.id}">Ez</button></div>`)).join('')
     : `<p class="muted small">Bu şehirde araban yok.</p>`) +
-  (away ? `<p class="muted small">Başka şehirlerde ${away} araban var; satmak için oraya git.</p>` : '');
+  (away ? `<p class="muted small">Başka şehirlerde ${away} araban var; satmak için oraya git.</p>` : '') +
+  crewSection();
+}
+
+// ── Ekip işleri (soygun / organize iş)
+const CREW_ROLES = { lider: 'Lider', sofor: 'Şoför', silahci: 'Silahçı', patlayici: 'Patlayıcı Uzmanı' };
+
+function crewSection() {
+  const X = extra.crews;
+  if (!X) return '';
+  let h = `<h2>Ekip İşleri</h2>`;
+  const active = X.crews.filter(c => c.status === 'forming');
+  const mine = active.find(c => c.i_lead);
+
+  for (const c of active) {
+    const t = X.types.find(x => x.id === c.type);
+    const me = c.members.find(m => m.nick === S.player.nick);
+    const list = c.members.map(m => `${CREW_ROLES[m.role]}: ${nickLink(m.nick)} ${m.accepted === true ? '✅' : m.accepted === false ? '❌' : '⏳'}`).join('<br>');
+    let btn = '';
+    if (c.i_lead) btn = `<div class="market-actions"><button class="btn sm primary" data-act="crewstart">Başlat</button>
+      <button class="btn sm" data-act="crewcancel">Dağıt</button></div>`;
+    else if (me && me.accepted === null) btn = `<div class="market-actions"><button class="btn sm primary" data-act="crewyes" data-id="${c.id}">Katıl</button>
+      <button class="btn sm" data-act="crewno" data-id="${c.id}">Reddet</button></div>`;
+    h += card(`${esc(t.name)} · ${esc(cityName(c.city))}`, list, btn);
+  }
+
+  for (const c of X.crews.filter(c => c.status !== 'forming').slice(0, 2)) {
+    h += `<p class="muted small">📰 ${esc(c.result || '')}</p>`;
+  }
+
+  if (!mine) {
+    for (const t of X.types) {
+      const locked = S.player.rank < t.min_rank, wait = t.ready_at && left(t.ready_at);
+      if (locked) { h += `<div class="card locked"><div class="grow"><div class="title">${esc(t.name)}</div>
+        <div class="muted small">🔒 ${esc(rankName(t.min_rank))} rütbesi gerekir</div></div></div>`; continue; }
+      const req = [`lider ${money(t.leader_cost)} + silah + ${X.settings.leader_bullets} kurşun`,
+        `şoförün en az ${money(t.car_min_value)} arabası`,
+        t.roles.includes('silahci') ? `silahçı ${X.settings.gunner_bullets} kurşun` : '',
+        t.roles.includes('patlayici') ? `patlayıcı ${money(X.settings.explosive_cost)}` : ''].filter(Boolean).join(' · ');
+      h += `<div class="card col"><div class="title">${esc(t.name)} <span class="muted small">${money(t.payout_min)}–${money(t.payout_max)}</span></div>
+        <div class="muted small">${req}. Herkes aynı şehirde olmalı.</div>
+        ${wait ? `<div class="muted small">⏳ ${fmt(wait)} sonra tekrar</div>` : `
+        ${t.roles.slice(1).map(r => `<input id="f-crew-${t.id}-${r}" placeholder="${CREW_ROLES[r]} (takma ad)" autocomplete="off" autocapitalize="off">`).join('')}
+        <button class="btn primary" data-act="crewcreate" data-id="${t.id}">Ekibi kur, davet et</button>`}</div>`;
+    }
+  }
+  return h;
 }
 
 // ── Kaçakçılık: pazar + liman
@@ -142,11 +190,22 @@ function tradeTab() {
         </div>`);
     }).join('') +
     `<h2>Liman</h2>
-    <p class="muted small">Vapur bileti ${money(S.travel_cost)}. Kaçak malla yolculukta gümrüğe takılma riski var.</p>` +
+    <p class="muted small">Bilet ${money(S.travel_cost)}. Kaçak malla yolculukta gümrüğe takılma riski var.</p>` +
     S.cities.map(c => {
       const here = c.id === S.player.city;
       return card(esc(c.name), here ? 'Buradasın' : '',
         `<button class="btn sm ${here ? '' : 'primary'}" data-act="travel" data-id="${c.id}" ${dis(here || travelWait)}>Git</button>`);
+    }).join('') + transportSection();
+}
+
+function transportSection() {
+  const cur = S.transports.find(t => t.id === S.player.transport);
+  return `<h2>Ulaşım</h2><p class="muted small">Şu an: <b>${esc(cur.name)}</b> · her yolculuktan sonra ${cur.cooldown_s / 60} dk bekleme.</p>` +
+    S.transports.filter(t => t.cooldown_s < cur.cooldown_s).map(t => {
+      const locked = S.player.rank < t.min_rank;
+      return `<div class="card ${locked ? 'locked' : ''}"><div class="grow"><div class="title">${esc(t.name)}</div>
+        <div class="muted small">${locked ? '🔒 ' + esc(rankName(t.min_rank)) : money(t.price)} · ${t.cooldown_s / 60} dk bekleme</div></div>
+        <button class="btn sm primary" data-act="transport" data-id="${t.id}" ${dis(locked)}>Al</button></div>`;
     }).join('');
 }
 
@@ -293,6 +352,7 @@ function cityTab() {
     : `<p class="muted small">İçeride kimse yok.</p>`;
   h += `<p class="muted small">Birini kaçırmak itibar kazandırır ama gardiyana yakalanabilirsin.</p>`;
 
+  h += casinoSection();
   h += `<h2>Hastane</h2>` + card(`Sağlık: ${p.health}/100`,
     hospLeft ? `Yatıyorsun: ${fmt(hospLeft)}` : `Can başı ${money(S.settings.heal_cost_per_hp)}`,
     `<button class="btn sm primary" data-act="heal" ${dis(p.health >= 100 || jailLeft)}>İyileş</button>`);
@@ -308,6 +368,23 @@ function cityTab() {
       <button class="btn primary" data-act="send">Gönder</button></div>
     <p class="muted small">%${Math.round(S.settings.transfer_fee * 100)} komisyon kesilir.</p>`;
   return h;
+}
+
+function casinoSection() {
+  const c = extra.casino;
+  return `<h2>Kumarhane</h2>
+    <p class="muted small">Oyun parasıyla oynanır. Rütbene göre en fazla bahis: <b>${money(S.player.max_bet)}</b>. Kasa her zaman biraz önde.</p>
+    <div class="form-row"><input id="f-bet" type="number" min="10" placeholder="Bahis $" inputmode="numeric"></div>
+    <div class="casino">
+      <button class="btn" data-act="casino" data-game="zar" data-choice="yuksek">🎲 Yüksek (8-12)</button>
+      <button class="btn" data-act="casino" data-game="zar" data-choice="dusuk">🎲 Düşük (2-6)</button>
+      <button class="btn" data-act="casino" data-game="rulet" data-choice="kirmizi">🔴 Kırmızı</button>
+      <button class="btn" data-act="casino" data-game="rulet" data-choice="siyah">⚫ Siyah</button>
+      <button class="btn primary" data-act="casino" data-game="slot">🎰 Slot çevir</button>
+      <div class="form-row"><input id="f-rulet-n" type="number" min="0" max="36" placeholder="Sayı 0-36" inputmode="numeric">
+        <button class="btn" data-act="casino" data-game="rulet" data-choice="num">×36</button></div>
+    </div>
+    ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${esc(c.msg)}</div>` : ''}`;
 }
 
 // ── Defter: istatistik, oyuncular, olaylar
@@ -377,7 +454,7 @@ document.addEventListener('click', async (e) => {
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b === nav));
     document.querySelectorAll('main section').forEach(s => s.classList.toggle('hidden', s.dataset.tab !== tab));
     renderTab();
-    if (['city', 'log', 'arms', 'family'].includes(tab)) refresh().then(scrollChat);
+    if (['crime', 'city', 'log', 'arms', 'family'].includes(tab)) refresh().then(scrollChat);
     return;
   }
   const q = e.target.closest('[data-qty]');
@@ -424,6 +501,34 @@ document.addEventListener('click', async (e) => {
     case 'buyfactory': return confirm('Fabrika kasadan satın alınsın mı?') && act('buy_factory');
     case 'facprice':   return num('f-fac-price') > 0 && act('set_factory_price', { p_price: num('f-fac-price') });
     case 'leave':      return confirm('Emin misin?') && act('leave_family');
+    case 'crush':      return confirm('Araba hurdaya gitsin mi?') && act('crush_car', { p_car_id: +id });
+    case 'transport':  return act('buy_transport', { p_id: id });
+    case 'crewcreate': {
+      const t = extra.crews.types.find(x => x.id === id), invites = {};
+      for (const r of t.roles.slice(1)) invites[r] = val(`f-crew-${id}-${r}`);
+      if (Object.values(invites).some(v => !v)) return toast('Bütün rollere birini yaz.', 'bad');
+      return act('create_crew', { p_type: id, p_invites: invites });
+    }
+    case 'crewyes':    return act('respond_crew', { p_crew: +id, p_accept: true });
+    case 'crewno':     return act('respond_crew', { p_crew: +id, p_accept: false });
+    case 'crewstart':  return act('start_crew');
+    case 'crewcancel': return act('cancel_crew');
+    case 'casino': {
+      const bet = num('f-bet');
+      if (bet < 10) return toast('Önce bahsini yaz (en az $10).', 'bad');
+      let choice = b.dataset.choice || null;
+      if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
+      if (busy) return;
+      busy = true;
+      try {
+        const r = await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice });
+        extra.casino = r.ok ? r : null;
+        if (!r.ok) toast(r.msg, 'bad');
+        S = await api.rpc('get_state'); render();
+        $('#f-bet').value = bet;   // aynı bahisle tekrar oynanabilsin
+      } finally { busy = false; }
+      return;
+    }
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }

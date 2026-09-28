@@ -133,3 +133,13 @@ select {
   border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 14px; display: flex; flex-direction: column; gap: 4px;
 }
 .card select { padding: 6px 4px; font-size: 13px; }
+
+/* Faz 2C-D: ekip işleri, kumarhane */
+.card.col { flex-direction: column; align-items: stretch; }
+.card.col input { text-align: left; padding: 10px; }
+.casino { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.casino .btn.primary, .casino .form-row { grid-column: 1 / -1; }
+.casino .form-row { margin: 0; }
+.casino-result { margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; font-size: 18px; border: 1px solid var(--line); }
+.casino-result.good { border-color: var(--green); color: #cfe5b8; }
+.casino-result.bad { border-color: var(--red); color: #f3c2bb; }

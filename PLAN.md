@@ -30,6 +30,44 @@ Esin kaynağı: Barafranca Omerta (2003). İsim, metin ve görsel **kopyalanmaz*
 - **Faz 3 – Sağlamlık:** sezonlar + şeref listesi, yeni oyuncu koruması, anti-bot, admin paneli.
 - **Faz 4 – Yayın:** Capacitor paketleme, AdMob + SSV, push bildirimleri, 17+ yaş sınıfı, kapalı beta, mağaza.
 
+## Omerta özellik karşılaştırması (2026-09-28)
+Kaynak: 2006 tarihli Omerta oyuncu rehberi (omertaholic.blogspot.com), Omerta Beyond eklentisinin sayfa listesi, Wikipedia. Resmî wiki Cloudflare korumalı.
+
+| Omerta | Bizde | Durum |
+|---|---|---|
+| Suçlar, rütbeler | İşler (6 suç), 10 rütbe | ✅ 001 |
+| Araba çalma, garaj | Araba çal/sat | ✅ 001 |
+| Hurdacı (araba → kurşun) | Ez butonu | ✅ 005 |
+| Hapis, self-bust (3 hak), başkasını kurtarma | Firar + Kurtar | ✅ 002 |
+| Booze/narkotik ticareti | Kaçak mal (uyuşturucusuz) | ✅ 001 |
+| Seyahat + uçak yükseltmeleri | Liman + motorbot/deniz uçağı | ✅ 001/005 |
+| Yerel kurşun fabrikası (stok, saatlik limit) | Kurşun fabrikası | ✅ 002 |
+| Silah (Tommy gun) | Tabanca / Pompalı / Thompson | ✅ 002 |
+| Dedektifler (şehir bulma) | Dedektifler | ✅ 002 |
+| Öldürme, gereken kurşun rütbeye göre | Vurma/yaralama/öldürme (kalıcı ölüm yok) | ✅ 002 |
+| Şişe atışı / killing skill | Şişe atışı / nişancılık | ✅ 002 |
+| Korumalar | 5 kademe koruma | ✅ 002 |
+| Blood bank / sağlık | Hastane + iyileşme | ✅ 002 |
+| Banka, para transferi | Banka (%5 komisyon), transfer | ✅ 002 |
+| Profil, istatistik, çevrimiçi liste | Profil, En Büyükler, çevrimiçi | ✅ 002 |
+| Aileler (Don, Sottocapo, Consigliere, Capo) | Aile + roller + kasa + başvuru | ✅ 003 |
+| Aile forumu | Aile sohbeti | ✅ 003 |
+| Aile objeleri: kurşun fabrikası | Fabrika sahipliği + fiyat + gelir | ✅ 003 |
+| Hitlist | Kelle listesi | ✅ 003 |
+| Heist (2 kişi, 3 sa) | Tren Soygunu | ✅ 004 |
+| Organized Crime (4 kişi, 12 sa) | Osmanlı Bankası İşi | ✅ 004 |
+| Kumarhane: slot, rulet, blackjack | Zar, rulet, slot | ✅ 005 (blackjack yok) |
+| Özel mesajlar (inbox) | — | ⏳ şikâyet/engelle ile birlikte (mağaza şartı) |
+| Mega OC (8 kişi, 3 gün) | — | ⏳ |
+| Aile objeleri: kumarhane sahipliği | — | ⏳ |
+| Aile baskınları / şehir kontrolü | — | ⏳ |
+| Yarışlar (race form) | — | ⏳ |
+| Honour points | — | ⏳ |
+| Evlilik | — | ⏳ (düşük öncelik) |
+| Piyango / kazı kazan | — | ⏳ |
+| Oyuncu pazarı (OBay) | — | ⏳ |
+| Safehouse | — | ⏳ (hastane/banka zaten koruma sağlıyor) |
+
 ## Klasör yapısı
 - `supabase/migrations/` — veritabanı şeması ve oyun kuralları (SQL fonksiyonları)
 - `www/` — oyun arayüzü
