@@ -27,6 +27,7 @@
         <div><div id="h-nick" class="nick"></div><div id="h-rank" class="muted small"></div></div>
         <div class="right"><div id="h-cash" class="cash"></div><div id="h-city" class="muted small"></div></div>
       </div>
+      <div id="h-stats" class="small stats"></div>
       <div id="xpbar" class="xpbar"><div></div></div>
       <div class="timers">
         <span class="chip" id="t-crime">İş</span>
@@ -38,21 +39,23 @@
 
     <main>
       <section data-tab="crime"></section>
-      <section data-tab="car" class="hidden"></section>
-      <section data-tab="market" class="hidden"></section>
-      <section data-tab="travel" class="hidden"></section>
+      <section data-tab="trade" class="hidden"></section>
+      <section data-tab="arms" class="hidden"></section>
+      <section data-tab="city" class="hidden"></section>
       <section data-tab="log" class="hidden"></section>
     </main>
 
     <nav>
       <button data-go="crime" class="on"><b>🕶</b>İşler</button>
-      <button data-go="car"><b>🚗</b>Araba</button>
-      <button data-go="market"><b>📦</b>Kaçak Mal</button>
-      <button data-go="travel"><b>⚓</b>Liman</button>
+      <button data-go="trade"><b>📦</b>Kaçakçılık</button>
+      <button data-go="arms"><b>🔫</b>Silah</button>
+      <button data-go="city"><b>🏛</b>Şehir</button>
       <button data-go="log"><b>📜</b>Defter</button>
     </nav>
   </div>
 
+  <div id="modal" class="modal hidden"><div class="modal-card"><div id="modal-body"></div>
+    <button id="modal-close" class="btn">Kapat</button></div></div>
   <div id="toast" class="toast hidden"></div>
   <script type="module" src="js/app.js"></script>
 </body>

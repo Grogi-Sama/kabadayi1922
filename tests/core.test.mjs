@@ -1,28 +1,13 @@
 // Supabase olmadan, gerçek Postgres (PGlite) üzerinde oyun kurallarını test eder.
-// Çalıştır: node tests/core.test.mjs
-import { PGlite } from '@electric-sql/pglite';
-import { readFileSync } from 'node:fs';
+// Çalıştır: npm test
 import assert from 'node:assert/strict';
+import { setup, ok, done } from './helpers.mjs';
 
-const db = new PGlite();
-
-// Supabase'in sağladığı parçaların taklidi
-await db.exec(readFileSync(new URL('../supabase/local-shim.sql', import.meta.url), 'utf8'));
-await db.exec(readFileSync(new URL('../supabase/migrations/001_core.sql', import.meta.url), 'utf8'));
+const { db, as, ready } = await setup();
 
 const A = '00000000-0000-0000-0000-00000000000a';
 const B = '00000000-0000-0000-0000-00000000000b';
 await db.exec(`insert into auth.users values ('${A}'), ('${B}')`);
-
-async function as(uid, sql, params = []) {
-  await db.query(`select set_config('test.uid', $1, false)`, [uid]);
-  const r = await db.query(sql, params);
-  return Object.values(r.rows[0])[0];
-}
-const ready = (uid) => db.exec(`update players set crime_ready_at = now(), car_ready_at = now(),
-  travel_ready_at = now(), jail_until = now() where id = '${uid}'`);
-let passed = 0;
-const ok = (name) => { passed++; console.log('  ✓', name); };
 
 // --- oyuncu oluşturma
 assert.equal((await as(A, `select get_state()`)).player, null);
@@ -121,4 +106,4 @@ assert.equal(viaRpc.rows[0].s.player.nick, 'Şükrü');
 await db.exec(`reset role`);
 ok('RLS: doğrudan yazma ve iç fonksiyon engelli, RPC çalışıyor');
 
-console.log(`\n${passed} test grubu geçti.`);
+done('core');

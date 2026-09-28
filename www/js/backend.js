@@ -24,7 +24,7 @@ async function supabaseBackend() {
 
 // Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
 const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
-const MIGRATIONS = ['001_core.sql'];
+const MIGRATIONS = ['001_core.sql', '002_combat.sql'];
 
 const IDB_NAME = '/pglite/kabadayi-dev';
 const deleteLocalDb = () => new Promise(r => {
@@ -34,7 +34,9 @@ const deleteLocalDb = () => new Promise(r => {
 async function localBackend() {
   const { PGlite } = await import('/node_modules/@electric-sql/pglite/dist/index.js');
   const load = async (p) => (await fetch(p)).text();
-  const sql = [await load('/supabase/local-shim.sql'), ...await Promise.all(MIGRATIONS.map(m => load('/supabase/migrations/' + m)))];
+  const sql = [await load('/supabase/local-shim.sql'),
+    ...await Promise.all(MIGRATIONS.map(m => load('/supabase/migrations/' + m))),
+    await load('/supabase/local-seed.sql')];
   const version = String(sql.join('').split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0));
 
   let db = new PGlite('idb://kabadayi-dev');
@@ -55,6 +57,8 @@ async function localBackend() {
       const sql = `select ${name}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')}) r`;
       return (await db.query(sql, keys.map(k => args[k]))).rows[0].r;
     },
+    // Sadece geliştirme: konsoldan ham SQL (ör. hızlı test için rütbe/para ayarlamak)
+    sql: (q, params) => db.query(q, params),
     async reset() {
       await db.close();
       await deleteLocalDb();

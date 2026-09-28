@@ -108,6 +108,7 @@ create table players (
   car_ready_at    timestamptz not null default now(),
   travel_ready_at timestamptz not null default now(),
   jail_until      timestamptz not null default now(),
+  hospital_until  timestamptz not null default now(),
   created_at      timestamptz not null default now()
 );
 create unique index players_nick_lower on players (lower(nick));
@@ -165,6 +166,20 @@ end $$;
 create or replace function secs_left(t timestamptz) returns int
 language sql stable as $$ select greatest(0, ceil(extract(epoch from t - now())))::int $$;
 
+create or replace function fmt_wait(t timestamptz) returns text
+language sql stable as $$
+  select case when secs_left(t) >= 60 then ceil(secs_left(t) / 60.0)::int || ' dk' else secs_left(t) || ' sn' end
+$$;
+
+-- Hapis/hastane: oyuncu aksiyon yapamıyorsa sebebini döner, yapabiliyorsa null.
+create or replace function blocked_msg(p players) returns text
+language sql stable as $$
+  select case
+    when p.jail_until > now()     then 'Hapistesin. ' || fmt_wait(p.jail_until) || ' kaldı.'
+    when p.hospital_until > now() then 'Hastanedesin. ' || fmt_wait(p.hospital_until) || ' kaldı.'
+  end
+$$;
+
 -- ─────────────── Oyun durumu ───────────────
 create or replace function get_state() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
@@ -180,7 +195,8 @@ begin
       'nick', p.nick, 'city', p.city_id, 'cash', p.cash, 'xp', p.xp,
       'rank', rk,
       'crime_ready_at', p.crime_ready_at, 'car_ready_at', p.car_ready_at,
-      'travel_ready_at', p.travel_ready_at, 'jail_until', p.jail_until),
+      'travel_ready_at', p.travel_ready_at, 'jail_until', p.jail_until,
+      'hospital_until', p.hospital_until),
     'ranks',  (select jsonb_agg(to_jsonb(r) order by r.id) from ranks r),
     'cities', (select jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name) order by c.sort) from cities c),
     'crimes', (select jsonb_agg(jsonb_build_object(
@@ -228,9 +244,7 @@ begin
   p := me_for_update();
   select * into c from crimes where id = p_crime;
   if not found then raise exception 'BAD_CRIME'; end if;
-  if p.jail_until > now() then
-    return jsonb_build_object('ok', false, 'msg', 'Hapistesin. ' || secs_left(p.jail_until) || ' sn kaldı.');
-  end if;
+  if blocked_msg(p) is not null then return jsonb_build_object('ok', false, 'msg', blocked_msg(p)); end if;
   if p.crime_ready_at > now() then
     return jsonb_build_object('ok', false, 'msg', 'Biraz dinlen. ' || secs_left(p.crime_ready_at) || ' sn kaldı.');
   end if;
@@ -264,9 +278,7 @@ language plpgsql security definer set search_path = public as $$
 declare p players; car cars; rk int; msg text;
 begin
   p := me_for_update();
-  if p.jail_until > now() then
-    return jsonb_build_object('ok', false, 'msg', 'Hapistesin. ' || secs_left(p.jail_until) || ' sn kaldı.');
-  end if;
+  if blocked_msg(p) is not null then return jsonb_build_object('ok', false, 'msg', blocked_msg(p)); end if;
   if p.car_ready_at > now() then
     return jsonb_build_object('ok', false, 'msg', 'Ortalık hâlâ sıcak. ' || secs_left(p.car_ready_at) || ' sn bekle.');
   end if;
@@ -299,7 +311,7 @@ begin
   if not found then return jsonb_build_object('ok', false, 'msg', 'Bu araba burada değil.'); end if;
   delete from player_cars where id = p_car_id;
   update players set cash = cash + v where id = p.id;
-  return jsonb_build_object('ok', true, 'msg', nm || ' $' || v || '''a satıldı.');
+  return jsonb_build_object('ok', true, 'msg', nm || ' satıldı: $' || v);
 end $$;
 
 create or replace function travel(p_city text) returns jsonb
@@ -310,9 +322,7 @@ begin
   select name into cname from cities where id = p_city;
   if not found then raise exception 'BAD_CITY'; end if;
   if p_city = p.city_id then return jsonb_build_object('ok', false, 'msg', 'Zaten buradasın.'); end if;
-  if p.jail_until > now() then
-    return jsonb_build_object('ok', false, 'msg', 'Hapistesin. ' || secs_left(p.jail_until) || ' sn kaldı.');
-  end if;
+  if blocked_msg(p) is not null then return jsonb_build_object('ok', false, 'msg', blocked_msg(p)); end if;
   if p.travel_ready_at > now() then
     return jsonb_build_object('ok', false, 'msg', 'Sıradaki vapur ' || secs_left(p.travel_ready_at) || ' sn sonra.');
   end if;
@@ -320,7 +330,7 @@ begin
 
   update players set cash = cash - cost, city_id = p_city,
     travel_ready_at = now() + make_interval(secs => setting('travel_cooldown_s')) where id = p.id;
-  msg := cname || '''e vardın.';
+  msg := 'Vapur ' || cname || ' limanına yanaştı.';
 
   select exists (select 1 from player_goods where player_id = p.id and qty > 0) into has_goods;
   if has_goods and random() < setting('customs_chance') then
@@ -340,9 +350,7 @@ begin
   if p_qty = 0 or abs(p_qty) > 1000 then raise exception 'BAD_QTY'; end if;
   select name into gname from goods where id = p_good;
   if not found then raise exception 'BAD_GOOD'; end if;
-  if p.jail_until > now() then
-    return jsonb_build_object('ok', false, 'msg', 'Hapisten ticaret yapılmaz.');
-  end if;
+  if blocked_msg(p) is not null then return jsonb_build_object('ok', false, 'msg', blocked_msg(p)); end if;
   price := price_of(p.city_id, p_good);
   select coalesce(qty, 0) into held from player_goods where player_id = p.id and good_id = p_good;
   held := coalesce(held, 0);
