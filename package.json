@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs",
+    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs && node tests/social.test.mjs && node tests/spots.test.mjs && node tests/races.test.mjs && node tests/extras.test.mjs",
     "dev": "node dev-server.mjs"
   },
   "keywords": [],

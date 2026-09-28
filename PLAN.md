@@ -57,16 +57,25 @@ Kaynak: 2006 tarihli Omerta oyuncu rehberi (omertaholic.blogspot.com), Omerta Be
 | Heist (2 kişi, 3 sa) | Tren Soygunu | ✅ 004 |
 | Organized Crime (4 kişi, 12 sa) | Osmanlı Bankası İşi | ✅ 004 |
 | Kumarhane: slot, rulet, blackjack | Zar, rulet, slot | ✅ 005 (blackjack yok) |
-| Özel mesajlar (inbox) | — | ⏳ şikâyet/engelle ile birlikte (mağaza şartı) |
-| Mega OC (8 kişi, 3 gün) | — | ⏳ |
-| Aile objeleri: kumarhane sahipliği | — | ⏳ |
-| Aile baskınları / şehir kontrolü | — | ⏳ |
-| Yarışlar (race form) | — | ⏳ |
-| Honour points | — | ⏳ |
-| Evlilik | — | ⏳ (düşük öncelik) |
-| Piyango / kazı kazan | — | ⏳ |
-| Oyuncu pazarı (OBay) | — | ⏳ |
-| Safehouse | — | ⏳ (hastane/banka zaten koruma sağlıyor) |
+| Özel mesajlar (inbox) | Mesajlar + engelle + şikâyet + küfür filtresi | ✅ 006 |
+| Honour points | Saygı puanı (haftalık) | ✅ 006 |
+| Spots / baskınlar (şehir kontrolü) | Mekânlar: haraç, baskın, tahkim | ✅ 007 |
+| Aile objeleri: kumarhane sahipliği | Gazino mekânı sahibine kayıp bahis payı | ✅ 007 |
+| Mega OC (8 kişi, 3 gün) | Büyük Liman Vurgunu | ✅ 008 |
+| Yarışlar (race form) | Yarışlar + yarış formu | ✅ 008 |
+| Blackjack | Blackjack | ✅ 009 |
+| Piyango / kazı kazan | Günlük piyango + kazı kazan | ✅ 009 |
+| Oyuncu pazarı (OBay) | Pazar (kurşun, araba) | ✅ 009 |
+| Evlilik | Evlilik (teklif/kabul/boşanma) | ✅ 009 |
+| Safehouse | Sığınak | ✅ 009 |
+| Lackeys (ücretli otomasyon) | — | ❌ bilerek yok: ücretli bot = pay-to-win, Omerta'yı bitiren şeylerden |
+| Pillory (adminlerin teşhir sayfası) | — | ⏳ admin paneliyle birlikte |
+
+### Omerta dışı, yayın için kalanlar
+- Admin/moderasyon paneli (şikâyetleri inceleme, ban, gerekçe gösterme)
+- Sezon sistemi + şeref listesi
+- Supabase bağlantısı (hesap bekleniyor), Capacitor paketleme, push bildirimleri
+- AdMob ödüllü reklam + sunucu doğrulaması
 
 ## Klasör yapısı
 - `supabase/migrations/` — veritabanı şeması ve oyun kuralları (SQL fonksiyonları)

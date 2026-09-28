@@ -73,10 +73,15 @@ language sql as $$
   where status = 'forming' and created_at < now() - make_interval(secs => setting('crew_invite_ttl_s'))
 $$;
 
+-- Aynı rolden birden fazla olabilir: 'sofor', 'sofor2', 'sofor3' → Şoför, Şoför 2, Şoför 3
+create or replace function role_kind(r text) returns text
+language sql immutable as $$ select regexp_replace(r, '\d+$', '') $$;
+
 create or replace function role_name(r text) returns text
 language sql immutable as $$
-  select case r when 'lider' then 'Lider' when 'sofor' then 'Şoför' when 'silahci' then 'Silahçı'
+  select case role_kind(r) when 'lider' then 'Lider' when 'sofor' then 'Şoför' when 'silahci' then 'Silahçı'
                 when 'patlayici' then 'Patlayıcı Uzmanı' else r end
+         || coalesce(' ' || substring(r from '\d+$'), '')
 $$;
 
 -- p_invites: {"sofor": "nick", "silahci": "nick", ...}
@@ -152,16 +157,16 @@ begin
       if pl.weapon_id is null or pl.bullets < setting('crew_leader_bullets') then
         return 'Liderin silahı ve ' || setting('crew_leader_bullets') || ' kurşunu olmalı.';
       end if;
-    elsif m.role = 'sofor' then
+    elsif role_kind(m.role) = 'sofor' then
       if not exists (select 1 from player_cars pc join cars k on k.id = pc.car_id
                      where pc.player_id = pl.id and pc.city_id = c.city_id and k.value >= ct.car_min_value) then
         return pl.nick || ' bu şehirde en az $' || ct.car_min_value || ' değerinde bir araba bulundurmalı.';
       end if;
-    elsif m.role = 'silahci' then
+    elsif role_kind(m.role) = 'silahci' then
       if pl.weapon_id is null or pl.bullets < setting('crew_gunner_bullets') then
         return pl.nick || ' silahlı olmalı ve ' || setting('crew_gunner_bullets') || ' kurşun getirmeli.';
       end if;
-    elsif m.role = 'patlayici' then
+    elsif role_kind(m.role) = 'patlayici' then
       if pl.cash < setting('crew_explosive_cost') then return pl.nick || ' dinamit için $' || setting('crew_explosive_cost') || ' bulmalı.'; end if;
     end if;
   end loop;
@@ -186,9 +191,9 @@ begin
   -- masraflar
   update players set cash = cash - ct.leader_cost, bullets = bullets - setting('crew_leader_bullets') where id = c.leader_id;
   update players set bullets = bullets - setting('crew_gunner_bullets')
-    where id = (select player_id from crew_members where crew_id = c.id and role = 'silahci');
+    where id in (select player_id from crew_members where crew_id = c.id and role_kind(role) = 'silahci');
   update players set cash = cash - setting('crew_explosive_cost')
-    where id = (select player_id from crew_members where crew_id = c.id and role = 'patlayici');
+    where id in (select player_id from crew_members where crew_id = c.id and role_kind(role) = 'patlayici');
   select player_id into driver from crew_members where crew_id = c.id and role = 'sofor';
 
   select avg(rank_of(pl.xp)), count(*) into avg_rank, n

@@ -8,13 +8,18 @@ export async function setup() {
   const db = new PGlite();
   await db.exec(readFileSync(new URL('local-shim.sql', dir), 'utf8'));
   for (const f of readdirSync(new URL('migrations/', dir)).filter(f => f.endsWith('.sql')).sort()) {
-    await db.exec(readFileSync(new URL('migrations/' + f, dir), 'utf8'));
+    try { await db.exec(readFileSync(new URL('migrations/' + f, dir), 'utf8')); }
+    catch (e) { throw new Error(`${f}: ${e.message}${e.where ? ' @ ' + e.where : ''}`); }
   }
 
   const as = async (uid, sql, params = []) => {
     await db.query(`select set_config('test.uid', $1, false)`, [uid]);
-    const r = await db.query(sql, params);
-    return Object.values(r.rows[0])[0];
+    try {
+      const r = await db.query(sql, params);
+      return Object.values(r.rows[0])[0];
+    } catch (e) {
+      throw new Error(`${e.message}${e.where ? ' @ ' + e.where.split(/\n/)[0] : ''} — ${sql}`);
+    }
   };
 
   // Oyuncu oluşturur; istenirse xp/para/şehir ayarlar. uid döner.

@@ -5,21 +5,39 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
 
 let api, S, clockOffset = 0, busy = false, tab = 'crime', qty = 1;
-const extra = { jail: [], players: null, family: null, families: [], hitlist: [], crews: null, casino: null };   // sekmeye girince çekilen listeler
+const extra = { jail: [], players: null, family: null, families: [], hitlist: [], crews: null, casino: null,
+  inbox: [], conv: null, convMsgs: [], spots: null, races: null, lottery: null, market: [], bj: null };   // sekmeye girince çekilen listeler
 
 // Sunucu saatine göre kalan saniye (telefon saati yanlış olsa da doğru sayar)
 const left = (iso) => Math.max(0, Math.ceil((new Date(iso) - (Date.now() + clockOffset)) / 1000));
 const fmt = (s) => s >= 3600 ? `${Math.floor(s / 3600)} sa ${Math.floor(s % 3600 / 60)} dk` : s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s} sn`;
 
 async function refresh() {
+  // açık konuşmayı önce oku ki okunmamış sayacı doğru gelsin
+  if (S?.player && tab === 'log' && extra.conv) extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
   S = await api.rpc('get_state');
   if (S.player) clockOffset = new Date(S.now) - Date.now();
-  if (S.player && tab === 'city') extra.jail = await api.rpc('get_jail');
-  if (S.player && tab === 'log') extra.players = await api.rpc('get_players');
-  if (S.player && tab === 'arms') extra.hitlist = await api.rpc('get_hitlist');
-  if (S.player && tab === 'family') await loadFamily();
-  if (S.player && tab === 'crime') extra.crews = await api.rpc('get_crews');
+  if (S.player) await loadTabData();
   render();
+}
+
+// Her sekmenin ihtiyaç duyduğu ek listeler (sadece o sekme açıkken çekilir)
+async function loadTabData() {
+  const rpc = api.rpc;
+  if (tab === 'city') {
+    [extra.jail, extra.lottery, extra.bj] = await Promise.all([rpc('get_jail'), rpc('get_lottery'), rpc('bj_current')]);
+  } else if (tab === 'log') {
+    [extra.players, extra.inbox] = await Promise.all([rpc('get_players'), rpc('get_inbox')]);
+  } else if (tab === 'arms') {
+    extra.hitlist = await rpc('get_hitlist');
+  } else if (tab === 'family') {
+    await loadFamily();
+    extra.spots = await rpc('get_spots');
+  } else if (tab === 'crime') {
+    [extra.crews, extra.races] = await Promise.all([rpc('get_crews'), rpc('get_races')]);
+  } else if (tab === 'trade') {
+    extra.market = await rpc('get_market');
+  }
 }
 
 async function loadFamily() {
@@ -66,6 +84,7 @@ function render() {
   $('#h-cash').textContent = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
   $('#h-stats').textContent = `❤ ${p.health} · 🔫 ${p.bullets} kurşun · 🏦 ${money(p.bank)}`;
+  $('[data-go="log"]').dataset.badge = p.unread > 0 ? p.unread : '';
   $('#xpbar div').style.width = next ? `${100 * (p.xp - rank.min_xp) / (next.min_xp - rank.min_xp)}%` : '100%';
   renderTab();
   tick();
@@ -89,7 +108,7 @@ function renderTab() {
 }
 
 // Hazır olmayan aksiyonların butonları pasif görünsün (sunucu zaten reddeder)
-const blocked = () => left(S.player.jail_until) > 0 || left(S.player.hospital_until) > 0;
+const blocked = () => left(S.player.jail_until) > 0 || left(S.player.hospital_until) > 0 || left(S.player.hideout_until) > 0;
 const waiting = (at) => blocked() || left(at) > 0;
 const dis = (cond) => cond ? 'disabled' : '';
 
@@ -119,11 +138,40 @@ function crimeTab() {
      <button class="btn sm" data-act="crush" data-id="${c.id}">Ez</button></div>`)).join('')
     : `<p class="muted small">Bu şehirde araban yok.</p>`) +
   (away ? `<p class="muted small">Başka şehirlerde ${away} araban var; satmak için oraya git.</p>` : '') +
-  crewSection();
+  crewSection() + raceSection();
+}
+
+// ── Yarışlar
+function raceSection() {
+  const R = extra.races;
+  if (!R) return '';
+  const here = S.cars.filter(c => c.city === S.player.city);
+  const carSelect = (id) => here.length
+    ? `<select id="${id}">${here.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>` : '';
+  const inRace = R.open.some(r => r.joined);
+  let h = `<h2>Yarışlar</h2><p class="muted small">Yarış formun: <b>${R.form}</b>/20. Güçlü araba ve form avantaj sağlar ama şans baskındır.
+    Kazanan havuzun %95'ini alır.</p>`;
+  h += R.open.map(r => card(`${esc(r.host)}'nin yarışı · giriş ${money(r.fee)}`,
+    r.racers.map(x => `${nickLink(x.nick)} (${esc(x.car)})`).join(', '),
+    r.i_host ? `<div class="market-actions"><button class="btn sm primary" data-act="racestart">Start</button>
+                <button class="btn sm" data-act="raceleave">İptal</button></div>`
+    : r.joined ? `<button class="btn sm" data-act="raceleave">Çekil</button>`
+    : !inRace && here.length ? `<div class="market-actions">${carSelect('f-race-car-' + r.id)}
+        <button class="btn sm primary" data-act="racejoin" data-id="${r.id}">Katıl</button></div>` : '')).join('');
+  if (!inRace) {
+    h += here.length ? `<div class="form-row">${carSelect('f-race-car')}
+        <input id="f-race-fee" type="number" min="1000" placeholder="Giriş $" inputmode="numeric">
+        <button class="btn primary" data-act="racecreate">Yarış aç</button></div>`
+      : `<p class="muted small">Yarışmak için bu şehirde bir araban olmalı.</p>`;
+  }
+  h += R.recent.map(t => `<p class="muted small">🏁 ${esc(t)}</p>`).join('');
+  return h;
 }
 
 // ── Ekip işleri (soygun / organize iş)
 const CREW_ROLES = { lider: 'Lider', sofor: 'Şoför', silahci: 'Silahçı', patlayici: 'Patlayıcı Uzmanı' };
+const roleLabel = (r) => { const [, k, n] = r.match(/^(\D+)(\d*)$/); return CREW_ROLES[k] + (n ? ' ' + n : ''); };
+const countRole = (t, k) => t.roles.filter(r => r.replace(/\d+$/, '') === k).length;
 
 function crewSection() {
   const X = extra.crews;
@@ -135,7 +183,7 @@ function crewSection() {
   for (const c of active) {
     const t = X.types.find(x => x.id === c.type);
     const me = c.members.find(m => m.nick === S.player.nick);
-    const list = c.members.map(m => `${CREW_ROLES[m.role]}: ${nickLink(m.nick)} ${m.accepted === true ? '✅' : m.accepted === false ? '❌' : '⏳'}`).join('<br>');
+    const list = c.members.map(m => `${roleLabel(m.role)}: ${nickLink(m.nick)} ${m.accepted === true ? '✅' : m.accepted === false ? '❌' : '⏳'}`).join('<br>');
     let btn = '';
     if (c.i_lead) btn = `<div class="market-actions"><button class="btn sm primary" data-act="crewstart">Başlat</button>
       <button class="btn sm" data-act="crewcancel">Dağıt</button></div>`;
@@ -154,13 +202,13 @@ function crewSection() {
       if (locked) { h += `<div class="card locked"><div class="grow"><div class="title">${esc(t.name)}</div>
         <div class="muted small">🔒 ${esc(rankName(t.min_rank))} rütbesi gerekir</div></div></div>`; continue; }
       const req = [`lider ${money(t.leader_cost)} + silah + ${X.settings.leader_bullets} kurşun`,
-        `şoförün en az ${money(t.car_min_value)} arabası`,
-        t.roles.includes('silahci') ? `silahçı ${X.settings.gunner_bullets} kurşun` : '',
-        t.roles.includes('patlayici') ? `patlayıcı ${money(X.settings.explosive_cost)}` : ''].filter(Boolean).join(' · ');
+        `${countRole(t, 'sofor') > 1 ? countRole(t, 'sofor') + ' şoförün' : 'şoförün'} en az ${money(t.car_min_value)} arabası`,
+        countRole(t, 'silahci') ? `${countRole(t, 'silahci') > 1 ? countRole(t, 'silahci') + ' silahçı' : 'silahçı'} ${X.settings.gunner_bullets}'er kurşun` : '',
+        countRole(t, 'patlayici') ? `patlayıcı ${money(X.settings.explosive_cost)}` : ''].filter(Boolean).join(' · ');
       h += `<div class="card col"><div class="title">${esc(t.name)} <span class="muted small">${money(t.payout_min)}–${money(t.payout_max)}</span></div>
         <div class="muted small">${req}. Herkes aynı şehirde olmalı.</div>
         ${wait ? `<div class="muted small">⏳ ${fmt(wait)} sonra tekrar</div>` : `
-        ${t.roles.slice(1).map(r => `<input id="f-crew-${t.id}-${r}" placeholder="${CREW_ROLES[r]} (takma ad)" autocomplete="off" autocapitalize="off">`).join('')}
+        ${t.roles.slice(1).map(r => `<input id="f-crew-${t.id}-${r}" placeholder="${roleLabel(r)} (takma ad)" autocomplete="off" autocapitalize="off">`).join('')}
         <button class="btn primary" data-act="crewcreate" data-id="${t.id}">Ekibi kur, davet et</button>`}</div>`;
     }
   }
@@ -195,7 +243,26 @@ function tradeTab() {
       const here = c.id === S.player.city;
       return card(esc(c.name), here ? 'Buradasın' : '',
         `<button class="btn sm ${here ? '' : 'primary'}" data-act="travel" data-id="${c.id}" ${dis(here || travelWait)}>Git</button>`);
-    }).join('') + transportSection();
+    }).join('') + transportSection() + marketSection();
+}
+
+// ── Oyuncu pazarı (kurşun / araba)
+function marketSection() {
+  let h = `<h2>Pazar</h2><p class="muted small">Oyuncular arası alım satım. Satıcıdan %${Math.round(S.settings.market_fee * 100)} komisyon kesilir.</p>`;
+  h += extra.market.length ? extra.market.map(l => card(
+      l.kind === 'bullets' ? `🔫 ${l.qty} kurşun` : `🚗 ${esc(l.car)} <span class="muted small">(${esc(l.city)})</span>`,
+      `${nickLink(l.seller)} · ${money(l.price)}${l.unit ? ` · kurşunu ${money(l.unit)}` : ` · piyasa ${money(l.car_value)}`}`,
+      l.mine ? `<button class="btn sm" data-act="unlist" data-id="${l.id}">Kaldır</button>`
+             : `<button class="btn sm primary" data-act="buylisting" data-id="${l.id}">Al</button>`)).join('')
+    : `<p class="muted small">Pazarda ilan yok.</p>`;
+  h += `<div class="form-row"><input id="f-sell-bullets" type="number" min="1" placeholder="Kurşun adedi" inputmode="numeric">
+      <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam $" inputmode="numeric">
+      <button class="btn" data-act="listbullets">Sat</button></div>`;
+  if (S.cars.length) h += `<div class="form-row"><select id="f-sell-car">${S.cars.map(c =>
+      `<option value="${c.id}">${esc(c.name)} · ${esc(cityName(c.city))}</option>`).join('')}</select>
+      <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat $" inputmode="numeric">
+      <button class="btn" data-act="listcar">Sat</button></div>`;
+  return h;
 }
 
 function transportSection() {
@@ -289,7 +356,7 @@ function familyTab() {
       ? `<div class="form-row"><input id="f-fam-name" placeholder="Aile adı" autocomplete="off">
           <button class="btn primary" data-act="createfam">${money(F.create_cost)}</button></div>`
       : `<p class="muted small">🔒 Aile kurmak için ${esc(rankName(S.settings.family_create_rank))} olmalısın (${money(F.create_cost)}).</p>`);
-    return h;
+    return h + spotsSection(null);
   }
 
   const role = F.my_role, isDon = role === 'don', leader = ['don', 'sottocapo', 'consigliere'].includes(role);
@@ -303,7 +370,9 @@ function familyTab() {
       <button class="btn" data-act="fampay">Öde</button></div>`;
 
   h += `<h2>Sohbet</h2><div class="chat" id="chat">${F.messages.map(m => m.nick
-      ? `<div><b>${esc(m.nick)}:</b> ${esc(m.text)}</div>` : `<div class="muted small">— ${esc(m.text)}</div>`).join('')}</div>
+      ? `<div><b>${esc(m.nick)}:</b> ${esc(m.text)}${m.nick !== S.player.nick
+          ? ` <a class="flag" data-report="family_message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`
+      : `<div class="muted small">— ${esc(m.text)}</div>`).join('')}</div>
     <form class="form-row" id="chat-form"><input id="f-chat" maxlength="300" placeholder="Mesaj yaz…" autocomplete="off">
       <button class="btn primary">Gönder</button></form>`;
 
@@ -334,7 +403,37 @@ function familyTab() {
   } else if (!here.mine) {
     h += `<p class="muted small">${esc(cityName(S.player.city))} fabrikası ${esc(here.owner)} ailesinin.</p>`;
   }
+  h += spotsSection(role);
   h += `<p style="margin-top:20px"><button class="btn" data-act="leave">${isDon && F.members.length === 1 ? 'Aileyi dağıt' : 'Aileden ayrıl'}</button></p>`;
+  return h;
+}
+
+// ── Mekânlar (haraç, baskın, tahkim)
+const SPOT_ICON = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
+
+function spotsSection(role) {
+  const X = extra.spots;
+  if (!X) return '';
+  const canRaid = ['don', 'sottocapo', 'capo'].includes(role);
+  const raidWait = X.raid_ready_at && left(X.raid_ready_at);
+  const list = X.spots;
+  const here = list.filter(s => s.city === S.player.city), others = list.filter(s => s.city !== S.player.city);
+  let h = `<h2>Mekânlar</h2><p class="muted small">Mekân sahibi aile her saat haraç toplar (en fazla 24 saatlik birikir).
+    Don, Sottocapo ve Capolar baskın yapabilir; şehirde çevrimiçi her aile üyesi gücü %15 artırır. Gazino sahibi, kumarda kaybedilen bahislerin %10'unu alır.</p>`;
+  if (role && raidWait) h += `<p class="small">⏳ Ailenin sıradaki baskını: ${fmt(raidWait)}</p>`;
+  h += here.map(sp => {
+    const prot = sp.protected_until && left(sp.protected_until);
+    let action = '';
+    if (sp.mine) action = `<div class="market-actions"><input id="f-fort-${sp.id}" class="sm-input" type="number" min="1" placeholder="Kurşun">
+        <button class="btn sm" data-act="fortify" data-id="${sp.id}">Tahkim</button></div>`;
+    else if (canRaid && !prot) action = `<div class="market-actions"><input id="f-raid-${sp.id}" class="sm-input" type="number" min="1" placeholder="Kurşun">
+        <button class="btn sm danger" data-act="raid" data-id="${sp.id}" ${dis(raidWait || blocked())}>Baskın</button></div>`;
+    return card(`${SPOT_ICON[sp.kind]} ${esc(sp.name)}`,
+      `${money(sp.income)}/saat · ${sp.owner ? esc(sp.owner) : 'sahipsiz'} · ${sp.mine ? `savunma ${sp.defense} kurşun` : `koruma: ${esc(sp.strength)}`}${prot ? ` · 🛡 ${fmt(prot)}` : ''}`,
+      action);
+  }).join('');
+  if (others.length) h += `<details><summary class="muted small">Diğer şehirlerdeki mekânlar (${others.length})</summary>${others.map(sp =>
+    `<p class="small">${SPOT_ICON[sp.kind]} ${esc(sp.name)} · ${esc(cityName(sp.city))} · ${sp.owner ? esc(sp.owner) : 'sahipsiz'}${sp.mine ? ' ✓' : ''}</p>`).join('')}</details>`;
   return h;
 }
 
@@ -352,7 +451,13 @@ function cityTab() {
     : `<p class="muted small">İçeride kimse yok.</p>`;
   h += `<p class="muted small">Birini kaçırmak itibar kazandırır ama gardiyana yakalanabilirsin.</p>`;
 
-  h += casinoSection();
+  h += casinoSection() + lotterySection();
+  h += `<h2>Sığınak</h2>` + (left(p.hideout_until)
+    ? card('Yer altındasın', `Kimse seni bulamaz ve vuramaz; sen de iş yapamazsın. ${fmt(left(p.hideout_until))} kaldı.`,
+        `<button class="btn sm primary" data-act="leavehide">Çık</button>`)
+    : `<p class="muted small">Saati ${money(S.settings.hideout_cost_per_rank_h * (p.rank + 1))}. Dedektifler bulamaz, kimse vuramaz ama bu sürede hiçbir iş yapamazsın.</p>
+      <div class="form-row"><select id="f-hide-h">${[1, 2, 4, 8, 12].map(n => `<option value="${n}">${n} saat</option>`).join('')}</select>
+        <button class="btn primary" data-act="hide" ${dis(blocked())}>Saklan</button></div>`);
   h += `<h2>Hastane</h2>` + card(`Sağlık: ${p.health}/100`,
     hospLeft ? `Yatıyorsun: ${fmt(hospLeft)}` : `Can başı ${money(S.settings.heal_cost_per_hp)}`,
     `<button class="btn sm primary" data-act="heal" ${dis(p.health >= 100 || jailLeft)}>İyileş</button>`);
@@ -384,13 +489,60 @@ function casinoSection() {
       <div class="form-row"><input id="f-rulet-n" type="number" min="0" max="36" placeholder="Sayı 0-36" inputmode="numeric">
         <button class="btn" data-act="casino" data-game="rulet" data-choice="num">×36</button></div>
     </div>
-    ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${esc(c.msg)}</div>` : ''}`;
+    ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${esc(c.msg)}</div>` : ''}
+    <h2>Blackjack</h2>${bjSection()}
+    <h2>Kazı Kazan</h2>` + card('Tanesi ' + money(S.settings.scratch_price), 'Büyük ikramiye $100.000',
+      `<button class="btn sm primary" data-act="scratch">Kazı</button>`);
+}
+
+function bjSection() {
+  const g = extra.bj;
+  if (!g) return `<p class="muted small">Bahsi yukarıdaki kutuya yaz. Krupiye 17'de durur, blackjack 3:2 öder.</p>
+    <button class="btn primary" data-act="bjstart">Kart dağıt</button>`;
+  return `<div class="bj"><div>Krupiye: <b>${esc(g.dealer)}</b>${g.dealer_value != null ? ` (${g.dealer_value})` : ''}</div>
+    <div>Sen: <b>${esc(g.hand)}</b> (${g.hand_value}) · bahis ${money(g.bet)}</div></div>` +
+    (g.done ? `<div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${esc(g.msg)}</div>
+       <button class="btn primary" data-act="bjstart">Yeni el</button>`
+     : `<div class="market-actions"><button class="btn primary" data-act="bjhit">Kart çek</button>
+        <button class="btn" data-act="bjstand">Dur</button></div>`);
+}
+
+function lotterySection() {
+  const L = extra.lottery;
+  if (!L) return '';
+  return `<h2>Piyango</h2>` + card(`İkramiye: ${money(L.pot)}`,
+    `Çekiliş: ${new Date(L.draw_at).toLocaleString('tr-TR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} ·
+     ${L.tickets} bilet satıldı · senin ${L.mine} biletin` +
+    (L.last_winner ? `<br>Son kazanan: ${nickLink(L.last_winner)} (${money(L.last_prize)})` : ''),
+    `<div class="market-actions"><select id="f-lot-n">${[1, 5, 10, 25].map(n => `<option value="${n}">${n}</option>`).join('')}</select>
+     <button class="btn sm primary" data-act="lottery">${money(S.settings.lottery_ticket)}/bilet</button></div>`);
 }
 
 // ── Defter: istatistik, oyuncular, olaylar
+function messagesSection() {
+  if (extra.conv) {
+    return `<h2>${esc(extra.conv)} ile mesajlar</h2>
+      <p><button class="btn sm" data-act="closeconv">← Gelen kutusu</button></p>
+      <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)}${!m.mine
+        ? ` <a class="flag" data-report="message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`).join('') || '<div class="muted small">Henüz mesaj yok.</div>'}</div>
+      <form class="form-row" id="dm-form"><input id="f-dm" maxlength="500" placeholder="Mesaj yaz…" autocomplete="off">
+        <button class="btn primary">Gönder</button></form>`;
+  }
+  return `<h2>Mesajlar${S.player.unread ? ` (${S.player.unread} yeni)` : ''}</h2>` +
+    (extra.inbox.length ? extra.inbox.map(c => `<div class="card clickable" data-act="openconv" data-id="${esc(c.nick)}">
+      <div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
+      <div class="muted small ellipsis">${esc(c.last)}</div></div></div>`).join('')
+      : `<p class="muted small">Mesaj yok. Birine yazmak için profiline dokun.</p>`);
+}
+
 function logTab() {
   const p = S.player, pl = extra.players;
-  return `<h2>Sicil</h2>
+  return messagesSection() +
+    (p.proposals.length ? `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
+      `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`)).join('') : '') +
+    `<h2>Sicil</h2>
+    <p class="small">💍 ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'} ·
+      🤝 saygı ${p.respect} (bu hafta verebileceğin: ${p.respect_left})</p>
     <p class="small">☠ ${p.kills} öldürme · ⚰ ${p.deaths} ölüm · 🔓 ${p.busts} kurtarma · 🎯 nişancılık ${p.kill_skill}</p>` +
     (pl ? `<h2>Çevrimiçi (${pl.online.length})</h2><p class="small">${pl.online.map(o => nickLink(o.nick)).join(' · ') || '—'}</p>
       <h2>En Büyükler</h2><ol class="top">${pl.top.map(t => `<li>${nickLink(t.nick)} <span class="muted small">${esc(rankName(t.rank))} · ☠ ${t.kills}</span></li>`).join('')}</ol>` : '') +
@@ -410,7 +562,17 @@ async function showProfile(nick) {
     ${pr.bounty > 0 ? `<p class="small">🎯 Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
     <p class="small">☠ ${pr.kills} öldürme · ⚰ ${pr.deaths} ölüm · 🔓 ${pr.busts} kurtarma</p>
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
-    <p class="small muted">Katılış: ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>`;
+    ${pr.spouse ? `<p class="small">💍 ${esc(pr.spouse)} ile evli</p>` : ''}
+    <p class="small muted">🤝 saygı ${pr.respect} · 🏁 yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
+    ${pr.nick === S.player.nick ? '' : `<div class="profile-actions">
+      <button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">✉ Mesaj</button>
+      <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>🤝 Saygı</button>
+      ${!S.player.spouse && !pr.spouse ? (pr.proposed_to_me
+        ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">💍 Kabul et</button>`
+        : `<button class="btn sm" data-act="propose" data-id="${esc(pr.nick)}">💍 Teklif</button>`) : ''}
+      <button class="btn sm" data-act="${pr.blocked ? 'unblock' : 'block'}" data-id="${esc(pr.nick)}">${pr.blocked ? 'Engeli kaldır' : '🚫 Engelle'}</button>
+      <button class="btn sm" data-act="reportplayer" data-id="${esc(pr.nick)}">⚑ Şikâyet</button>
+    </div>`}`;
   $('#modal').classList.remove('hidden');
 }
 
@@ -419,7 +581,7 @@ let lastReady = '';
 function tick() {
   if (!S?.player) return;
   const p = S.player;
-  const timed = [p.crime_ready_at, p.car_ready_at, p.travel_ready_at, p.jail_until, p.hospital_until,
+  const timed = [p.crime_ready_at, p.car_ready_at, p.travel_ready_at, p.jail_until, p.hospital_until, p.hideout_until,
     p.kill_ready_at, p.bust_ready_at, p.practice_ready_at, ...S.searches.map(s => s.ready_at)];
   const ready = timed.map(t => left(t) > 0).join();
   if (ready !== lastReady) {
@@ -432,10 +594,11 @@ function tick() {
     el.textContent = s ? `${label} ${fmt(s)}` : `${label} hazır`;
     el.classList.toggle('wait', s > 0);
   }
-  const j = left(p.jail_until), h = left(p.hospital_until);
-  $('#jail').classList.toggle('hidden', !j && !h);
+  const j = left(p.jail_until), h = left(p.hospital_until), hid = left(p.hideout_until);
+  $('#jail').classList.toggle('hidden', !j && !h && !hid);
   if (j) $('#jail').textContent = `⛓ Hapistesin — ${fmt(j)}`;
   else if (h) $('#jail').textContent = `🏥 Hastanedesin — ${fmt(h)}`;
+  else if (hid) $('#jail').textContent = `🕳 Sığınaktasın — ${fmt(hid)} (Şehir sekmesinden çıkabilirsin)`;
 }
 setInterval(tick, 1000);
 
@@ -447,6 +610,12 @@ document.addEventListener('click', async (e) => {
   if (e.target.closest('#modal-close') || e.target.id === 'modal') { $('#modal').classList.add('hidden'); return; }
   const prof = e.target.closest('[data-profile]');
   if (prof) return showProfile(prof.dataset.profile);
+  const rep = e.target.closest('[data-report]');
+  if (rep) {
+    const reason = prompt('Neden şikâyet ediyorsun? (hakaret, taciz, dolandırıcılık…)');
+    if (reason !== null) act('report_content', { p_kind: rep.dataset.report, p_ref: +rep.dataset.id, p_nick: null, p_reason: reason });
+    return;
+  }
 
   const nav = e.target.closest('[data-go]');
   if (nav) {
@@ -454,7 +623,7 @@ document.addEventListener('click', async (e) => {
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b === nav));
     document.querySelectorAll('main section').forEach(s => s.classList.toggle('hidden', s.dataset.tab !== tab));
     renderTab();
-    if (['crime', 'city', 'log', 'arms', 'family'].includes(tab)) refresh().then(scrollChat);
+    refresh().then(scrollChat);
     return;
   }
   const q = e.target.closest('[data-qty]');
@@ -529,6 +698,60 @@ document.addEventListener('click', async (e) => {
       } finally { busy = false; }
       return;
     }
+    // sosyal
+    case 'dmto':       $('#modal').classList.add('hidden'); return openConv(id);
+    case 'openconv':   return openConv(id);
+    case 'closeconv':  extra.conv = null; return refresh();
+    case 'respect': {
+      const pts = parseInt(prompt(`${id} kişisine kaç saygı puanı? (kalan: ${S.player.respect_left})`, '1'), 10);
+      if (pts > 0) { $('#modal').classList.add('hidden'); return act('give_respect', { p_nick: id, p_points: pts }); }
+      return;
+    }
+    case 'block':      $('#modal').classList.add('hidden'); return confirm(`${id} engellensin mi? Mesajlarını görmezsin.`) && act('block_player', { p_nick: id });
+    case 'unblock':    $('#modal').classList.add('hidden'); return act('unblock_player', { p_nick: id });
+    case 'reportplayer': {
+      const reason = prompt('Neden şikâyet ediyorsun?');
+      if (reason !== null) { $('#modal').classList.add('hidden'); return act('report_content', { p_kind: 'player', p_ref: null, p_nick: id, p_reason: reason }); }
+      return;
+    }
+    case 'propose':    $('#modal').classList.add('hidden'); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı ($${S.settings.marriage_cost}) senden çıkar.`) && act('propose', { p_nick: id });
+    case 'acceptprop': $('#modal').classList.add('hidden'); return act('accept_proposal', { p_nick: id });
+    case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
+    // mekânlar
+    case 'raid':       return num('f-raid-' + id) > 0 && confirm('Baskın başlasın mı? Kurşunlar geri gelmez.') &&
+                         act('raid_spot', { p_spot: +id, p_bullets: num('f-raid-' + id) });
+    case 'fortify':    return num('f-fort-' + id) > 0 && act('fortify_spot', { p_spot: +id, p_bullets: num('f-fort-' + id) });
+    // yarış
+    case 'racecreate': return num('f-race-fee') > 0 && act('create_race', { p_fee: num('f-race-fee'), p_car: num('f-race-car') });
+    case 'racejoin':   return act('join_race', { p_race: +id, p_car: num('f-race-car-' + id) });
+    case 'racestart':  return act('start_race');
+    case 'raceleave':  return act('leave_race');
+    // pazar
+    case 'listbullets': return num('f-sell-bullets') > 0 && num('f-sell-bprice') > 0 &&
+                          act('list_item', { p_kind: 'bullets', p_qty: num('f-sell-bullets'), p_car: null, p_price: num('f-sell-bprice') });
+    case 'listcar':    return num('f-sell-cprice') > 0 &&
+                         act('list_item', { p_kind: 'car', p_qty: null, p_car: num('f-sell-car'), p_price: num('f-sell-cprice') });
+    case 'unlist':     return act('cancel_listing', { p_id: +id });
+    case 'buylisting': return confirm('Satın alınsın mı?') && act('buy_listing', { p_id: +id });
+    // şehir
+    case 'hide':       return confirm('Sığınağa girilsin mi?') && act('enter_hideout', { p_hours: num('f-hide-h') });
+    case 'leavehide':  return act('leave_hideout');
+    case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
+    case 'scratch':    return act('scratch_card');
+    case 'bjstart': case 'bjhit': case 'bjstand': {
+      if (busy) return;
+      const bet = num('f-bet');
+      if (b.dataset.act === 'bjstart' && bet < 10) return toast('Önce bahsini yaz (en az $10).', 'bad');
+      busy = true;
+      try {
+        const r = b.dataset.act === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })
+          : await api.rpc(b.dataset.act === 'bjhit' ? 'bj_hit' : 'bj_stand');
+        if (!r.ok) toast(r.msg, 'bad'); else extra.bj = r;
+        S = await api.rpc('get_state'); render();
+        $('#f-bet').value = bet;
+      } finally { busy = false; }
+      return;
+    }
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
@@ -539,6 +762,24 @@ document.addEventListener('change', (e) => {
   if (!sel) return;
   if (sel.value === 'don' && !confirm(`Donluk devredilsin mi? Yeni Don: ${sel.dataset.role}. Sen Sottocapo olursun.`)) return renderTab();
   act('set_role', { p_nick: sel.dataset.role, p_role: sel.value });
+});
+
+async function openConv(nick) {
+  extra.conv = nick;
+  if (tab !== 'log') return $('[data-go="log"]').click();
+  await refresh(); scrollChat();
+}
+
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'dm-form') return;
+  e.preventDefault();
+  const text = val('f-dm');
+  if (!text) return;
+  const r = await api.rpc('send_message', { p_nick: extra.conv, p_text: text });
+  if (!r.ok) return toast(r.msg, 'bad');
+  $('#f-dm').value = '';
+  extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
+  renderTab(); scrollChat();
 });
 
 document.addEventListener('submit', async (e) => {
@@ -552,12 +793,18 @@ document.addEventListener('submit', async (e) => {
   await loadFamily(); renderTab(); scrollChat();
 });
 
-const scrollChat = () => { const c = $('#chat'); if (c) c.scrollTop = c.scrollHeight; };
-// Aile sekmesi açıkken sohbeti 10 sn'de bir tazele (yazarken bölme)
+const scrollChat = () => { for (const c of [$('#chat'), $('#dm')]) if (c) c.scrollTop = c.scrollHeight; };
+// Aile sohbeti ya da özel mesaj açıkken 10 sn'de bir tazele (yazarken bölme)
 setInterval(async () => {
-  if (tab !== 'family' || !extra.family?.family || document.hidden) return;
-  if ($('#f-chat') === document.activeElement && val('f-chat')) return;
-  await loadFamily(); renderTab(); scrollChat();
+  if (document.hidden || !S?.player) return;
+  if (tab === 'family' && extra.family?.family) {
+    if ($('#f-chat') === document.activeElement && val('f-chat')) return;
+    await loadFamily();
+  } else if (tab === 'log' && extra.conv) {
+    if ($('#f-dm') === document.activeElement && val('f-dm')) return;
+    extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
+  } else return;
+  renderTab(); scrollChat();
 }, 10000);
 
 $('#nick-form').addEventListener('submit', async (e) => {

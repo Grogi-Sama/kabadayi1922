@@ -143,3 +143,21 @@ select {
 .casino-result { margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; font-size: 18px; border: 1px solid var(--line); }
 .casino-result.good { border-color: var(--green); color: #cfe5b8; }
 .casino-result.bad { border-color: var(--red); color: #f3c2bb; }
+
+/* Faz 3: mesajlar, profil, mekân, blackjack */
+nav button { position: relative; }
+nav button[data-badge]:not([data-badge=""])::after {
+  content: attr(data-badge); position: absolute; top: 6px; right: calc(50% - 20px);
+  background: var(--red); color: #fff; font-size: 11px; border-radius: 9px; padding: 0 5px; min-width: 16px;
+}
+.flag { color: var(--muted); cursor: pointer; font-size: 12px; margin-left: 4px; text-decoration: none; }
+.flag:hover { color: var(--red); }
+.chat .me { align-self: flex-end; background: #3a2e22; border-radius: 8px; padding: 4px 8px; }
+#dm > div:not(.me) { align-self: flex-start; background: #2a2119; border-radius: 8px; padding: 4px 8px; }
+.card.clickable { cursor: pointer; }
+.pill { background: var(--red); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 12px; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
+.sm-input { width: 80px; padding: 6px; font-size: 14px; text-align: left; }
+.bj { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; line-height: 1.8; }
+details summary { cursor: pointer; margin: 6px 0; }

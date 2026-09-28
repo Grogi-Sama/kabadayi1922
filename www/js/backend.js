@@ -24,7 +24,8 @@ async function supabaseBackend() {
 
 // Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
 const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
-const MIGRATIONS = ['001_core.sql', '002_combat.sql', '003_families.sql', '004_crews.sql', '005_casino_transport.sql'];
+const MIGRATIONS = ['001_core.sql', '002_combat.sql', '003_families.sql', '004_crews.sql', '005_casino_transport.sql',
+  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql'];
 
 const IDB_NAME = '/pglite/kabadayi-dev';
 const deleteLocalDb = () => new Promise(r => {
