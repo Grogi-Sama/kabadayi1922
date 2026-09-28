@@ -8,3 +8,14 @@ insert into players (id, nick, city_id, cash, xp, bullets, bodyguards, jail_unti
   ('00000000-0000-0000-0000-0000000000b2', 'Kör_Salih',   'istanbul',  6000,   800,  150, 0, now(), now()),
   ('00000000-0000-0000-0000-0000000000b3', 'Topal_Osman', 'istanbul',  2500,  1600,  300, 1, now() + interval '2 hours', now()),
   ('00000000-0000-0000-0000-0000000000b4', 'Çırak_Nuri',  'selanik',    300,    40,    0, 0, now(), now() - interval '1 day');
+
+-- Örnek bir aile ve kelle ilanı
+insert into families (name, bank) values ('Karaköy Çetesi', 400000);
+update players set family_id = (select id from families where name = 'Karaköy Çetesi'), family_role = 'don' where nick = 'Rıza_Baba';
+update players set family_id = (select id from families where name = 'Karaköy Çetesi'), family_role = 'asker' where nick = 'Kör_Salih';
+update city_bullets set owner_family = (select id from families where name = 'Karaköy Çetesi'), price = 8 where city_id = 'izmir';
+insert into family_messages (family_id, player_id, text)
+  select f.id, p.id, 'İzmir fabrikası bizde, kurşunu oradan alın.' from families f, players p
+  where f.name = 'Karaköy Çetesi' and p.nick = 'Rıza_Baba';
+insert into bounties (target_id, placer_id, amount)
+  select t.id, p.id, 15000 from players t, players p where t.nick = 'Topal_Osman' and p.nick = 'Rıza_Baba';

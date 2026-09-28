@@ -5,7 +5,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
 
 let api, S, clockOffset = 0, busy = false, tab = 'crime', qty = 1;
-const extra = { jail: [], players: null };   // sekmeye girince çekilen listeler
+const extra = { jail: [], players: null, family: null, families: [], hitlist: [] };   // sekmeye girince çekilen listeler
 
 // Sunucu saatine göre kalan saniye (telefon saati yanlış olsa da doğru sayar)
 const left = (iso) => Math.max(0, Math.ceil((new Date(iso) - (Date.now() + clockOffset)) / 1000));
@@ -16,7 +16,14 @@ async function refresh() {
   if (S.player) clockOffset = new Date(S.now) - Date.now();
   if (S.player && tab === 'city') extra.jail = await api.rpc('get_jail');
   if (S.player && tab === 'log') extra.players = await api.rpc('get_players');
+  if (S.player && tab === 'arms') extra.hitlist = await api.rpc('get_hitlist');
+  if (S.player && tab === 'family') await loadFamily();
   render();
+}
+
+async function loadFamily() {
+  extra.family = await api.rpc('get_family');
+  extra.families = extra.family.family ? [] : await api.rpc('get_families');
 }
 
 async function act(name, args) {
@@ -26,6 +33,8 @@ async function act(name, args) {
   try {
     const r = await api.rpc(name, args);
     toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good');
+    // başarılı işlemden sonra tutar/isim kutuları boşalsın (seçim kutuları kalsın)
+    if (r.ok !== false) document.querySelectorAll(`section[data-tab="${tab}"] input`).forEach(i => i.value = '');
     await refresh();
   } catch (e) {
     console.error(e);
@@ -51,7 +60,8 @@ function render() {
   show('game');
   const p = S.player, rank = S.ranks[p.rank], next = S.ranks[p.rank + 1];
   $('#h-nick').textContent = p.nick;
-  $('#h-rank').textContent = rank.name + (next ? ` · ${p.xp}/${next.min_xp} itibar` : ' · zirvede');
+  $('#h-rank').textContent = rank.name + (next ? ` · ${p.xp}/${next.min_xp} itibar` : ' · zirvede')
+    + (p.family ? ` · ${p.family}` : '') + (p.bounty > 0 ? ` · 🎯 başına ${money(p.bounty)}` : '');
   $('#h-cash').textContent = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
   $('#h-stats').textContent = `❤ ${p.health} · 🔫 ${p.bullets} kurşun · 🏦 ${money(p.bank)}`;
@@ -73,7 +83,7 @@ function renderTab() {
   const el = $(`section[data-tab="${tab}"]`);
   const keep = {};
   el.querySelectorAll('input[id], select[id]').forEach(i => keep[i.id] = i.value);
-  el.innerHTML = ({ crime: crimeTab, trade: tradeTab, arms: armsTab, city: cityTab, log: logTab })[tab]();
+  el.innerHTML = ({ crime: crimeTab, trade: tradeTab, arms: armsTab, family: familyTab, city: cityTab, log: logTab })[tab]();
   for (const [id, v] of Object.entries(keep)) { const i = el.querySelector('#' + id); if (i) i.value = v; }
 }
 
@@ -191,6 +201,81 @@ function armsTab() {
         <button class="btn danger" data-act="shoot" ${dis(!weapon || waiting(p.kill_ready_at))}>Ateş</button></div>
       <p class="muted small">Az kurşun sıkarsan sadece yaralarsın. Hedefin profilinde tahmini kurşun ihtiyacı yazar (korumalar hariç).</p>`
     : `<p class="muted small">Vurabilmek için dedektiflerinin hedefi <b>bulunduğun şehirde</b> bulmuş olması gerekir.</p>`);
+
+  h += `<h2>Kelle Listesi</h2>` +
+    (extra.hitlist.length ? extra.hitlist.map(b => card(nickLink(b.nick), esc(rankName(b.rank)),
+      `<span class="cash-sm">${money(b.amount)}</span>`)).join('') : `<p class="muted small">Listede kimse yok.</p>`) +
+    `<div class="form-row"><input id="f-bounty-nick" placeholder="Kimin başına" autocomplete="off" autocapitalize="off">
+      <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül $" inputmode="numeric">
+      <button class="btn primary" data-act="bounty">Koy</button></div>
+    <p class="muted small">En az ${money(S.settings.bounty_min)}. Aracıya %${Math.round(S.settings.bounty_fee * 100)} pay. Ödülü onu öldüren alır.</p>`;
+  return h;
+}
+
+// ── Aile
+const ROLES = { don: 'Don', sottocapo: 'Sottocapo', consigliere: 'Consigliere', capo: 'Capo', asker: 'Asker' };
+
+function familyTab() {
+  const F = extra.family;
+  if (!F) return `<h2>Aile</h2><p class="muted">Yükleniyor…</p>`;
+  if (!F.family) {
+    let h = `<h2>Aile</h2><p class="muted small">Tek başına kabadayı olunmaz. Bir aileye katıl ya da kendi aileni kur.</p>`;
+    if (F.application) h += card(`Başvurun: ${esc(F.application.family)}`, 'Yönetimin cevabı bekleniyor.',
+      `<button class="btn sm" data-act="cancelapp">Geri çek</button>`);
+    h += `<h2>Aileler</h2>` + (extra.families.length ? extra.families.map(f => card(esc(f.name),
+      `Don: ${f.don ? esc(f.don) : '—'} · ${f.members} üye · 🏭 ${f.factories}`,
+      `<button class="btn sm primary" data-act="apply" data-id="${esc(f.name)}">Başvur</button>`)).join('')
+      : `<p class="muted small">Henüz aile yok.</p>`);
+    h += `<h2>Aile Kur</h2>` + (F.can_create
+      ? `<div class="form-row"><input id="f-fam-name" placeholder="Aile adı" autocomplete="off">
+          <button class="btn primary" data-act="createfam">${money(F.create_cost)}</button></div>`
+      : `<p class="muted small">🔒 Aile kurmak için ${esc(rankName(S.settings.family_create_rank))} olmalısın (${money(F.create_cost)}).</p>`);
+    return h;
+  }
+
+  const role = F.my_role, isDon = role === 'don', leader = ['don', 'sottocapo', 'consigliere'].includes(role);
+  const treasurer = ['don', 'sottocapo'].includes(role);
+  let h = `<h2>${esc(F.family.name)}</h2>
+    <p class="small">Rolün: <b>${ROLES[role]}</b> · Kasa: <b class="cash-sm">${money(F.family.bank)}</b></p>
+    <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy $" inputmode="numeric">
+      <button class="btn primary" data-act="famdeposit">Koy</button></div>`;
+  if (treasurer) h += `<div class="form-row"><input id="f-pay-nick" placeholder="Üyeye" autocomplete="off" autocapitalize="off">
+      <input id="f-pay-amt" type="number" min="1" placeholder="$" inputmode="numeric">
+      <button class="btn" data-act="fampay">Öde</button></div>`;
+
+  h += `<h2>Sohbet</h2><div class="chat" id="chat">${F.messages.map(m => m.nick
+      ? `<div><b>${esc(m.nick)}:</b> ${esc(m.text)}</div>` : `<div class="muted small">— ${esc(m.text)}</div>`).join('')}</div>
+    <form class="form-row" id="chat-form"><input id="f-chat" maxlength="300" placeholder="Mesaj yaz…" autocomplete="off">
+      <button class="btn primary">Gönder</button></form>`;
+
+  h += `<h2>Üyeler (${F.members.length})</h2>` + F.members.map(m => {
+    const self = m.nick === S.player.nick;
+    const controls = isDon && !self
+      ? `<select data-role="${esc(m.nick)}">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${v}</option>`).join('')}</select>` : '';
+    const kick = treasurer && !self && m.role !== 'don' ? `<button class="btn sm" data-act="kick" data-id="${esc(m.nick)}">At</button>` : '';
+    return card(`${nickLink(m.nick)} ${m.online ? '🟢' : ''}`, `${ROLES[m.role]} · ${esc(rankName(m.rank))}`,
+      controls || kick ? `<div class="market-actions">${controls}${kick}</div>` : '');
+  }).join('');
+
+  if (leader && F.applications?.length) {
+    h += `<h2>Başvurular</h2>` + F.applications.map(a => card(nickLink(a.nick), `${esc(rankName(a.rank))} · ☠ ${a.kills}`,
+      `<div class="market-actions"><button class="btn sm primary" data-act="accept" data-id="${esc(a.nick)}">Al</button>
+       <button class="btn sm" data-act="reject" data-id="${esc(a.nick)}">Reddet</button></div>`)).join('');
+  }
+
+  const here = F.factory_here;
+  h += `<h2>Kurşun Fabrikaları</h2>` + (F.factories.length ? F.factories.map(f =>
+      card(`🏭 ${esc(f.city)}`, `Fiyat ${money(f.price)} · stok ${f.stock}`)).join('') : `<p class="muted small">Ailenin fabrikası yok.</p>`);
+  if (here.mine && treasurer) {
+    h += `<div class="form-row"><input id="f-fac-price" type="number" min="2" max="20" placeholder="Buradaki fiyat ($2-20)">
+      <button class="btn primary" data-act="facprice">Ayarla</button></div>`;
+  } else if (!here.owner) {
+    h += card(`${esc(cityName(S.player.city))} fabrikası sahipsiz`, `Kasadan ${money(F.factory_price)}. Satılan her kurşunun parası kasaya girer.`,
+      treasurer ? `<button class="btn sm primary" data-act="buyfactory">Satın al</button>` : '');
+  } else if (!here.mine) {
+    h += `<p class="muted small">${esc(cityName(S.player.city))} fabrikası ${esc(here.owner)} ailesinin.</p>`;
+  }
+  h += `<p style="margin-top:20px"><button class="btn" data-act="leave">${isDon && F.members.length === 1 ? 'Aileyi dağıt' : 'Aileden ayrıl'}</button></p>`;
   return h;
 }
 
@@ -243,7 +328,9 @@ async function showProfile(nick) {
   if (!pr) return toast('Böyle biri yok.', 'bad');
   $('#modal-body').innerHTML = `<div class="logo-sm">${esc(pr.nick)}</div>
     <p>${esc(rankName(pr.rank))} ${pr.online ? '· 🟢 çevrimiçi' : ''}</p>
+    ${pr.family ? `<p class="small">${esc(ROLES[pr.family_role])} · ${esc(pr.family)}</p>` : ''}
     <p class="small">Durum: ${esc(pr.status)}${pr.protected ? ' · 🛡 çaylak koruması' : ''}</p>
+    ${pr.bounty > 0 ? `<p class="small">🎯 Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
     <p class="small">☠ ${pr.kills} öldürme · ⚰ ${pr.deaths} ölüm · 🔓 ${pr.busts} kurtarma</p>
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
     <p class="small muted">Katılış: ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>`;
@@ -290,7 +377,7 @@ document.addEventListener('click', async (e) => {
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b === nav));
     document.querySelectorAll('main section').forEach(s => s.classList.toggle('hidden', s.dataset.tab !== tab));
     renderTab();
-    if (tab === 'city' || tab === 'log') refresh();
+    if (['city', 'log', 'arms', 'family'].includes(tab)) refresh().then(scrollChat);
     return;
   }
   const q = e.target.closest('[data-qty]');
@@ -323,10 +410,50 @@ document.addEventListener('click', async (e) => {
     case 'withdraw':   return num('f-bank') > 0 && act('bank_move', { p_amount: -num('f-bank') });
     case 'send':       return val('f-send-nick') && num('f-send-amt') > 0 &&
                          act('send_money', { p_nick: val('f-send-nick'), p_amount: num('f-send-amt') });
+    case 'bounty':     return val('f-bounty-nick') && num('f-bounty-amt') > 0 &&
+                         act('place_bounty', { p_nick: val('f-bounty-nick'), p_amount: num('f-bounty-amt') });
+    case 'createfam':  return val('f-fam-name') && act('create_family', { p_name: val('f-fam-name') });
+    case 'apply':      return act('apply_family', { p_name: id });
+    case 'cancelapp':  return act('cancel_application');
+    case 'accept':     return act('answer_application', { p_nick: id, p_accept: true });
+    case 'reject':     return act('answer_application', { p_nick: id, p_accept: false });
+    case 'kick':       return confirm(`${id} aileden atılsın mı?`) && act('kick_member', { p_nick: id });
+    case 'famdeposit': return num('f-fam-dep') > 0 && act('family_deposit', { p_amount: num('f-fam-dep') });
+    case 'fampay':     return val('f-pay-nick') && num('f-pay-amt') > 0 &&
+                         act('family_pay', { p_nick: val('f-pay-nick'), p_amount: num('f-pay-amt') });
+    case 'buyfactory': return confirm('Fabrika kasadan satın alınsın mı?') && act('buy_factory');
+    case 'facprice':   return num('f-fac-price') > 0 && act('set_factory_price', { p_price: num('f-fac-price') });
+    case 'leave':      return confirm('Emin misin?') && act('leave_family');
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
 });
+
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest('[data-role]');
+  if (!sel) return;
+  if (sel.value === 'don' && !confirm(`Donluk devredilsin mi? Yeni Don: ${sel.dataset.role}. Sen Sottocapo olursun.`)) return renderTab();
+  act('set_role', { p_nick: sel.dataset.role, p_role: sel.value });
+});
+
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'chat-form') return;
+  e.preventDefault();
+  const text = val('f-chat');
+  if (!text) return;
+  const r = await api.rpc('post_family_message', { p_text: text });
+  if (!r.ok) return toast(r.msg, 'bad');
+  $('#f-chat').value = '';
+  await loadFamily(); renderTab(); scrollChat();
+});
+
+const scrollChat = () => { const c = $('#chat'); if (c) c.scrollTop = c.scrollHeight; };
+// Aile sekmesi açıkken sohbeti 10 sn'de bir tazele (yazarken bölme)
+setInterval(async () => {
+  if (tab !== 'family' || !extra.family?.family || document.hidden) return;
+  if ($('#f-chat') === document.activeElement && val('f-chat')) return;
+  await loadFamily(); renderTab(); scrollChat();
+}, 10000);
 
 $('#nick-form').addEventListener('submit', async (e) => {
   e.preventDefault();
