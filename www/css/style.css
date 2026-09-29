@@ -161,3 +161,9 @@ nav button[data-badge]:not([data-badge=""])::after {
 .sm-input { width: 80px; padding: 6px; font-size: 14px; text-align: left; }
 .bj { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; line-height: 1.8; }
 details summary { cursor: pointer; margin: 6px 0; }
+
+/* Faz 4A: sezon, rozet, admin bağlantısı */
+.season-box { background: var(--panel); border: 1px solid var(--gold); border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 8px; }
+.season-count { font-size: 22px; color: var(--gold); font-weight: bold; }
+.badge { display: inline-block; background: #2c231a; border: 1px solid var(--line); border-radius: 12px; padding: 2px 8px; margin: 2px 0; font-size: 12px; }
+.admin-link { display: block; text-align: center; padding: 10px; margin-bottom: 8px; border: 1px dashed var(--gold); border-radius: 10px; color: var(--gold); text-decoration: none; }

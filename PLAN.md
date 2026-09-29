@@ -71,9 +71,14 @@ Kaynak: 2006 tarihli Omerta oyuncu rehberi (omertaholic.blogspot.com), Omerta Be
 | Lackeys (ücretli otomasyon) | — | ❌ bilerek yok: ücretli bot = pay-to-win, Omerta'yı bitiren şeylerden |
 | Pillory (adminlerin teşhir sayfası) | — | ⏳ admin paneliyle birlikte |
 
-### Omerta dışı, yayın için kalanlar
-- Admin/moderasyon paneli (şikâyetleri inceleme, ban, gerekçe gösterme)
-- Sezon sistemi + şeref listesi
+### Omerta dışı eklenenler
+- ✅ Admin paneli (`www/admin.html`, 010): şikâyetler + kanıt, oyuncu dosyası, uyar/sustur/ban (gerekçe zorunlu, oyuncu görür), mesaj silme, işlem geçmişi
+- ✅ Sezonlar (010): 8 hafta, 4 kategoride şeref listesi (itibar, infaz, servet, aile), ilk 3'e kalıcı rozet, sonra dünya sıfırlanır (hesap, isim, evlilik, saygı, mesajlar kalır)
+
+**Admin olmak (Supabase açılınca, bir kez):** oyunu telefonda/tarayıcıda aç → Supabase panel → Authentication → Users'ta kendi kullanıcının UID'sini kopyala → SQL Editor: `insert into admins values ('<UID>');`
+Not: anonim hesap uygulama silinince kaybolur; yayından önce admin hesabı e-postaya bağlanmalı.
+
+### Yayın için kalanlar
 - Supabase bağlantısı (hesap bekleniyor), Capacitor paketleme, push bildirimleri
 - AdMob ödüllü reklam + sunucu doğrulaması
 

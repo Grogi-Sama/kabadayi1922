@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Kabadayı · Yönetim</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="vendor/supabase.js"></script>
+</head>
+<body class="admin">
+  <header class="admin-head">
+    <div class="row"><b class="logo-sm">YÖNETİM</b><a href="./" class="small muted">← Oyuna dön</a></div>
+    <nav class="admin-nav">
+      <button data-view="overview" class="on">Özet</button>
+      <button data-view="reports">Şikâyetler <span id="open-count" class="pill hidden"></span></button>
+      <button data-view="player">Oyuncu</button>
+      <button data-view="log">Geçmiş</button>
+    </nav>
+  </header>
+  <main id="view"><p class="muted">Yükleniyor…</p></main>
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

@@ -19,3 +19,10 @@ insert into family_messages (family_id, player_id, text)
   where f.name = 'Karaköy Çetesi' and p.nick = 'Rıza_Baba';
 insert into bounties (target_id, placer_id, amount)
   select t.id, p.id, 15000 from players t, players p where t.nick = 'Topal_Osman' and p.nick = 'Rıza_Baba';
+
+-- Örnek şikâyet (admin panelini denemek için)
+insert into messages (from_id, to_id, text)
+  select a.id, b.id, 'Senin gibi çaylakları Haliç''e atarım, ***!' from players a, players b where a.nick = 'Topal_Osman' and b.nick = 'Kör_Salih';
+insert into reports (reporter_id, target_id, kind, ref_id, snapshot, reason)
+  select b.id, a.id, 'message', m.id, m.text, 'tehdit ve küfür'
+  from players a, players b, messages m where a.nick = 'Topal_Osman' and b.nick = 'Kör_Salih' and m.from_id = a.id;

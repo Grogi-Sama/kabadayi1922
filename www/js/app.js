@@ -27,7 +27,7 @@ async function loadTabData() {
   if (tab === 'city') {
     [extra.jail, extra.lottery, extra.bj] = await Promise.all([rpc('get_jail'), rpc('get_lottery'), rpc('bj_current')]);
   } else if (tab === 'log') {
-    [extra.players, extra.inbox] = await Promise.all([rpc('get_players'), rpc('get_inbox')]);
+    [extra.players, extra.inbox, extra.season] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season')]);
   } else if (tab === 'arms') {
     extra.hitlist = await rpc('get_hitlist');
   } else if (tab === 'family') {
@@ -57,7 +57,8 @@ async function act(name, args) {
     await refresh();
   } catch (e) {
     console.error(e);
-    toast('Bağlantı sorunu, tekrar dene.', 'bad');
+    if (/BANNED/.test(e.message)) await refresh();
+    else toast('Bağlantı sorunu, tekrar dene.', 'bad');
   } finally {
     busy = false;
     document.body.style.cursor = '';
@@ -75,6 +76,11 @@ function toast(msg, kind) {
 
 // ─────────────── Çizim ───────────────
 function render() {
+  if (S.banned) {
+    $('#ban-reason').textContent = 'Gerekçe: ' + (S.banned.reason || '—');
+    $('#ban-until').textContent = S.banned.until ? 'Bitiş: ' + new Date(S.banned.until).toLocaleString('tr-TR') : 'Süresiz.';
+    show('banned'); return;
+  }
   if (!S.player) { show('onboard'); return; }
   show('game');
   const p = S.player, rank = S.ranks[p.rank], next = S.ranks[p.rank + 1];
@@ -91,7 +97,7 @@ function render() {
 }
 
 function show(id) {
-  for (const s of ['loading', 'onboard', 'game']) $('#' + s).classList.toggle('hidden', s !== id);
+  for (const s of ['loading', 'onboard', 'banned', 'game']) $('#' + s).classList.toggle('hidden', s !== id);
 }
 
 const cityName = (id) => S.cities.find(c => c.id === id).name;
@@ -535,9 +541,31 @@ function messagesSection() {
       : `<p class="muted small">Mesaj yok. Birine yazmak için profiline dokun.</p>`);
 }
 
+const BADGE = { itibar: 'İtibar', infaz: 'İnfaz', servet: 'Servet', aile: 'Aile' };
+const MEDAL = ['', '🥇', '🥈', '🥉'];
+const badgeList = (bs) => bs.map(b => `<span class="badge">${MEDAL[b.place]} ${esc(b.season)} · ${BADGE[b.category]}</span>`).join(' ');
+
+function seasonSection() {
+  const X = extra.season;
+  if (!X) return '';
+  const secs = left(X.ends_at);
+  const days = Math.floor(secs / 86400);
+  let h = `<h2>${esc(X.name)}</h2>
+    <div class="season-box"><div class="season-count">${days > 0 ? `${days} gün ${Math.floor(secs % 86400 / 3600)} saat` : fmt(secs)}</div>
+    <div class="muted small">sonra sezon biter: ilk 3'e girenler kalıcı rozet alır, sonra herkes sıfırdan başlar.</div></div>`;
+  if (X.badges.length) h += `<p class="small">Rozetlerin: ${badgeList(X.badges)}</p>`;
+  if (X.last) {
+    h += `<details><summary class="muted small">${esc(X.last.name)} şeref listesi</summary>` +
+      Object.entries(BADGE).map(([k, label]) => X.last.results?.[k] ? `<p class="small"><b>${label}:</b> ${X.last.results[k].slice(0, 3)
+        .map(r => `${MEDAL[r.place]} ${esc(r.name)}`).join(' · ')}</p>` : '').join('') + `</details>`;
+  }
+  return h;
+}
+
 function logTab() {
   const p = S.player, pl = extra.players;
-  return messagesSection() +
+  return (p.is_admin ? `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>` : '') +
+    seasonSection() + messagesSection() +
     (p.proposals.length ? `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
       `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`)).join('') : '') +
     `<h2>Sicil</h2>
@@ -563,6 +591,7 @@ async function showProfile(nick) {
     <p class="small">☠ ${pr.kills} öldürme · ⚰ ${pr.deaths} ölüm · 🔓 ${pr.busts} kurtarma</p>
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
     ${pr.spouse ? `<p class="small">💍 ${esc(pr.spouse)} ile evli</p>` : ''}
+    ${pr.badges?.length ? `<p class="small">${badgeList(pr.badges)}</p>` : ''}
     <p class="small muted">🤝 saygı ${pr.respect} · 🏁 yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
     ${pr.nick === S.player.nick ? '' : `<div class="profile-actions">
       <button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">✉ Mesaj</button>
