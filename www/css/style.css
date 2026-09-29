@@ -1,169 +1,282 @@
+/* Kabadayı — 1920'ler art-deco teması */
+@font-face { font-family: 'Limelight'; font-weight: 400; font-display: swap;
+  src: url(../vendor/fonts/limelight-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: 'Limelight'; font-weight: 400; font-display: swap;
+  src: url(../vendor/fonts/limelight-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 400; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 400; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 600; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 600; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-ext-600-normal.woff2) format('woff2'); unicode-range: U+0100-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 700; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: 'Josefin Sans'; font-weight: 700; font-display: swap;
+  src: url(../vendor/fonts/josefin-sans-latin-ext-700-normal.woff2) format('woff2'); unicode-range: U+0100-024F, U+1E00-1EFF; }
+
 :root {
   --bg: #15110d;
   --panel: #211a13;
+  --panel-2: #2a2119;
   --line: #3a2e22;
   --paper: #e8d9bb;
-  --muted: #9c8a6d;
+  --muted: #a8967a;
   --gold: #c9a14a;
+  --gold-hi: #e6c476;
+  --burgundy: #7a2331;
+  --teal: #1f4e55;
   --red: #b3453a;
   --green: #6f9a4f;
   --nav-h: 64px;
+  --display: 'Limelight', Georgia, serif;
+  --body: 'Josefin Sans', 'Trebuchet MS', sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
 body {
-  background: var(--bg); color: var(--paper);
-  font: 16px/1.4 Georgia, 'Times New Roman', serif;
+  color: var(--paper); font: 16px/1.4 var(--body);
   overscroll-behavior: none;
+  background: var(--bg) radial-gradient(ellipse at 50% -10%, #2b2217 0%, var(--bg) 60%) fixed;
 }
 .hidden { display: none !important; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .err { color: var(--red); min-height: 1.4em; }
+b, strong { font-weight: 700; }
 
+/* ─── Başlıklar: iki yanda deco çizgi ─── */
+h2 {
+  font: 17px var(--display); letter-spacing: 2px; color: var(--gold); text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px; margin: 18px 0 10px;
+}
+h2::before, h2::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+h2::after { background: linear-gradient(90deg, var(--gold), transparent); }
+.logo { font: 42px var(--display); letter-spacing: 6px; color: var(--gold); text-shadow: 0 2px 0 #000, 0 0 24px rgba(201,161,74,.25); }
+.logo-sm { font: 22px var(--display); color: var(--gold); letter-spacing: 2px; }
+
+/* ─── Açılış ekranları ─── */
 .screen { min-height: 100%; padding: 24px 16px; }
 .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; }
-.logo { font-size: 40px; letter-spacing: 8px; color: var(--gold); font-weight: bold; }
-.lead { max-width: 320px; }
-#nick-form { display: flex; flex-direction: column; gap: 10px; width: min(320px, 100%); }
-input {
+.splash-art { width: min(320px, 80vw); border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 5px var(--bg), 0 0 0 6px var(--gold); }
+.lead { max-width: 340px; }
+#nick-form { display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); }
+input, select {
   font: inherit; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
-  background: var(--panel); color: var(--paper); text-align: center;
+  background: #1a140f; color: var(--paper); min-width: 0;
 }
+input:focus, select:focus { outline: none; border-color: var(--gold); }
+#nick { text-align: center; }
 
+/* ─── Düğmeler ─── */
 .btn {
-  font: inherit; padding: 10px 14px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--line); background: #2c231a; color: var(--paper);
+  font: 600 15px var(--body); letter-spacing: .5px; padding: 10px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--paper);
 }
-.btn.primary { background: var(--gold); color: #1b140c; border-color: var(--gold); font-weight: bold; }
-.btn.sm { padding: 6px 10px; font-size: 14px; }
+.btn.primary {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, #a8812f); color: #1b140c;
+  border-color: #8a6a26; text-shadow: 0 1px 0 rgba(255,255,255,.3); font-weight: 700;
+}
+.btn.danger { background: linear-gradient(180deg, #c05244, var(--burgundy)); border-color: #5a1822; color: #fff; }
+.btn.sm { padding: 7px 11px; font-size: 14px; }
 .btn:disabled { opacity: .4; cursor: default; }
+.btn:not(:disabled):active { transform: translateY(1px); }
 
-/* Oyun ekranı */
-#game { display: flex; flex-direction: column; height: 100%; }
-header {
-  padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
-  background: var(--panel); border-bottom: 1px solid var(--line);
-}
-.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.right { text-align: right; }
-.nick { font-weight: bold; font-size: 18px; }
-.cash { color: var(--gold); font-weight: bold; font-size: 20px; }
-.xpbar { height: 4px; background: var(--line); border-radius: 2px; margin: 8px 0; overflow: hidden; }
-.xpbar div { height: 100%; background: var(--gold); width: 0; transition: width .4s; }
-.timers { display: flex; gap: 6px; }
-.chip {
-  flex: 1; text-align: center; font-size: 13px; padding: 4px 0; border-radius: 12px;
-  background: #2d3a22; color: #cfe5b8;
-}
-.chip.wait { background: #2c231a; color: var(--muted); }
-.jail {
-  margin-top: 8px; padding: 8px; border-radius: 8px; text-align: center;
-  background: #3b1a16; color: #f3c2bb; border: 1px solid var(--red);
-}
-
-main { flex: 1; overflow-y: auto; padding: 12px 16px calc(var(--nav-h) + 16px); }
-h2 { font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin: 8px 0 10px; }
+/* ─── Kartlar: altın çift çerçeve ─── */
 .card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-  padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  position: relative; background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid #4a3a26; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 4px rgba(201,161,74,.18);
 }
 .card .grow { flex: 1; min-width: 0; }
 .card.locked { opacity: .45; }
-.card .title { font-weight: bold; }
-.pct { font-variant-numeric: tabular-nums; }
+.card .title { font-weight: 700; }
+.card.col { flex-direction: column; align-items: stretch; }
+.card.col input { text-align: left; padding: 10px; }
+.card.clickable { cursor: pointer; }
+.card select { padding: 6px 4px; font-size: 13px; }
+.icon { width: 52px; height: 52px; border-radius: 8px; flex: 0 0 auto; object-fit: cover; border: 1px solid #4a3a26; }
+.icon.emoji { display: grid; place-items: center; font-size: 28px; background: #1a140f; }
 
+/* Resimli iş kartı */
+.job { padding: 0; overflow: hidden; flex-direction: column; align-items: stretch; gap: 0; }
+.job .art { aspect-ratio: 16 / 10; width: 100%; object-fit: cover; display: block; }
+.job .art.ph { display: grid; place-items: center; font-size: 42px;
+  background: repeating-linear-gradient(45deg, #241c14 0 14px, #1d1610 14px 28px); }
+.job .body { padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.jobs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.jobs-grid .card { margin: 0; }
+.jobs-grid .job .body { flex-direction: column; align-items: stretch; text-align: center; }
+
+.pct { font-variant-numeric: tabular-nums; }
+.form-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.form-row input { flex: 1; text-align: left; padding: 10px; }
+.form-row select { flex: 0 1 auto; padding: 10px 6px; }
 .qtybar { display: flex; gap: 6px; margin-bottom: 10px; }
 .qtybar .btn { flex: 1; }
 .qtybar .btn.on { border-color: var(--gold); color: var(--gold); }
-.market-actions { display: flex; gap: 6px; }
+.market-actions { display: flex; gap: 6px; align-items: center; }
+.cash-sm { color: var(--gold); font-weight: 700; }
+.nick-link { color: var(--gold); text-decoration: underline dotted; cursor: pointer; }
+.flag { color: var(--muted); cursor: pointer; font-size: 12px; margin-left: 4px; text-decoration: none; }
+.flag:hover { color: var(--red); }
+.pill { background: var(--red); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 12px; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-input { width: 80px; padding: 6px; font-size: 14px; text-align: left; }
+details summary { cursor: pointer; margin: 6px 0; }
 
-.log { list-style: none; padding: 0; margin: 0; }
-.log li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-.log time { color: var(--muted); font-size: 12px; display: block; }
+/* ─── Oyun iskeleti ─── */
+#game { display: flex; flex-direction: column; height: 100%; }
+header {
+  padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  background: linear-gradient(180deg, #2a2119, var(--panel)); border-bottom: 2px solid var(--gold);
+  box-shadow: 0 1px 0 #000, 0 3px 0 rgba(201,161,74,.25);
+}
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+.avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex: 0 0 auto; background: #1a140f; }
+.avatar.emoji { display: grid; place-items: center; font-size: 24px; }
+.right { text-align: right; }
+.nick { font: 19px var(--display); letter-spacing: 1px; }
+.cash { color: var(--gold); font-weight: 700; font-size: 21px; font-variant-numeric: tabular-nums; }
+.stats { margin-top: 6px; color: var(--muted); }
+.xpbar { height: 5px; background: #0f0b08; border: 1px solid var(--line); border-radius: 3px; margin: 8px 0; overflow: hidden; }
+.xpbar div { height: 100%; background: linear-gradient(90deg, #a8812f, var(--gold-hi)); width: 0; transition: width .4s; }
+.timers { display: flex; gap: 6px; }
+.chip { flex: 1; text-align: center; font-size: 13px; padding: 4px 0; border-radius: 12px; background: #24361c; color: #cfe5b8; border: 1px solid #3c5a2e; }
+.chip.wait { background: #1a140f; color: var(--muted); border-color: var(--line); }
+.jail { margin-top: 8px; padding: 8px; border-radius: 8px; text-align: center; background: #3b1a16; color: #f3c2bb; border: 1px solid var(--red); }
+
+main { flex: 1; overflow-y: auto; padding: 4px 16px calc(var(--nav-h) + 16px); }
+main section[data-tab="city"] { margin: -4px -16px 0; }
 
 nav {
-  position: fixed; left: 0; right: 0; bottom: 0; display: flex;
+  position: fixed; left: 0; right: 0; bottom: 0; display: flex; z-index: 3;
   height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-  background: var(--panel); border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), #17120d); border-top: 2px solid var(--gold);
 }
 nav button {
-  flex: 1; background: none; border: 0; color: var(--muted); font: 12px Georgia, serif;
+  position: relative; flex: 1; background: none; border: 0; color: var(--muted); font: 600 12px var(--body); letter-spacing: .5px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;
 }
-nav button b { font-size: 20px; font-weight: normal; }
+nav button b { font-size: 21px; font-weight: normal; }
 nav button.on { color: var(--gold); }
-
-.toast {
-  position: fixed; left: 16px; right: 16px; bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
-  padding: 12px 14px; border-radius: 10px; background: #2c231a; border: 1px solid var(--gold);
-  box-shadow: 0 6px 20px rgba(0,0,0,.5); animation: pop .2s ease-out;
+nav button.on::before { content: ''; position: absolute; top: -2px; left: 25%; right: 25%; height: 3px; background: var(--gold-hi); }
+nav button[data-badge]:not([data-badge=""])::after {
+  content: attr(data-badge); position: absolute; top: 6px; right: calc(50% - 22px);
+  background: var(--red); color: #fff; font-size: 11px; border-radius: 9px; padding: 1px 5px; min-width: 16px;
 }
+
+/* ─── Şehir haritası ─── */
+.map {
+  position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 9 / 16;
+  background:
+    linear-gradient(180deg, #1f3b44 0%, #6b4a3a 24%, #c9a14a 31%, #1f4e55 32%, #183c42 38%, #3a2e22 39%, #2a2119 100%);
+  overflow: hidden; user-select: none; isolation: isolate;   /* bina z-index'leri alt menünün üstüne çıkmasın */
+}
+.map .bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.map .city-title {
+  position: absolute; top: 3%; left: 0; right: 0; text-align: center; font: 26px var(--display); letter-spacing: 4px;
+  color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 12px #000; pointer-events: none;
+}
+.map .city-title small { display: block; font: 600 12px var(--body); letter-spacing: 3px; color: var(--paper); }
+.bld {
+  position: absolute; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+  transition: transform .12s; filter: drop-shadow(0 6px 6px rgba(0,0,0,.55));
+}
+.bld:active { transform: scale(.96); }
+.bld img { width: 100%; display: block; }
+.bld .ph {
+  width: 78%; aspect-ratio: 1 / .8; margin-top: 10%; display: grid; place-items: center; font-size: 30px;
+  background: linear-gradient(180deg, #3a2e22, #241c14); border: 2px solid var(--gold); border-bottom-width: 4px;
+  clip-path: polygon(0 18%, 50% 0, 100% 18%, 100% 100%, 0 100%); padding-top: 12%;
+}
+.bld .plate {
+  margin-top: -6%; padding: 2px 8px; font: 600 11px var(--body); letter-spacing: .5px; white-space: nowrap;
+  background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px; position: relative;
+}
+.bld .tag {
+  position: absolute; top: 2%; right: 0; font: 700 10px var(--body); padding: 1px 6px; border-radius: 9px;
+  background: var(--burgundy); color: #fff; border: 1px solid #000; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bld .tag.mine { background: var(--teal); }
+.bld .tag.ok { background: #3c5a2e; }
+.hotspot { position: absolute; cursor: pointer; text-align: center; font: 600 11px var(--body); color: var(--gold-hi); text-shadow: 0 1px 2px #000; }
+.hotspot .dot {
+  width: 48px; height: 48px; margin: 0 auto 2px; border-radius: 50%; display: grid; place-items: center; font-size: 24px;
+  background: rgba(21,17,13,.85); border: 2px solid var(--gold); box-shadow: 0 0 0 4px rgba(201,161,74,.2);
+}
+.map-hint { text-align: center; margin: 8px 16px; }
+
+/* ─── Alt panel (binaya dokununca) ─── */
+.sheet-wrap { position: fixed; inset: 0; z-index: 8; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; background: var(--bg);
+  border-top: 2px solid var(--gold); border-radius: 16px 16px 0 0; padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+  animation: up .22s ease-out;
+}
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+.sheet-head {
+  position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 12px 0 6px;
+  display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line);
+}
+.sheet-head img, .sheet-head .ph-icon { width: 56px; height: 56px; object-fit: contain; }
+.sheet-head .ph-icon { display: grid; place-items: center; font-size: 30px; }
+.sheet-head .title { flex: 1; font: 20px var(--display); color: var(--gold); letter-spacing: 1px; }
+
+/* ─── Bildirim ─── */
+.toast {
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); z-index: 20;
+  display: flex; align-items: center; gap: 10px; max-width: 520px; margin: 0 auto;
+  padding: 10px 12px; border-radius: 10px; background: #221a12; border: 1px solid var(--gold);
+  box-shadow: 0 8px 24px rgba(0,0,0,.6); animation: pop .2s ease-out;
+}
+.toast img { width: 92px; height: 58px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); flex: 0 0 auto; }
 .toast.bad { border-color: var(--red); }
 .toast.good { border-color: var(--green); }
 @keyframes pop { from { transform: translateY(10px); opacity: 0; } }
 
-/* Faz 2A */
-.stats { margin-top: 6px; color: var(--muted); }
-.btn.danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: bold; }
-.form-row { display: flex; gap: 6px; margin-bottom: 10px; }
-.form-row input { flex: 1; min-width: 0; text-align: left; padding: 10px; }
-select {
-  font: inherit; padding: 10px 6px; border-radius: 8px; border: 1px solid var(--line);
-  background: var(--panel); color: var(--paper); min-width: 0;
-}
-.form-row select { flex: 0 1 auto; }
-.nick-link { color: var(--gold); text-decoration: underline dotted; cursor: pointer; }
-.top { padding-left: 22px; margin: 0; }
-.top li { padding: 4px 0; }
-.modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center;
-  padding: 16px; z-index: 10;
-}
+/* ─── Profil penceresi ─── */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
 .modal-card {
-  background: var(--panel); border: 1px solid var(--gold); border-radius: 12px; padding: 18px;
-  width: min(360px, 100%); text-align: center;
+  background: var(--panel); border: 2px solid var(--gold); border-radius: 14px; padding: 18px;
+  width: min(380px, 100%); max-height: 90%; overflow-y: auto; text-align: center;
+  box-shadow: inset 0 0 0 4px var(--panel), inset 0 0 0 5px rgba(201,161,74,.35);
 }
-.logo-sm { font-size: 22px; color: var(--gold); font-weight: bold; letter-spacing: 2px; }
+.portrait-lg { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; }
+.portrait-lg.emoji { display: inline-grid; place-items: center; font-size: 56px; background: #1a140f; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
+.portrait-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; width: min(340px, 100%); }
+.portrait-grid button { padding: 0; border: 2px solid var(--line); border-radius: 50%; background: #1a140f; aspect-ratio: 1; cursor: pointer; overflow: hidden; font-size: 28px; }
+.portrait-grid button.on { border-color: var(--gold-hi); box-shadow: 0 0 0 3px rgba(201,161,74,.35); }
+.portrait-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* Faz 2B: aile */
-.cash-sm { color: var(--gold); font-weight: bold; }
+/* ─── Sohbet, mesaj, liste ─── */
 .chat {
-  max-height: 240px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+  max-height: 260px; overflow-y: auto; background: #1a140f; border: 1px solid var(--line);
   border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 14px; display: flex; flex-direction: column; gap: 4px;
 }
-.card select { padding: 6px 4px; font-size: 13px; }
+.chat .me { align-self: flex-end; background: #3a2e22; border-radius: 8px; padding: 4px 8px; }
+#dm > div:not(.me) { align-self: flex-start; background: #2a2119; border-radius: 8px; padding: 4px 8px; }
+.log { list-style: none; padding: 0; margin: 0; }
+.log li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.log time { color: var(--muted); font-size: 12px; display: block; }
+.top { padding-left: 22px; margin: 0; }
+.top li { padding: 4px 0; }
 
-/* Faz 2C-D: ekip işleri, kumarhane */
-.card.col { flex-direction: column; align-items: stretch; }
-.card.col input { text-align: left; padding: 10px; }
+/* ─── Kumarhane ─── */
 .casino { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .casino .btn.primary, .casino .form-row { grid-column: 1 / -1; }
 .casino .form-row { margin: 0; }
 .casino-result { margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; font-size: 18px; border: 1px solid var(--line); }
 .casino-result.good { border-color: var(--green); color: #cfe5b8; }
 .casino-result.bad { border-color: var(--red); color: #f3c2bb; }
+.bj { background: #1a140f; border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; line-height: 1.8; }
 
-/* Faz 3: mesajlar, profil, mekân, blackjack */
-nav button { position: relative; }
-nav button[data-badge]:not([data-badge=""])::after {
-  content: attr(data-badge); position: absolute; top: 6px; right: calc(50% - 20px);
-  background: var(--red); color: #fff; font-size: 11px; border-radius: 9px; padding: 0 5px; min-width: 16px;
-}
-.flag { color: var(--muted); cursor: pointer; font-size: 12px; margin-left: 4px; text-decoration: none; }
-.flag:hover { color: var(--red); }
-.chat .me { align-self: flex-end; background: #3a2e22; border-radius: 8px; padding: 4px 8px; }
-#dm > div:not(.me) { align-self: flex-start; background: #2a2119; border-radius: 8px; padding: 4px 8px; }
-.card.clickable { cursor: pointer; }
-.pill { background: var(--red); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 12px; }
-.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.profile-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 12px 0; }
-.sm-input { width: 80px; padding: 6px; font-size: 14px; text-align: left; }
-.bj { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; line-height: 1.8; }
-details summary { cursor: pointer; margin: 6px 0; }
-
-/* Faz 4A: sezon, rozet, admin bağlantısı */
-.season-box { background: var(--panel); border: 1px solid var(--gold); border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 8px; }
-.season-count { font-size: 22px; color: var(--gold); font-weight: bold; }
-.badge { display: inline-block; background: #2c231a; border: 1px solid var(--line); border-radius: 12px; padding: 2px 8px; margin: 2px 0; font-size: 12px; }
-.admin-link { display: block; text-align: center; padding: 10px; margin-bottom: 8px; border: 1px dashed var(--gold); border-radius: 10px; color: var(--gold); text-decoration: none; }
+/* ─── Sezon, rozet ─── */
+.season-box { background: linear-gradient(180deg, #2a2119, var(--panel)); border: 1px solid var(--gold); border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 8px; }
+.season-count { font: 24px var(--display); color: var(--gold-hi); }
+.badge { display: inline-block; background: #2c231a; border: 1px solid var(--gold); border-radius: 12px; padding: 2px 8px; margin: 2px 0; font-size: 12px; }
+.admin-link { display: block; text-align: center; padding: 10px; margin: 12px 0 8px; border: 1px dashed var(--gold); border-radius: 10px; color: var(--gold); text-decoration: none; }

@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs && node tests/social.test.mjs && node tests/spots.test.mjs && node tests/races.test.mjs && node tests/extras.test.mjs && node tests/admin_seasons.test.mjs",
+    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs && node tests/social.test.mjs && node tests/spots.test.mjs && node tests/races.test.mjs && node tests/extras.test.mjs && node tests/admin_seasons.test.mjs && node tests/avatar.test.mjs",
     "dev": "node dev-server.mjs"
   },
   "keywords": [],
@@ -15,7 +15,9 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.8",
+    "@fontsource/josefin-sans": "^5.3.0",
+    "@fontsource/limelight": "^5.3.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2"

@@ -12,8 +12,10 @@
   <div id="loading" class="screen center"><div class="logo">KABADAYI</div><p class="muted">İstanbul, 1922…</p></div>
 
   <div id="onboard" class="screen center hidden">
+    <div id="onboard-art"></div>
     <div class="logo">KABADAYI</div>
-    <p class="lead">Men-i Müskirat yürürlükte. İçki yasak, sokaklar aç.<br>Adını söyle, delikanlı.</p>
+    <p class="lead">Men-i Müskirat yürürlükte. İçki yasak, sokaklar aç.<br>Kim olduğunu seç, adını söyle.</p>
+    <div id="onboard-portraits" class="portrait-grid"></div>
     <form id="nick-form">
       <input id="nick" maxlength="16" placeholder="Takma adın" autocomplete="off" autocapitalize="off">
       <button class="btn primary">Şehre in</button>
@@ -32,7 +34,10 @@
   <div id="game" class="hidden">
     <header>
       <div class="row">
-        <div><div id="h-nick" class="nick"></div><div id="h-rank" class="muted small"></div></div>
+        <div class="who" data-me>
+          <span id="h-avatar"></span>
+          <div><div id="h-nick" class="nick"></div><div id="h-rank" class="muted small"></div></div>
+        </div>
         <div class="right"><div id="h-cash" class="cash"></div><div id="h-city" class="muted small"></div></div>
       </div>
       <div id="h-stats" class="small stats"></div>
@@ -46,23 +51,25 @@
     </header>
 
     <main>
-      <section data-tab="crime"></section>
-      <section data-tab="trade" class="hidden"></section>
-      <section data-tab="arms" class="hidden"></section>
+      <section data-tab="city"></section>
+      <section data-tab="crime" class="hidden"></section>
       <section data-tab="family" class="hidden"></section>
-      <section data-tab="city" class="hidden"></section>
       <section data-tab="log" class="hidden"></section>
     </main>
 
     <nav>
-      <button data-go="crime" class="on"><b>🕶</b>İşler</button>
-      <button data-go="trade"><b>📦</b>Kaçakçılık</button>
-      <button data-go="arms"><b>🔫</b>Silah</button>
+      <button data-go="city" class="on"><b>🏙</b>Şehir</button>
+      <button data-go="crime"><b>🕶</b>İşler</button>
       <button data-go="family"><b>🤝</b>Aile</button>
-      <button data-go="city"><b>🏛</b>Şehir</button>
       <button data-go="log"><b>📜</b>Defter</button>
     </nav>
   </div>
+
+  <div id="sheet" class="sheet-wrap hidden"><div class="sheet">
+    <div class="sheet-head"><span id="sheet-icon"></span><div id="sheet-title" class="title"></div>
+      <button class="btn sm" data-close-sheet>✕</button></div>
+    <div id="sheet-body"></div>
+  </div></div>
 
   <div id="modal" class="modal hidden"><div class="modal-card"><div id="modal-body"></div>
     <button id="modal-close" class="btn">Kapat</button></div></div>
