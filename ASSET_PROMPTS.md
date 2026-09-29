@@ -1,20 +1,67 @@
 # Kabadayı — Görsel Üretim Listesi (art-deco afiş tarzı)
 
 **Yapı:** Ana ekran her şehrin 2D panoraması; binalar ayrı saydam PNG olarak üstüne yerleştirilir (hepsi düz ön cephe, perspektif yok).
-**Toplam:** 60 görsel. Klasör: `www/assets/` altındaki alt klasörler (aşağıda yazıyor). Dosya adları aynen böyle olsun.
+**Toplam:** 60 görsel ama **26 üretim**: küçük görseller (bina, eşya, portre = 38 adet) 4 toplu sayfada üretilir, betikle kesilir. Büyükler (arka plan, iş/sonuç sahneleri, splash, amblem) tek tek.
 
 ## Nasıl üretelim
-1. **Önce stil çapası:** `bg/istanbul.png` + `buildings/gazino.png` + `portraits/p1.png` üret, bana at. Tutarlılığa bakıp onay vereyim (renk/çizgi kalınlığı oturduysa geri kalanı aynı tarzda gider).
-2. Geri kalanları üretirken **ilk onaylanan görseli referans görsel olarak ekle** (Nano Banana'da görsel ekleyip "same style as the reference" demek tutarlılığı çok artırır).
-3. **Saydamlık sadece `buildings/` klasöründe gerekli.** O 12 dosyayı arka planı silinmiş PNG olarak ver (remove.bg, Photoshop, Canva vb.). Diğer her şey düz arka planlı — saydamlık yok.
-4. Kod hazır: görsel gelmeyen yerde geçici çizim/emoji görünür, dosyayı klasöre koyduğun an otomatik yerine oturur.
+1. **Önce stil çapası:** `bg/istanbul.png` + **A sayfası (binalar)** + **D sayfası (portreler)** üret. Tutarlılığa bakıp onay vereyim.
+2. Geri kalanları üretirken **onaylanan görseli referans olarak ekle** ("same style as the reference").
+3. Toplu sayfaları **en yüksek çözünürlükte** al (2K/4K seçeneği varsa onu seç; en az 2048 px genişlik).
+4. **Saydamlık sadece A sayfasında (binalar):** sayfanın arka planını bir kez sil (remove.bg, Canva vb.), saydam PNG olarak kaydet. Diğer sayfalar düz arka planlı kalır.
+5. Toplu sayfaları `art/sheets/` klasörüne şu adlarla koy: `binalar.png`, `arac_silah.png`, `mallar.png`, `portreler.png`. Kesip `www/assets/` altına ben yerleştiririm (`python tools/slice_all.py`).
+6. Kod hazır: görsel gelmeyen yerde geçici çizim/emoji görünür, dosya klasöre konunca otomatik yerine oturur.
 
 ## Ortak stil (her promptun SONUNA ekle)
 ```
 1920s Art Deco travel poster illustration, flat colors with subtle paper grain, limited palette: antique gold #C9A14A, deep burgundy #7A2331, petrol teal #1F4E55, cream #E8D9BB, charcoal #15110D. Bold geometric shapes, clean silhouettes, thin gold outlines, warm dusk lighting. Strictly flat 2D, orthographic front view, no perspective, no 3D. No text, no letters, no numbers, no watermark, no signature.
 ```
 
+## Toplu sayfalar için ortak ızgara kuralı (toplu sayfa promptlarında ortak stilden ÖNCE ekle)
+```
+Sprite sheet layout: the items are arranged in a neat, evenly spaced grid exactly as described, row by row, left to right. Each item sits fully inside its own cell, centered, similar size, with wide empty gaps between cells. Nothing touches or overlaps, nothing is cut off at the edges. No grid lines, no cell borders, no frames, no labels, no ground shadows.
+```
+
 ---
+
+## A) Binalar — `art/sheets/binalar.png` · 4 sütun × 3 satır · yatay 4:3 (ör. 2048×1536) · **arka planı silinip SAYDAM PNG**
+```
+A sprite sheet of 12 separate 1920s buildings on a plain flat solid light green background (#9FD8B8). Each building is a single flat front facade elevation (like an architectural drawing), full building visible, bottoms aligned on the same line within each row.
+Row 1: (1) glamorous Art Deco casino with gold marquee lights, arched entrance, red carpet; (2) small Ottoman tavern with wooden bay window, hanging lanterns, grapevine over the door; (3) modest coffeehouse with striped awning, small tables and stools outside, hookah by the door; (4) stone bonded warehouse with big arched cargo doors and crates stacked in front.
+Row 2: (5) stern Ottoman police station and jail, barred windows, heavy iron door, gas lamp; (6) white hospital building with a red crescent emblem on the pediment, ambulance carriage; (7) neoclassical bank with columns and a heavy bronze door; (8) brick munitions workshop with a tall chimney and ammunition crates.
+Row 3: (9) narrow gunsmith shop, rifles in the window, hanging sign shaped like a pistol; (10) shadowy upstairs private detective office, frosted glass door, venetian blinds, one lit window; (11) automobile garage with open doors showing a 1920s car, tools on the wall; (12) covered bazaar entrance with domed roof, market stalls with rugs and brass goods.
+```
+Kesim sırası: gazino, meyhane, kahvehane, antrepo · karakol, hastane, banka, fabrika · silahci, dedektif, garaj, carsi
+(Yeşil arka plan, beyaz hastane ve krem binalar silinirken karışmasın diye.)
+
+## B) Silah ve araçlar — `art/sheets/arac_silah.png` · 4 sütun × 3 satır · yatay 4:3
+```
+A sprite sheet of 12 separate objects on a plain flat solid dark brown background (#211A13), each shown from the side, flat illustrated.
+Row 1: (1) 1920s pistol; (2) pump-action shotgun; (3) Thompson submachine gun with drum magazine; (4) 1920s seaplane.
+Row 2: (5) battered old 1920s pickup truck; (6) 1920s city taxi cab; (7) 1920s family sedan car; (8) 1920s open-top roadster sports car.
+Row 3: (9) long luxury 1920s limousine sedan; (10) grand 1920s state limousine with chrome details; (11) steam ferry boat; (12) fast wooden motorboat.
+```
+Kesim sırası: w_tabanca, w_pompali, w_thompson, t_deniz_ucagi · c_kamyonet, c_taksi, c_aile, c_spor · c_sedan, c_limuzin, t_vapur, t_motorbot
+
+## C) Kaçak mallar — `art/sheets/mallar.png` · 3 sütun × 2 satır · yatay 3:2 (ör. 2048×1365)
+```
+A sprite sheet of 6 separate objects on a plain flat solid dark brown background (#211A13), flat illustrated.
+Row 1: (1) burlap sack of coffee beans; (2) bundle of tobacco leaves tied with string; (3) wooden crate of wine bottles.
+Row 2: (4) crate of clear anise liquor bottles; (5) crate of cognac bottles with plain gold labels; (6) wooden whisky barrel.
+```
+Kesim sırası: g_kahve, g_tutun, g_sarap · g_raki, g_konyak, g_viski
+
+## D) Portreler — `art/sheets/portreler.png` · 4 sütun × 2 satır · yatay 2:1 (ör. 2048×1024)
+(Altın yuvarlak çerçeveyi oyun kendisi çiziyor, görselde çerçeve olmasın.)
+```
+A sprite sheet of 8 separate head-and-shoulders character portraits on a plain flat solid charcoal background (#15110D), each facing slightly left, confident expression, same scale, no frames, no circles.
+Row 1 (men): (1) a young Istanbul kabadayı, thick black moustache, fez tilted, dark suit with a gold chain; (2) a scarred older mob boss, grey beard, fedora, fur-collar overcoat, cigar; (3) a slim sharp-eyed man, slicked-back hair, pinstripe suit, flower in lapel; (4) a heavy-set dock-worker bruiser, flat cap, rolled sleeves, suspenders.
+Row 2 (women): (5) an elegant woman with a black bob haircut, pearl necklace, flapper dress, cigarette holder; (6) a tough woman with a headscarf tied back, leather jacket, determined look; (7) a glamorous casino owner, finger-wave hair, emerald earrings, silk gown; (8) a young street-smart woman, newsboy cap, tweed vest, knowing smirk.
+```
+Kesim sırası: p1 … p8
+
+---
+
+# Tek tek üretilenler
 
 ## 1) Şehir arka planları — `www/assets/bg/` · 1080×1920 (dikey 9:16) · 6 adet
 Ortak kalıp: *"Vertical 9:16 city backdrop for a mobile game map. Top 35%: sky and skyline silhouette of [ŞEHİR]. Middle: calm harbor water on the left edge. Bottom 60%: an empty cobblestone town square and streets seen from the front, with EMPTY flat ground areas (buildings will be placed on top later, so leave open space, no large buildings in the lower 60%)."*
@@ -28,63 +75,7 @@ Ortak kalıp: *"Vertical 9:16 city backdrop for a mobile game map. Top 35%: sky 
 | `iskenderiye.png` | Alexandria 1922: Corniche curve, Qaitbay citadel, palm trees, felucca sails |
 | `beyrut.png` | Beirut 1922: red-tiled Ottoman houses on hills, Mount Lebanon snowy peaks behind, harbor lighthouse |
 
-## 2) Binalar — `www/assets/buildings/` · 1024×1024 · **SAYDAM PNG** · 12 adet
-Ortak kalıp: *"Single 1920s building, flat front facade elevation (like an architectural drawing), centered, full building visible, isolated on a plain white background, [TARİF]."*
-
-| Dosya | [TARİF] | Oyundaki işlevi |
-|---|---|---|
-| `gazino.png` | glamorous Art Deco casino with neon-like gold marquee lights, arched entrance, red carpet | Kumarhane + mekân |
-| `meyhane.png` | small Ottoman tavern with wooden bay window, hanging lanterns, grapevine over the door | Mekân |
-| `kahvehane.png` | modest coffeehouse with striped awning, small tables and stools outside, hookah by the door | Mekân |
-| `antrepo.png` | stone bonded warehouse with big arched cargo doors and crates stacked in front | Mekân |
-| `karakol.png` | stern Ottoman police station and jail, barred windows, heavy iron door, gas lamp | Hapishane |
-| `hastane.png` | white hospital building with a red crescent emblem on the pediment, ambulance carriage | Hastane |
-| `banka.png` | neoclassical bank with columns and a heavy bronze door | Banka |
-| `fabrika.png` | brick munitions workshop with a tall chimney and ammunition crates | Kurşun fabrikası |
-| `silahci.png` | narrow gunsmith shop, rifles displayed in the window, hanging sign shaped like a pistol (no text) | Silahçı + korumalar |
-| `dedektif.png` | shadowy upstairs private detective office, frosted glass door, venetian blinds, a lit window | Dedektif + infaz + kelle listesi |
-| `garaj.png` | automobile garage with open doors showing a 1920s car, tools on the wall | Araba + yarış |
-| `carsi.png` | covered bazaar entrance with domed roof, market stalls with rugs and brass goods | Oyuncu pazarı |
-
-## 3) Karakter portreleri — `www/assets/portraits/` · 768×768 · 8 adet
-Ortak kalıp: *"Head-and-shoulders portrait of [KİŞİ], facing slightly left, confident expression, framed inside a gold Art Deco circle, solid charcoal #15110D background."*
-
-| Dosya | [KİŞİ] |
-|---|---|
-| `p1.png` | a young Istanbul kabadayı man, thick black moustache, fez tilted, dark suit with a gold chain |
-| `p2.png` | a scarred older mob boss man, grey beard, fedora, fur-collar overcoat, cigar |
-| `p3.png` | a slim sharp-eyed man, slicked-back hair, pinstripe suit, flower in lapel |
-| `p4.png` | a heavy-set dock-worker bruiser man, flat cap, rolled sleeves, suspenders |
-| `p5.png` | an elegant woman with a black bob haircut, pearl necklace, flapper dress, cigarette holder |
-| `p6.png` | a tough woman with a headscarf tied back, leather jacket, determined look |
-| `p7.png` | a glamorous woman casino owner, finger-wave hair, emerald earrings, silk gown |
-| `p8.png` | a young street-smart woman, newsboy cap, tweed vest, knowing smirk |
-
-## 4) Eşya kutucukları — `www/assets/items/` · 512×512 · kare, düz koyu arka plan · 18 adet
-Ortak kalıp: *"Single [NESNE], centered, slightly angled for readability but flat illustrated, on a solid dark brown #211A13 square background with a thin gold Art Deco border."*
-
-| Dosya | [NESNE] |
-|---|---|
-| `w_tabanca.png` | 1920s pistol |
-| `w_pompali.png` | pump-action shotgun |
-| `w_thompson.png` | Thompson submachine gun with drum magazine |
-| `c_kamyonet.png` | battered old pickup truck, 1920s |
-| `c_taksi.png` | 1920s city taxi cab |
-| `c_aile.png` | 1920s family sedan car |
-| `c_spor.png` | 1920s open-top roadster sports car |
-| `c_sedan.png` | long luxury 1920s limousine sedan |
-| `c_limuzin.png` | grand 1920s state limousine with chrome details |
-| `g_kahve.png` | burlap sack of coffee beans |
-| `g_tutun.png` | bundle of tobacco leaves tied with string |
-| `g_sarap.png` | wooden crate of wine bottles |
-| `g_raki.png` | crate of clear anise liquor bottles |
-| `g_konyak.png` | crate of cognac bottles with gold labels (no text) |
-| `g_viski.png` | wooden whisky barrel |
-| `t_vapur.png` | steam ferry boat |
-| `t_motorbot.png` | fast wooden motorboat |
-| `t_deniz_ucagi.png` | 1920s seaplane |
-
-## 5) İş illüstrasyonları — `www/assets/jobs/` · 1024×640 (yatay) · 9 adet
+## 2) İş illüstrasyonları — `www/assets/jobs/` · 1024×640 (yatay) · 9 adet
 Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*
 
 | Dosya | [SAHNE] |
@@ -99,7 +90,7 @@ Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*
 | `organize.png` | a crew in a getaway car outside the Ottoman Bank building, sirens |
 | `buyuk.png` | a large crew unloading gold crates from a cargo ship at night under cranes |
 
-## 6) Sonuç kartları — `www/assets/results/` · 1024×640 · 5 adet
+## 3) Sonuç kartları — `www/assets/results/` · 1024×640 · 5 adet
 | Dosya | Sahne |
 |---|---|
 | `basari.png` | a gangster counting a thick roll of banknotes under a streetlamp, satisfied |
@@ -108,7 +99,7 @@ Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*
 | `vuruldu.png` | a fedora hat lying on wet cobblestones, a single rose, dramatic shadow (no blood, no body) |
 | `yaris.png` | two 1920s cars racing side by side along a coastal road, dust clouds |
 
-## 7) Tek parçalar — `www/assets/ui/` · 2 adet
+## 4) Tek parçalar — `www/assets/ui/` · 2 adet
 | Dosya | Boyut | Sahne |
 |---|---|---|
 | `splash.png` | 1080×1920 | lone kabadayı in a long coat and fez standing on the Galata Bridge at night, Istanbul skyline and moon behind him, fog |
