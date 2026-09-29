@@ -3,6 +3,11 @@
 **Yapı:** Ana ekran her şehrin 2D panoraması; binalar ayrı saydam PNG olarak üstüne yerleştirilir (hepsi düz ön cephe, perspektif yok).
 **Toplam:** 60 görsel ama **26 üretim**: küçük görseller (bina, eşya, portre = 38 adet) 4 toplu sayfada üretilir, betikle kesilir. Büyükler (arka plan, iş/sonuç sahneleri, splash, amblem) tek tek.
 
+## Durum (2026-09-29)
+- ✅ B araçlar/silahlar, C mallar, D portreler: onaylandı, kesildi, oyunda.
+- 🔁 A binalar: yeniden üretilecek (ilk deneme piksel sanat çıktı ve üstünde İngilizce yazılar vardı). Referans görsel olarak B veya D sayfasını ekle.
+- ⏳ Tek tek üretilenler: hepsi bekliyor.
+
 ## Nasıl üretelim
 1. **Önce stil çapası:** `bg/istanbul.png` + **A sayfası (binalar)** + **D sayfası (portreler)** üret. Tutarlılığa bakıp onay vereyim.
 2. Geri kalanları üretirken **onaylanan görseli referans olarak ekle** ("same style as the reference").
@@ -13,7 +18,7 @@
 
 ## Ortak stil (her promptun SONUNA ekle)
 ```
-1920s Art Deco travel poster illustration, flat colors with subtle paper grain, limited palette: antique gold #C9A14A, deep burgundy #7A2331, petrol teal #1F4E55, cream #E8D9BB, charcoal #15110D. Bold geometric shapes, clean silhouettes, thin gold outlines, warm dusk lighting. Strictly flat 2D, orthographic front view, no perspective, no 3D. No text, no letters, no numbers, no watermark, no signature.
+1920s Art Deco travel poster illustration, flat colors with subtle paper grain, limited palette: antique gold #C9A14A, deep burgundy #7A2331, petrol teal #1F4E55, cream #E8D9BB, charcoal #15110D. Bold geometric shapes, clean silhouettes, thin gold outlines, warm dusk lighting. Strictly flat 2D vector illustration (not pixel art, not photorealistic), orthographic front view, no perspective, no 3D. No text, no signs with words, no letters, no numbers, no watermark, no signature.
 ```
 
 ## Toplu sayfalar için ortak ızgara kuralı (toplu sayfa promptlarında ortak stilden ÖNCE ekle)

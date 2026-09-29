@@ -5,12 +5,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SHEETS = [
-    ('binalar', 4, 3, 'buildings', ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hastane', 'banka',
+    ('binalar', 'auto', 'auto', 'buildings', ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hastane', 'banka',
                                     'fabrika', 'silahci', 'dedektif', 'garaj', 'carsi'], ['--size', '512', '--bottom']),
-    ('arac_silah', 4, 3, 'items', ['w_tabanca', 'w_pompali', 'w_thompson', 't_deniz_ucagi', 'c_kamyonet', 'c_taksi',
+    ('arac_silah', 'auto', 'auto', 'items', ['w_tabanca', 'w_pompali', 'w_thompson', 't_deniz_ucagi', 'c_kamyonet', 'c_taksi',
                                    'c_aile', 'c_spor', 'c_sedan', 'c_limuzin', 't_vapur', 't_motorbot'], ['--size', '256']),
-    ('mallar', 3, 2, 'items', ['g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski'], ['--size', '256']),
-    ('portreler', 4, 2, 'portraits', [f'p{i}' for i in range(1, 9)], ['--size', '384']),
+    ('mallar', 'auto', 'auto', 'items', ['g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski'], ['--size', '256']),
+    ('portreler', 'auto', 'auto', 'portraits', [f'p{i}' for i in range(1, 9)], ['--size', '384', '--top']),
 ]
 
 for name, cols, rows, out, names, extra in SHEETS:
