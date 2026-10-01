@@ -424,12 +424,14 @@ function detectiveSection() {
 
 function hitlistSection() {
   return `<h2>Kelle Listesi</h2>` +
-    (extra.hitlist.length ? extra.hitlist.map(b => card(nickLink(b.nick), esc(rankName(b.rank)),
+    (extra.hitlist.length ? extra.hitlist.map(b => card(nickLink(b.nick), `${esc(rankName(b.rank))}${b.expires_at
+        ? ` · ${ico('kum', '⏳')} ${fmt(left(b.expires_at))}` : ''}`,
       `<span class="cash-sm">${money(b.amount)}</span>`)).join('') : `<p class="muted small">Listede kimse yok.</p>`) +
     `<div class="form-row"><input id="f-bounty-nick" placeholder="Kimin başına" autocomplete="off" autocapitalize="off">
       <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül $" inputmode="numeric">
       <button class="btn primary" data-act="bounty">Koy</button></div>
-    <p class="muted small">En az ${money(S.settings.bounty_min)}. Aracıya %${Math.round(S.settings.bounty_fee * 100)} pay. Ödülü onu öldüren alır.</p>`;
+    <p class="muted small">En az ${money(S.settings.bounty_min)}. Aracıya %${Math.round(S.settings.bounty_fee * 100)} pay. Ödülü onu öldüren alır.
+      ${S.settings.bounty_days} gün içinde kimse öldürmezse ödül bankana geri döner (aracı payı dönmez).</p>`;
 }
 
 function garageSection() {

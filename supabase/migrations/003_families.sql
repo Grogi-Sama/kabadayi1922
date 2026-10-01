@@ -6,7 +6,8 @@ insert into game_settings values
   ('family_max_members',    30),
   ('factory_price',     250000),
   ('bounty_min',          5000),
-  ('bounty_fee',          0.10);
+  ('bounty_fee',          0.10),
+  ('bounty_days',         7);     -- süresi dolan ödül, koyanın bankasına geri döner (aracı payı dönmez)
 
 create table families (
   id         bigserial primary key,
@@ -44,9 +45,10 @@ create table bounties (
   amount     bigint not null check (amount > 0),
   created_at timestamptz not null default now(),
   claimed_by uuid references players(id) on delete set null,
-  claimed_at timestamptz
+  claimed_at timestamptz,
+  refunded_at timestamptz         -- süresi dolup iade edildiyse
 );
-create index on bounties (target_id) where claimed_by is null;
+create index on bounties (target_id) where claimed_by is null and refunded_at is null;
 
 alter table families            enable row level security;
 alter table family_applications enable row level security;
@@ -327,12 +329,32 @@ begin
   return done(t.nick || ' kelle listesine eklendi ($' || p_amount || ').');
 end $$;
 
+create or replace function expire_bounties() returns void
+language plpgsql security definer set search_path = public as $$
+declare b record;
+begin
+  for b in update bounties set refunded_at = now()
+             where claimed_by is null and refunded_at is null
+               and created_at < now() - make_interval(days => setting('bounty_days')::int)
+             returning placer_id, target_id, amount loop
+    if b.placer_id is not null then
+      update players set bank = bank + b.amount where id = b.placer_id;
+      perform log_event(b.placer_id, (select nick from players where id = b.target_id)
+        || ' için koyduğun $' || b.amount || ' kelle ödülünün süresi doldu; para bankana iade edildi.');
+    end if;
+  end loop;
+end $$;
+
 create or replace function get_hitlist() returns jsonb
-language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('nick', t.nick, 'rank', rank_of(t.xp), 'amount', b.total) order by b.total desc), '[]')
-  from (select target_id, sum(amount) total from bounties where claimed_by is null group by target_id) b
-  join players t on t.id = b.target_id
-$$;
+language plpgsql security definer set search_path = public as $$
+begin
+  perform expire_bounties();
+  return (select coalesce(jsonb_agg(jsonb_build_object('nick', t.nick, 'rank', rank_of(t.xp), 'amount', b.total,
+            'expires_at', b.first_at + make_interval(days => setting('bounty_days')::int)) order by b.total desc), '[]')
+          from (select target_id, sum(amount) total, min(created_at) first_at from bounties
+                 where claimed_by is null and refunded_at is null group by target_id) b
+          join players t on t.id = b.target_id);
+end $$;
 
 -- shoot'u sar: aile içi ateş yasak; öldürünce ödülleri topla.
 alter function shoot(text, int) rename to shoot_core;
@@ -345,10 +367,11 @@ begin
   if t.id is not null and me.family_id is not null and t.family_id = me.family_id then
     return fail('Aileden birine silah çekilmez.');
   end if;
+  perform expire_bounties();
   r := shoot_core(p_nick, p_bullets);
   if (r->>'killed')::boolean then
     update bounties set claimed_by = me.id, claimed_at = now()
-      where target_id = t.id and claimed_by is null and placer_id is distinct from me.id;
+      where target_id = t.id and claimed_by is null and refunded_at is null and placer_id is distinct from me.id;
     select coalesce(sum(amount), 0) into total from bounties where target_id = t.id and claimed_by = me.id and claimed_at = now();
     if total > 0 then
       update players set cash = cash + total where id = me.id;
@@ -407,7 +430,7 @@ create or replace function get_profile(p_nick text) returns jsonb
 language sql stable security definer set search_path = public as $$
   select profile_core(p_nick) || jsonb_build_object(
     'family', f.name, 'family_role', t.family_role,
-    'bounty', (select coalesce(sum(amount), 0) from bounties where target_id = t.id and claimed_by is null))
+    'bounty', (select coalesce(sum(amount), 0) from bounties where target_id = t.id and claimed_by is null and refunded_at is null))
   from players t left join families f on f.id = t.family_id
   where lower(t.nick) = lower(p_nick)
 $$;
@@ -423,7 +446,7 @@ begin
   select * into p from players where id = auth.uid();
   return jsonb_set(base, '{player}', (base->'player') || jsonb_build_object(
     'family', (select name from families where id = p.family_id), 'family_role', p.family_role,
-    'bounty', (select coalesce(sum(amount), 0) from bounties where target_id = p.id and claimed_by is null)));
+    'bounty', (select coalesce(sum(amount), 0) from bounties where target_id = p.id and claimed_by is null and refunded_at is null)));
 end $$;
 
 revoke execute on all functions in schema public from public, anon, authenticated;

@@ -98,6 +98,17 @@ assert.equal((await get(K)).cash, 20000);
 assert.equal((await as(K, `select get_hitlist()`)).length, 0);
 ok('aile içi ateş yasak, kelle ödülü öldürene gider');
 
+// ─── Kelle ödülü 7 günde dolar: koyanın bankasına döner, artık alınamaz
+const d2Bank = Number((await get(D2)).bank);
+assert.equal((await as(D2, `select place_bounty('Katil', 10000)`)).ok, true);
+assert.ok((await as(K, `select get_hitlist()`))[0].expires_at);
+await db.query(`update bounties set created_at = now() - interval '8 days' where claimed_by is null`);
+assert.equal((await as(K, `select get_hitlist()`)).length, 0, 'süresi dolan listeden düşer');
+assert.equal(Number((await get(D2)).bank), d2Bank + 10000, 'ödül bankaya iade (aracı payı hariç)');
+assert.equal((await as(D2, `select get_profile('Katil')`)).bounty, 0);
+assert.equal((await db.query(`select count(*)::int n from bounties where refunded_at is not null and claimed_by is null`)).rows[0].n, 1);
+ok('kelle ödülünün süresi dolunca iade');
+
 // ─── Profil aile + ayrılma/dağılma
 const pr = await as(K, `select get_profile('lale')`);
 assert.equal(pr.family, 'Corleone'); assert.equal(pr.family_role, 'sottocapo');
