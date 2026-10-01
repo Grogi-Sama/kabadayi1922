@@ -11,7 +11,10 @@
   <script src="vendor/supabase.js"></script>
 </head>
 <body>
-  <div id="loading" class="screen center"><img class="logo-img" src="assets/ui/logo.png" alt="KABADAYI"><p class="muted">Şehir uyanıyor…</p></div>
+  <div id="loading" class="screen center"><img class="logo-img" src="assets/ui/logo.png" alt="KABADAYI">
+    <div class="loader" aria-hidden="true"><span></span></div>
+    <div class="load-track"><div id="load-bar"></div></div>
+    <p id="load-text" class="muted small">Şehir uyanıyor…</p></div>
 
   <div id="onboard" class="screen center hidden">
     <div id="onboard-art"></div>

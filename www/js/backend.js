@@ -1,11 +1,15 @@
 // Oyunun sunucuyla konuştuğu tek yer. İki uygulama, aynı arayüz: rpc(ad, argümanlar).
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-export async function createBackend() {
+// Yükleme ekranı için ilerleme bildirimi: (0–1 arası oran, aşama yazısı)
+let report = () => {};
+export async function createBackend(onProgress) {
+  if (onProgress) report = onProgress;
   return SUPABASE_URL ? supabaseBackend() : localBackend();
 }
 
 async function supabaseBackend() {
+  report(0.3, 'Sunucuya bağlanılıyor…');
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const { data: { session } } = await client.auth.getSession();
   if (!session) {
@@ -37,24 +41,32 @@ async function localBackend() {
   // PGlite yerelde node_modules'tan, yayında (node_modules yok) CDN'den gelir.
   const rel = (p) => new URL('../' + p, location.href).href;
   let PGlite;
+  report(0.05, 'Oyun motoru yükleniyor…');
   try { ({ PGlite } = await import(rel('node_modules/@electric-sql/pglite/dist/index.js'))); }
   catch { ({ PGlite } = await import('https://cdn.jsdelivr.net/npm/@electric-sql/pglite@0.5.8/dist/index.js')); }
   const load = async (p) => (await fetch(rel(p))).text();
+  report(0.15, 'Şehir kuralları okunuyor…');
   const sql = [await load('supabase/local-shim.sql'),
     ...await Promise.all(MIGRATIONS.map(m => load('supabase/migrations/' + m))),
     await load('supabase/local-seed.sql')];
   const version = String(sql.join('').split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0));
 
+  report(0.25, 'Veritabanı açılıyor…');
   let db = new PGlite('idb://kabadayi-dev');
   // SQL kuralları değiştiyse yerel veritabanını baştan kur (sadece geliştirme modu)
   if (localStorage.getItem('kabadayi-sql-version') !== version) {
     await db.close();
     await deleteLocalDb();
     db = new PGlite('idb://kabadayi-dev');
-    for (const s of sql) await db.exec(s);
+    // İlk açılış: bütün kurallar tarayıcıda kurulur (en uzun adım)
+    for (const [i, s] of sql.entries()) {
+      report(0.3 + 0.65 * i / sql.length, `Şehir kuruluyor… (${i + 1}/${sql.length})`);
+      await db.exec(s);
+    }
     await db.exec(`insert into auth.users values ('${LOCAL_UID}'); insert into admins values ('${LOCAL_UID}');`);
     localStorage.setItem('kabadayi-sql-version', version);
   }
+  report(0.97, 'Sokaklara çıkılıyor…');
   await db.query(`select set_config('test.uid', $1, false)`, [LOCAL_UID]);
   return {
     mode: 'local',

@@ -1209,8 +1209,17 @@ setInterval(async () => {
 // Uygulama arka plandan dönünce durumu tazele
 document.addEventListener('visibilitychange', () => { if (!document.hidden && api) refresh(); });
 
+// Yükleme çubuğu: oran ve aşama yazısı (çubuk geri gitmez)
+function loadProgress(f, label) {
+  const bar = $('#load-bar'), txt = $('#load-text');
+  if (!bar) return;
+  bar.style.width = Math.max(parseFloat(bar.style.width) || 0, Math.round(f * 100)) + '%';
+  if (label) txt.textContent = label;
+}
+
 try {
-  [api] = await Promise.all([createBackend(), probeAssets()]);
+  [api] = await Promise.all([createBackend(loadProgress), probeAssets()]);
+  loadProgress(1, 'Hazır');
   for (const [tab, name] of [['city', 'sehir'], ['crime', 'isler'], ['family', 'aile'], ['chat', 'sohbet'], ['log', 'defter']]) {
     const b = $(`nav [data-go="${tab}"] b`);
     if (b) b.innerHTML = ico(name, b.textContent);
@@ -1219,5 +1228,6 @@ try {
   await refresh();
 } catch (e) {
   console.error(e);
-  $('#loading').innerHTML = `<div class="logo">KABADAYI</div><p class="err">Sunucuya bağlanılamadı.</p>`;
+  $('#loading').innerHTML = `<img class="logo-img" src="assets/ui/logo.png" alt="KABADAYI">
+    <p class="err">Sunucuya bağlanılamadı.</p><button class="btn primary" onclick="location.reload()">Tekrar dene</button>`;
 }

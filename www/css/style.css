@@ -510,3 +510,21 @@ nav button[data-badge]:not([data-badge=""])::after {
 /* Oyun logosu (açılış, yükleme, ban ekranı) */
 .logo-img { width: min(300px, 78vw); height: auto; display: block; margin: 4px auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
 #loading .logo-img { width: min(340px, 84vw); }
+
+/* Yükleme ekranı: dönen art-deco halka + dolan çubuk */
+.loader { position: relative; width: 54px; height: 54px; margin: 10px auto 4px; }
+.loader::before, .loader::after, .loader span { content: ''; position: absolute; inset: 0; border-radius: 50%; }
+.loader::before { border: 3px solid rgba(201,161,74,.18); }
+.loader::after { border: 3px solid transparent; border-top-color: var(--gold-hi); border-right-color: var(--gold);
+  animation: spin 1s linear infinite; }
+.loader span { inset: 12px; border: 2px dashed var(--gold); opacity: .7; animation: spin 3s linear infinite reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-track { position: relative; width: min(260px, 70vw); height: 10px; margin: 8px auto 2px; border-radius: 6px; overflow: hidden;
+  background: #120e0a; border: 1px solid #4a3a26; }
+#load-bar { position: relative; height: 100%; width: 0; border-radius: 6px; transition: width .35s ease;
+  background: linear-gradient(90deg, #8a6a26, var(--gold), var(--gold-hi)); overflow: hidden; }
+#load-bar::after { content: ''; position: absolute; inset: 0; animation: shine 1.4s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); transform: translateX(-100%); }
+@keyframes shine { to { transform: translateX(100%); } }
+#load-text { min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { .loader::after, .loader span, #load-bar::after { animation-duration: 3s; } }
