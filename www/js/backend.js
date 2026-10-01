@@ -5,7 +5,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 let report = () => {};
 export async function createBackend(onProgress) {
   if (onProgress) report = onProgress;
-  return SUPABASE_URL ? supabaseBackend() : localBackend();
+  const forceLocal = new URLSearchParams(location.search).has('yerel');
+  return SUPABASE_URL && !forceLocal ? supabaseBackend() : localBackend();
 }
 
 async function supabaseBackend() {
