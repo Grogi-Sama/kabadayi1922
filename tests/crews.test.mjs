@@ -70,7 +70,7 @@ for (let i = 0; i < 40; i++) {
   if (res.success) wins++;
   if (/içeri alındı/.test(res.msg)) jails++;
 }
-assert.ok(wins > 10 && wins < 35, `başarı oranı makul: ${wins}/40`);
+assert.ok(wins >= 6 && wins <= 30, `başarı oranı makul: ${wins}/40`);  // şans %45 → ortalama 18; ±4 standart sapma
 ok(`organize iş: 40 denemede ${wins} başarı, ${jails} toplu hapis`);
 
 // ─── Red & iptal
