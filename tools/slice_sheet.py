@@ -9,6 +9,7 @@ Kullanım:
   Bu betik saydamlık ÜRETMEZ; saydam sayfa kullanıcıdan hazır gelir.
 - Görseller ızgaraya tam oturmasa da olur: kare sınırları en boş sütun/satıra kaydırılır.
 - Ad yerine '-' yazılan kare atlanır. --bottom: nesne karenin altına oturtulur (binalar aynı zemine basar).
+  --native: kare yapılmaz, kaynak boyutunda kırpılır (sayfadaki göreli ölçek korunur).
   --top: uzun nesnenin sadece üstteki kare kısmı alınır (portrede baş ve omuzlar).
 """
 import sys
@@ -70,6 +71,7 @@ def main():
     if '--size' in opts:
         args.remove(str(size))
     bottom = '--bottom' in opts
+    native = '--native' in opts  # bina: kare yapma, kaynaktaki ölçeği koru (binalar birbirine göre doğru boyda)
     top = '--top' in opts  # portre: kare, üstten (baş ve omuzlar)
     sheet, cols, rows, outdir, names = args[0], args[1], args[2], Path(args[3]), args[4:]
     auto = cols == 'auto'
@@ -116,6 +118,10 @@ def main():
             by1 = by0 + (bx1 - bx0)
         obj = im.crop((bx0, by0, bx1, by1))
         w, h = obj.size
+        if native:
+            obj.save(outdir / f'{name}.png', optimize=True)
+            print(f'  {name}.png  ({w}x{h})')
+            continue
         pad = 0.04 if transparent else 0.06
         side = int(max(w, h) * (1 + 2 * pad))
         fill = (0, 0, 0, 0) if transparent else tuple(int(v) for v in bg) + (255,)

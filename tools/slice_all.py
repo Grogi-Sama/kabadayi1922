@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SHEETS = [
     ('binalar', 'auto', 'auto', 'buildings', ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hastane', 'banka',
-                                    'fabrika', 'silahci', 'dedektif', 'garaj', 'carsi'], ['--size', '512', '--bottom']),
+                                    'fabrika', 'silahci', 'dedektif', 'garaj', 'carsi'], ['--native']),
     ('arac_silah', 'auto', 'auto', 'items', ['w_tabanca', 'w_pompali', 'w_thompson', 't_deniz_ucagi', 'c_kamyonet', 'c_taksi',
                                    'c_aile', 'c_spor', 'c_sedan', 'c_limuzin', 't_vapur', 't_motorbot'], ['--size', '256']),
     ('mallar', 'auto', 'auto', 'items', ['g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski'], ['--size', '256']),

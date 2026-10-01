@@ -169,41 +169,58 @@ nav button[data-badge]:not([data-badge=""])::after {
   background: var(--red); color: #fff; font-size: 11px; border-radius: 9px; padding: 1px 5px; min-width: 16px;
 }
 
-/* ─── Şehir haritası ─── */
+/* ─── Şehir haritası: yatay kaydırılan rıhtım caddesi ─── */
 .map {
-  position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 9 / 16;
-  background:
-    linear-gradient(180deg, #1f3b44 0%, #6b4a3a 24%, #c9a14a 31%, #1f4e55 32%, #183c42 38%, #3a2e22 39%, #2a2119 100%);
-  overflow: hidden; user-select: none; isolation: isolate;   /* bina z-index'leri alt menünün üstüne çıkmasın */
+  --mh: clamp(380px, calc(100dvh - 250px), 600px);   /* başlık ve alt menü dışında kalan yükseklik */
+  --u: calc(var(--mh) / 100);                          /* 1u = harita yüksekliğinin %1'i */
+  position: relative; height: var(--mh); overflow: hidden; user-select: none; isolation: isolate;
+  background: linear-gradient(180deg, #c9a46a 0%, #8a5a4a 40%, #1f4e55 62%, #15343a 100%);
 }
-.map .bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.map .pano { position: absolute; top: 0; left: 0; height: 86%; width: auto; max-width: none; will-change: transform; pointer-events: none; }
 .map .city-title {
-  position: absolute; top: 3%; left: 0; right: 0; text-align: center; font: 26px var(--display); letter-spacing: 4px;
+  position: absolute; top: 2.5%; left: 0; right: 0; text-align: center; font: 26px var(--display); letter-spacing: 4px; z-index: 2;
   color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 12px #000; pointer-events: none;
 }
 .map .city-title small { display: block; font: 600 12px var(--body); letter-spacing: 3px; color: var(--paper); }
-.bld {
-  position: absolute; cursor: pointer; display: flex; flex-direction: column; align-items: center;
-  transition: transform .12s; filter: drop-shadow(0 6px 6px rgba(0,0,0,.55));
+.map-scroll { position: absolute; inset: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.map-scroll::-webkit-scrollbar { display: none; }
+.street {
+  position: relative; height: 100%; min-width: 100%; width: max-content; display: flex; align-items: flex-end;
+  gap: calc(3 * var(--u)); padding: 0 calc(6 * var(--u)) calc(9 * var(--u));
 }
-.bld:active { transform: scale(.96); }
-.bld img { width: 100%; display: block; }
+/* Rıhtım: taş kenar + arnavut kaldırımı (caddeyle birlikte kayar) */
+.street::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 17%; z-index: -1;
+  background:
+    linear-gradient(180deg, #a08a62 0, #a08a62 6%, #3a2e20 6%, #3a2e20 10%, transparent 10%),
+    radial-gradient(ellipse at 50% 45%, rgba(255,240,210,.09) 0 45%, transparent 50%) 0 0 / 16px 10px,
+    linear-gradient(180deg, #5e4c36, #2a2018);
+}
+.bld {
+  position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; flex: 0 0 auto;
+  transition: transform .12s;
+}
+.bld img { height: calc(var(--h) * var(--u)); width: auto; display: block;
+  filter: drop-shadow(0 4px 3px rgba(0,0,0,.6)); transition: filter .15s; }
+.bld:hover img { filter: drop-shadow(0 0 2px #f3d27a) drop-shadow(0 0 8px rgba(243,210,122,.7)); }
+.bld:active { transform: scale(.97); }
+.bld:active img { filter: drop-shadow(0 0 3px #fff2c4) drop-shadow(0 0 14px rgba(243,210,122,.95)); }
 .bld .ph {
-  width: 78%; aspect-ratio: 1 / .8; margin-top: 10%; display: grid; place-items: center; font-size: 30px;
+  height: calc(var(--h) * var(--u)); aspect-ratio: 1 / 1; display: grid; place-items: center; font-size: 30px;
   background: linear-gradient(180deg, #3a2e22, #241c14); border: 2px solid var(--gold); border-bottom-width: 4px;
   clip-path: polygon(0 18%, 50% 0, 100% 18%, 100% 100%, 0 100%); padding-top: 12%;
 }
 .bld .plate {
-  margin-top: -6%; padding: 2px 8px; font: 600 11px var(--body); letter-spacing: .5px; white-space: nowrap;
-  background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px; position: relative;
+  position: absolute; bottom: calc(-5.5 * var(--u)); padding: 2px 8px; font: 600 11px var(--body); letter-spacing: .5px; white-space: nowrap;
+  background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px;
 }
 .bld .tag {
-  position: absolute; top: 2%; right: 0; font: 700 10px var(--body); padding: 1px 6px; border-radius: 9px;
+  position: absolute; top: -4px; right: -2px; z-index: 1; font: 700 10px var(--body); padding: 1px 6px; border-radius: 9px;
   background: var(--burgundy); color: #fff; border: 1px solid #000; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bld .tag.mine { background: var(--teal); }
 .bld .tag.ok { background: #3c5a2e; }
-.hotspot { position: absolute; cursor: pointer; text-align: center; font: 600 11px var(--body); color: var(--gold-hi); text-shadow: 0 1px 2px #000; }
+.hotspot { position: relative; flex: 0 0 auto; cursor: pointer; text-align: center; font: 600 11px var(--body); color: var(--gold-hi); text-shadow: 0 1px 2px #000; }
 .hotspot .dot {
   width: 48px; height: 48px; margin: 0 auto 2px; border-radius: 50%; display: grid; place-items: center; font-size: 24px;
   background: rgba(21,17,13,.85); border: 2px solid var(--gold); box-shadow: 0 0 0 4px rgba(201,161,74,.2);
