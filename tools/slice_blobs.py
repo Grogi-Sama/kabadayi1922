@@ -47,7 +47,10 @@ def main():
     pos = [a for i, a in enumerate(args) if not a.startswith('--') and (i == 0 or not args[i - 1].startswith('--'))]
     sheet, outdir, names = pos[0], Path(pos[1]), pos[2:]
     im = Image.open(sheet).convert('RGBA')
-    found = sorted(blobs(im), key=lambda b: (b[1] // rowh, b[0]))
+    found = blobs(im)
+    # Ana parçalardan kopmuş küçük kırıntıları (ör. uçuşan bir banknot) at
+    big = max((b[2] - b[0]) * (b[3] - b[1]) for b in found)
+    found = sorted([b for b in found if (b[2] - b[0]) * (b[3] - b[1]) >= big * 0.04], key=lambda b: (b[1] // rowh, b[0]))
     print(f'{sheet}: {len(found)} parça')
     if len(found) != len(names):
         for b in found:
