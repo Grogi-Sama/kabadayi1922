@@ -169,45 +169,70 @@ nav button[data-badge]:not([data-badge=""])::after {
   background: var(--red); color: #fff; font-size: 11px; border-radius: 9px; padding: 1px 5px; min-width: 16px;
 }
 
-/* ─── Şehir haritası ─── */
+/* ─── Şehir haritası: gökyüzü + liman şeridi, altında sokak sıraları ─── */
 .map {
-  position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 9 / 16;
-  background:
-    linear-gradient(180deg, #1f3b44 0%, #6b4a3a 24%, #c9a14a 31%, #1f4e55 32%, #183c42 38%, #3a2e22 39%, #2a2119 100%);
-  overflow: hidden; user-select: none; isolation: isolate;   /* bina z-index'leri alt menünün üstüne çıkmasın */
+  position: relative; width: 100%; max-width: 520px; margin: 0 auto; overflow: hidden; user-select: none; isolation: isolate;
+  background: #2a2119;
 }
-.map .bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.map .bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.map .sky {
+  position: relative; height: 128px;
+  background:
+    linear-gradient(180deg, transparent 72%, #c9a14a 72%, #c9a14a 73%, #1f4e55 73%, #183c42 100%),
+    linear-gradient(180deg, #1f3b44 0%, #6b4a3a 50%, #c98a4a 72%);
+}
 .map .city-title {
-  position: absolute; top: 3%; left: 0; right: 0; text-align: center; font: 26px var(--display); letter-spacing: 4px;
+  position: absolute; top: 14px; left: 0; right: 0; text-align: center; font: 26px var(--display); letter-spacing: 4px;
   color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 12px #000; pointer-events: none;
 }
 .map .city-title small { display: block; font: 600 12px var(--body); letter-spacing: 3px; color: var(--paper); }
-.bld {
-  position: absolute; cursor: pointer; display: flex; flex-direction: column; align-items: center;
-  transition: transform .12s; filter: drop-shadow(0 6px 6px rgba(0,0,0,.55));
+.map .sky .hotspot { position: absolute; left: 12px; bottom: 6px; }
+.town { padding: 6px 8px 10px; }
+/* Her sokak: binalar kaldırım çizgisine basar, altta arnavut kaldırımı şeridi */
+.street {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; align-items: end;
+  padding: 10px 0 8px; margin-bottom: 4px; position: relative;
 }
+.street::after {
+  content: ''; position: absolute; left: -8px; right: -8px; bottom: 0; height: 30px; z-index: -1;
+  background:
+    linear-gradient(180deg, #8c7a5c 0, #8c7a5c 3px, #3a2e20 3px, #3a2e20 5px, transparent 5px),
+    radial-gradient(ellipse at 50% 45%, rgba(255,240,210,.08) 0 45%, transparent 50%) 0 0 / 14px 9px,
+    linear-gradient(180deg, #4e3f2d, #2e241a);
+}
+.bld {
+  position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; min-width: 0;
+  transition: transform .12s;
+}
+.bld.empty { visibility: hidden; }
+.bld-art { width: 100%; aspect-ratio: 1; display: flex; align-items: flex-end; justify-content: center; }
+.bld img { width: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,.6)); transition: filter .15s; }
+.bld:hover img { filter: drop-shadow(0 0 2px #f3d27a) drop-shadow(0 0 7px rgba(243,210,122,.65)); }
 .bld:active { transform: scale(.96); }
-.bld img { width: 100%; display: block; }
+.bld:active img { filter: drop-shadow(0 0 3px #fff2c4) drop-shadow(0 0 12px rgba(243,210,122,.9)); }
 .bld .ph {
-  width: 78%; aspect-ratio: 1 / .8; margin-top: 10%; display: grid; place-items: center; font-size: 30px;
+  width: 78%; aspect-ratio: 1 / .8; display: grid; place-items: center; font-size: 30px;
   background: linear-gradient(180deg, #3a2e22, #241c14); border: 2px solid var(--gold); border-bottom-width: 4px;
   clip-path: polygon(0 18%, 50% 0, 100% 18%, 100% 100%, 0 100%); padding-top: 12%;
 }
 .bld .plate {
-  margin-top: -6%; padding: 2px 8px; font: 600 11px var(--body); letter-spacing: .5px; white-space: nowrap;
-  background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px; position: relative;
+  margin-top: 3px; max-width: 100%; padding: 2px 6px; font: 600 10.5px/1.15 var(--body); letter-spacing: .3px; text-align: center;
+  background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bld .tag {
-  position: absolute; top: 2%; right: 0; font: 700 10px var(--body); padding: 1px 6px; border-radius: 9px;
+  position: absolute; top: 0; right: 0; z-index: 1; font: 700 10px var(--body); padding: 1px 6px; border-radius: 9px;
   background: var(--burgundy); color: #fff; border: 1px solid #000; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bld .tag.mine { background: var(--teal); }
 .bld .tag.ok { background: #3c5a2e; }
-.hotspot { position: absolute; cursor: pointer; text-align: center; font: 600 11px var(--body); color: var(--gold-hi); text-shadow: 0 1px 2px #000; }
-.hotspot .dot {
+.bld.hs .bld-art { align-items: center; }
+.hotspot { cursor: pointer; text-align: center; font: 600 11px var(--body); color: var(--gold-hi); text-shadow: 0 1px 2px #000; }
+.dot {
   width: 48px; height: 48px; margin: 0 auto 2px; border-radius: 50%; display: grid; place-items: center; font-size: 24px;
   background: rgba(21,17,13,.85); border: 2px solid var(--gold); box-shadow: 0 0 0 4px rgba(201,161,74,.2);
 }
+.bld.hs .dot { width: 56px; height: 56px; font-size: 28px; }
 .map-hint { text-align: center; margin: 8px 16px; }
 
 /* ─── Alt panel (binaya dokununca) ─── */
