@@ -929,7 +929,7 @@ function openReport(kind, ref, nick) {
 
 function chatTab() {
   const p = S.player, F = extra.family, inFam = !!p.family;
-  const tabs = [['global', 'Genel'], ['city', cityName(p.city)], ...(inFam ? [['family', 'Aile']] : []), ['dm', 'Mesajlar']];
+  const tabs = [['global', 'Genel'], ['city', 'Şehir'], ...(inFam ? [['family', 'Aile']] : []), ['dm', 'Özel']];
   let h = `<div class="chat-tabs">${tabs.map(([k, label]) => `<button class="${chatCh === k ? 'on' : ''}" data-act="chatch" data-id="${k}">${esc(label)}${
     k === 'dm' && p.unread > 0 ? ` <span class="pill">${p.unread}</span>` : ''}</button>`).join('')}</div>`;
   if (chatCh === 'dm') return h + messagesSection();
