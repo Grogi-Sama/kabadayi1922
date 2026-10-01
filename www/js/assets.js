@@ -7,8 +7,7 @@ const BUILDINGS = ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hast
 const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 'c_aile', 'c_spor', 'c_sedan', 'c_limuzin',
   'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];
-const DECOR = ['pencere', 'fener', 'sarmasik', 'afis', 'camasir', 'balkon', 'cesme', 'tabela', 'lamba', 'kasa', 'fici',
-  'boyaci', 'incir', 'kedi', 'guvercin'];
+const DECOR = ['fener', 'sarmasik', 'afis', 'camasir', 'balkon', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [
