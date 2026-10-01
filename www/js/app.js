@@ -265,8 +265,9 @@ function cityTab() {
     <div class="sky">${img(`harbor/${p.city}`, 'harbor', '<div class="ship">⛴</div>')}
       <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>
       <div class="hotspot" data-open="liman"><div class="dot">⚓</div>Liman</div>
+      ${eventStrip()}
     </div>
-    ${eventStrip()}<div class="town">${town}</div></div>`;
+    <div class="town">${town}</div></div>`;
 }
 
 // ── Binaya dokununca açılan panel
@@ -432,7 +433,7 @@ function hitlistSection() {
         ? ` · ${ico('kum', '⏳')} ${fmt(left(b.expires_at))}` : ''}`,
       `<span class="cash-sm">${money(b.amount)}</span>`)).join('') : `<p class="muted small">Listede kimse yok.</p>`) +
     `<div class="form-row"><input id="f-bounty-nick" placeholder="Kimin başına" autocomplete="off" autocapitalize="off">
-      <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül (sikke)" inputmode="numeric">
+      <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül $" inputmode="numeric">
       <button class="btn primary" data-act="bounty">Koy</button></div>
     <p class="muted small">En az ${money(S.settings.bounty_min)}. Aracıya %${Math.round(S.settings.bounty_fee * 100)} pay. Ödülü onu öldüren alır.
       ${S.settings.bounty_days} gün içinde kimse öldürmezse ödül bankana geri döner (aracı payı dönmez).</p>`;
@@ -469,7 +470,7 @@ function raceSection() {
         <button class="btn sm primary" data-act="racejoin" data-id="${r.id}">Katıl</button></div>` : '')).join('');
   if (!inRace) {
     h += here.length ? `<div class="form-row">${carSelect('f-race-car')}
-        <input id="f-race-fee" type="number" min="1000" placeholder="Giriş (sikke)" inputmode="numeric">
+        <input id="f-race-fee" type="number" min="1000" placeholder="Giriş $" inputmode="numeric">
         <button class="btn primary" data-act="racecreate">Yarış aç</button></div>`
       : `<p class="muted small">Yarışmak için bu şehirde bir araban olmalı.</p>`;
   }
@@ -522,11 +523,11 @@ function marketSection() {
       l.kind === 'bullets' ? `<span class="icon emoji">🔫</span>` : `<span class="icon emoji">🚗</span>`)).join('')
     : `<p class="muted small">Pazarda ilan yok.</p>`;
   h += `<h2>Sat</h2><div class="form-row"><input id="f-sell-bullets" type="number" min="1" placeholder="Kurşun adedi" inputmode="numeric">
-      <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam (sikke)" inputmode="numeric">
+      <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam $" inputmode="numeric">
       <button class="btn" data-act="listbullets">Sat</button></div>`;
   if (S.cars.length) h += `<div class="form-row"><select id="f-sell-car">${S.cars.map(c =>
       `<option value="${c.id}">${esc(c.name)} · ${esc(cityName(c.city))}</option>`).join('')}</select>
-      <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat (sikke)" inputmode="numeric">
+      <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat $" inputmode="numeric">
       <button class="btn" data-act="listcar">Sat</button></div>`;
   return h;
 }
@@ -566,9 +567,6 @@ function spotPanel(sp) {
 const DIE_PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
 const die = (n, roll) => `<span class="die ${roll ? 'roll' : ''}">${Array.from({ length: 9 }, (_, i) =>
   `<i class="${DIE_PIPS[n]?.includes(i + 1) ? 'on' : ''}"></i>`).join('')}</span>`;
-// Sunucudaki slot sembolleri → görseller (sıklık sırası: fes en sık, amblem en nadir)
-const SLOT_SYM = { '🍒': 'casino/s_fes', '🍋': 'casino/s_raki', '🔔': 'casino/s_tespih', '🍀': 'casino/fis_bordo', '💎': 'casino/s_sikke', '7️⃣': 'ui/emblem' };
-const slotSym = (e) => img(SLOT_SYM[e] || 'casino/s_fes', 'sym', `<span class="sym">${e}</span>`);
 const RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 const rouletteColor = (n) => n === 0 ? 'green' : RED.includes(n) ? 'red' : 'black';
 // Kart: "10♥" → küçük kart; gizli kart → kart arkası görseli
@@ -579,30 +577,34 @@ const hand = (label) => (label || '').split(' ').filter(Boolean).map(cardHtml).j
 function casinoSection() {
   const c = extra.casino, max = S.player.max_bet, just = c && !c.shown;
   if (c) c.shown = true;   // animasyon sadece sonuç ilk çizildiğinde
-  const chips = [[100, 'fis_teal'], [1000, 'fis_bordo'], [10000, 'fis_siyah']].filter(([v]) => v <= max);
+  // Her oyunun kendi bahis kutusu + hızlı fişler
+  const bet = (g) => `<div class="bet-row"><input id="f-bet-${g}" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric">
+    ${[[100, 'fis_teal'], [1000, 'fis_bordo']].filter(([v]) => v <= max).map(([v, ic]) =>
+      `<button class="bet-chip" data-act="betset" data-game="${g}" data-id="${v}">${img('casino/' + ic, '', '')}<span>${v >= 1000 ? v / 1000 + 'B' : v}</span></button>`).join('')}
+    <button class="bet-chip max" data-act="betset" data-game="${g}" data-id="${max}"><span>Max</span></button></div>`;
   return `<div class="casino-hero">${img('ui/kumar_bant', '', '')}<div class="ch-title">Kumarhane</div></div>
     <p class="muted small">Oyun parasıyla oynanır. Rütbene göre en yüksek bahis: <b>${money(max)}</b>. Kasa her zaman biraz önde.</p>
-    <div class="bet-row"><input id="f-bet" type="number" min="10" placeholder="Bahis" inputmode="numeric">
-      ${chips.map(([v, ic]) => `<button class="bet-chip" data-act="betset" data-id="${v}">${img('casino/' + ic, '', '')}<span>${v >= 1000 ? v / 1000 + 'B' : v}</span></button>`).join('')}
-      <button class="bet-chip max" data-act="betset" data-id="${max}"><span>Max</span></button></div>
     <div class="games">
       <div class="game"><div class="g-head">Zar</div>
         <div class="dice">${die(c?.game === 'zar' ? c.d1 : 6, just && c.game === 'zar')}${die(c?.game === 'zar' ? c.d2 : 1, just && c.game === 'zar')}</div>
         ${c?.game === 'zar' ? `<div class="g-res">${c.d1} + ${c.d2} = <b>${c.d1 + c.d2}</b></div>` : '<div class="g-res muted">İki zarın toplamını bil</div>'}
+        ${bet('zar')}
         <div class="g-btns"><button class="btn sm" data-act="casino" data-game="zar" data-choice="yuksek">Yüksek 8-12</button>
           <button class="btn sm" data-act="casino" data-game="zar" data-choice="dusuk">Düşük 2-6</button></div></div>
       <div class="game"><div class="g-head">Rulet</div>
         <div class="wheel ${just && c.game === 'rulet' ? 'spin' : ''}">${img('casino/rulet', '', '🎡')}</div>
         ${c?.game === 'rulet' ? `<div class="g-res"><span class="rnum ${rouletteColor(c.num)}">${c.num}</span></div>` : '<div class="g-res muted">Renk ya da sayı seç</div>'}
+        ${bet('rulet')}
         <div class="g-btns"><button class="btn sm red" data-act="casino" data-game="rulet" data-choice="kirmizi">Kırmızı</button>
           <button class="btn sm black" data-act="casino" data-game="rulet" data-choice="siyah">Siyah</button></div>
         <div class="g-btns"><input id="f-rulet-n" type="number" min="0" max="36" placeholder="0-36" inputmode="numeric">
           <button class="btn sm" data-act="casino" data-game="rulet" data-choice="num">×36</button></div></div>
       <div class="game wide"><div class="g-head">Slot</div>
-        <div class="slotm">${img('casino/slot', 'frame', '')}<div class="reels ${just && c.game === 'slot' ? 'spin' : ''}">
-          ${(c?.game === 'slot' ? c.reels : ['🍒', '💎', '7️⃣']).map(e => `<span>${slotSym(e)}</span>`).join('')}</div></div>
+        <div class="slotm ${just && c.game === 'slot' ? 'shake' : ''}">${img('casino/slot', 'frame', '🎰')}</div>
+        <div class="slot-res ${just && c.game === 'slot' ? 'spin' : ''}">${(c?.game === 'slot' ? c.reels : ['❔', '❔', '❔']).map(e => `<span>${e}</span>`).join('')}</div>
+        ${bet('slot')}
         <button class="btn primary" data-act="casino" data-game="slot">Kolu çek</button>
-        <p class="muted small">Üç amblem ×250 · üç sikke ×60 · üç fiş ×25 · üç tespih ×14 · üç rakı ×8 · üç fes ×5 · iki fes ×3 · tek fes ×1,2</p></div>
+        <p class="muted small">Üç 7️⃣ ×250 · üç 💎 ×60 · üç 🍀 ×25 · üç 🔔 ×14 · üç 🍋 ×8 · üç 🍒 ×5 · iki 🍒 ×3 · tek 🍒 ×1,2</p></div>
     </div>
     ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${richText(c.msg)}</div>` : ''}
     <h2>Blackjack</h2>${bjSection()}
@@ -612,15 +614,21 @@ function casinoSection() {
 
 function bjSection() {
   const g = extra.bj;
-  if (!g) return `<div class="felt"><p class="muted small">Bahsi yukarıdaki kutuya yaz. Krupiye 17'de durur, blackjack 3:2 öder.</p>
-    <button class="btn primary" data-act="bjstart">Kart dağıt</button></div>`;
+  const max = S.player.max_bet;
+  const betRow = `<div class="bet-row"><input id="f-bet-bj" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric">
+    <button class="bet-chip" data-act="betset" data-game="bj" data-id="100">${img('casino/fis_teal', '', '')}<span>100</span></button>
+    <button class="bet-chip max" data-act="betset" data-game="bj" data-id="${max}"><span>Max</span></button></div>`;
+  if (!g || g.done) {
+    const res = g ? `<div class="bj-row"><span class="bj-who">Krupiye${g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(g.dealer)}</div>
+      <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(g.hand)}</div>
+      <div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${richText(g.msg)}</div>` : `<p class="muted small">Krupiye 17'de durur, blackjack 3:2 öder.</p>`;
+    return `<div class="felt">${res}${betRow}<button class="btn primary" data-act="bjstart">${g ? 'Yeni el' : 'Kart dağıt'}</button></div>`;
+  }
   return `<div class="felt"><div class="bj-row"><span class="bj-who">Krupiye${g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(g.dealer)}</div>
     <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(g.hand)}</div>
     <div class="muted small">Bahis ${money(g.bet)}</div>` +
-    (g.done ? `<div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${richText(g.msg)}</div>
-       <button class="btn primary" data-act="bjstart">Yeni el</button>`
-     : `<div class="market-actions"><button class="btn primary" data-act="bjhit">Kart çek</button>
-        <button class="btn" data-act="bjstand">Dur</button></div>`) + `</div>`;
+    `<div class="market-actions"><button class="btn primary" data-act="bjhit">Kart çek</button>
+        <button class="btn" data-act="bjstand">Dur</button></div></div>`;
 }
 
 function lotterySection() {
@@ -807,10 +815,10 @@ function familyTab() {
     <p class="muted small vault-help">Ailenin ortak parası. Üyeler buraya para koyar; mekân haraçları, ailenin fabrikasının kurşun
       satışları ve gazino payı da buraya gelir. Don ve Sottocapo kasadan üyelere ödeme yapar, fabrika satın alır.</p>
     <div class="stats">${stat(ico('uye', '👤'), F.members.length, 'üye')}${stat(ico('fabrika', '🏭'), F.factories.length, 'fabrika')}${stat(ico('mekan', '🏠'), mySpots, 'mekân')}</div>
-    <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy (sikke)" inputmode="numeric">
+    <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy $" inputmode="numeric">
       <button class="btn primary" data-act="famdeposit">Koy</button></div>
     ${treasurer ? `<div class="form-row"><input id="f-pay-nick" placeholder="Üyeye" autocomplete="off" autocapitalize="off">
-      <input id="f-pay-amt" type="number" min="1" placeholder="Sikke" inputmode="numeric">
+      <input id="f-pay-amt" type="number" min="1" placeholder="$" inputmode="numeric">
       <button class="btn" data-act="fampay">Öde</button></div>` : ''}</div>`;
 
   h += `<h2>Üyeler (${F.members.length})</h2>` + rolesHelp() + `<div class="member-grid">` + F.members.map(m => {
@@ -841,7 +849,7 @@ function familyTab() {
   h += `<h2>Kurşun Fabrikaları</h2>` + (F.factories.length ? F.factories.map(f =>
       card(esc(f.city), `Fiyat ${money(f.price)} · stok ${f.stock}`, '', facIcon)).join('') : `<p class="muted small">Ailenin fabrikası yok.</p>`);
   if (here.mine && treasurer) {
-    h += `<div class="form-row"><input id="f-fac-price" type="number" min="2" max="20" placeholder="Buradaki fiyat (2-20 sikke)">
+    h += `<div class="form-row"><input id="f-fac-price" type="number" min="2" max="20" placeholder="Buradaki fiyat ($2-20)">
       <button class="btn primary" data-act="facprice">Ayarla</button></div>`;
   } else if (!here.owner) {
     h += card(`${esc(cityName(S.player.city))} fabrikası sahipsiz`, `Kasadan ${money(F.factory_price)}. Satılan her kurşunun parası kasaya girer.`,
@@ -1046,9 +1054,10 @@ function eventStrip() {
   const p = S.player, soon = Date.now() + clockOffset + S.settings.ev_notice_minutes * 60e3;
   const list = (extra.events || []).filter(e => (!e.city || e.city === p.city) && new Date(e.starts) <= soon);
   if (!list.length) return '';
-  return `<div class="ev-strip" data-act="evcal">${list.map(e => `<div class="ev ${evActive(e) ? 'on' : 'soon'}">
-    <span class="ev-ic">${EVENTS[e.kind].icon}</span><b>${EVENTS[e.kind].name}</b>
-    <span>${evActive(e) ? `${fmt(left(e.ends))} kaldı` : `${fmt(left(e.starts))} sonra`}</span></div>`).join('')}</div>`;
+  return `<div class="ev-strip" data-act="evcal">${list.slice(0, 3).map(e => `<div class="ev ${evActive(e) ? 'on' : 'soon'}">
+    ${img('events/' + e.kind, 'ev-ic', `<span class="ev-ic">${EVENTS[e.kind].icon}</span>`)}<b>${EVENTS[e.kind].name}</b>
+    <span>${evActive(e) ? `etkin · ${fmt(left(e.ends))} kaldı` : `${fmt(left(e.starts))} sonra başlıyor`}</span></div>`).join('')}
+    ${list.length > 3 ? `<div class="ev more">+${list.length - 3} etkinlik daha</div>` : ''}</div>`;
 }
 
 function eventsView() {
@@ -1492,7 +1501,7 @@ document.addEventListener('click', async (e) => {
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
     case 'scratch':    return act('scratch_card');
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
-    case 'betset':     if ($('#f-bet')) $('#f-bet').value = id; return;
+    case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; return;
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
@@ -1501,8 +1510,8 @@ document.addEventListener('click', async (e) => {
 // Kumarhane: sonucu panelde gösterir, bahis kutusu dolu kalır (aynı bahisle tekrar oynansın)
 async function playCasino(b) {
   if (busy) return;
-  const a = b.dataset.act, bet = num('f-bet');
-  if ((a === 'casino' || a === 'bjstart') && bet < 10) return toast(`Önce bahsini yaz (en az ${moneyText(10)}).`, 'bad');
+  const a = b.dataset.act, game = a === 'bjstart' ? 'bj' : b.dataset.game, bet = num('f-bet-' + game);
+  if ((a === 'casino' || a === 'bjstart') && bet < 10) return toast(`Önce bu oyunun bahsini yaz (en az ${moneyText(10)}).`, 'bad');
   let choice = b.dataset.choice || null;
   if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
   busy = true;
@@ -1514,7 +1523,7 @@ async function playCasino(b) {
     else if (a === 'casino') extra.casino = r;
     else extra.bj = r;
     S = await api.rpc('get_state'); render();
-    if ($('#f-bet')) $('#f-bet').value = bet;
+    if (game && $('#f-bet-' + game)) $('#f-bet-' + game).value = bet;   // aynı bahisle tekrar oynanabilsin
   } finally { busy = false; }
 }
 

@@ -643,7 +643,7 @@ nav button[data-badge]:not([data-badge=""])::after {
 .bet-chip.max { border-radius: 50%; background: radial-gradient(circle, var(--gold-hi), #8a6a26); }
 .bet-chip.max span { color: #1b140c; text-shadow: none; }
 .bet-chip:active { transform: scale(.92); }
-.games { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .game { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 12px; text-align: center;
   background: radial-gradient(ellipse at 50% 30%, #1f5a52, #12332f 75%); border: 2px solid #8a6a26; box-shadow: inset 0 0 0 3px #0e2a26; }
 .game.wide { grid-column: 1 / -1; }
@@ -692,10 +692,29 @@ nav button[data-badge]:not([data-badge=""])::after {
 .coin-ic { width: 1.05em; height: 1.05em; vertical-align: -0.17em; margin-right: .18em; display: inline-block; }
 
 /* Etkinlik şeridi (harita) ve takvim */
-.ev-strip { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: rgba(21,17,13,.92); border-bottom: 2px solid var(--gold); cursor: pointer; }
-.ev { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.ev b { color: var(--gold-hi); }
-.ev span:last-child { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-.ev.on .ev-ic { animation: pulse 1.6s ease-in-out infinite; display: inline-block; }
-.ev.soon b { color: var(--paper); }
+.ev-strip { position: absolute; z-index: 1; right: 8px; bottom: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; cursor: pointer; max-width: 72%; }
+.ev { display: flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border-radius: 14px; font-size: 12px; line-height: 1.2;
+  background: rgba(31,78,85,.55); border: 1px solid rgba(230,196,118,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  color: var(--paper); text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.ev b { color: var(--gold-hi); font-weight: 700; }
+.ev span:last-child { font-variant-numeric: tabular-nums; }
+.ev .ev-ic { width: 20px; height: 20px; font-size: 14px; display: inline-grid; place-items: center; }
+.ev.on .ev-ic { animation: pulse 1.6s ease-in-out infinite; }
+.ev.soon { background: rgba(21,17,13,.35); border-color: rgba(230,196,118,.4); }
+.ev.more { padding: 2px 9px; font-size: 11px; }
 .ev-card.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+
+/* Kumarhane: her oyunda bahis; slot sonucu makinenin altında emoji olarak */
+.game .bet-row { width: 100%; margin: 0; }
+.game .bet-row input { padding: 8px; font-size: 14px; }
+.game .bet-chip { width: 36px; height: 36px; }
+.felt .bet-row { margin: 8px 0; }
+.slotm.shake { animation: shake .5s ease-in-out; }
+@keyframes shake { 25% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } 75% { transform: rotate(-1deg); } }
+.slot-res { display: flex; gap: 14px; font-size: 32px; line-height: 1.1; }
+.slot-res.spin span { animation: reel .9s cubic-bezier(.2,.8,.3,1) both; display: inline-block; }
+.slot-res.spin span:nth-child(2) { animation-duration: 1.1s; } .slot-res.spin span:nth-child(3) { animation-duration: 1.3s; }
+.game { min-width: 0; }
+.game p { overflow-wrap: anywhere; }
+.game:not(.wide) .bet-row { flex-wrap: wrap; justify-content: center; }
+.game:not(.wide) .bet-row input { flex: 1 0 100%; text-align: center; }
