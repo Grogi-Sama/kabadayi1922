@@ -680,7 +680,8 @@ nav button[data-badge]:not([data-badge=""])::after {
 .bj-row { display: flex; align-items: center; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; min-height: 70px; }
 .bj-who { width: 100%; font-size: 13px; color: var(--gold-hi); }
 .pcard { width: 46px; height: 66px; border-radius: 6px; background: #fffaf0; color: #15110d; box-shadow: 0 3px 6px rgba(0,0,0,.5);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; animation: deal .35s ease-out both; }
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.pcard.new { animation: deal .35s ease-out both; }
 .pcard b { font: 700 18px var(--body); } .pcard i { font-style: normal; font-size: 20px; }
 .pcard.red { color: #b3262f; }
 .pcard.back { background: none; padding: 0; overflow: hidden; } .pcard.back img { width: 100%; height: 100%; object-fit: cover; }
@@ -692,7 +693,7 @@ nav button[data-badge]:not([data-badge=""])::after {
 .coin-ic { width: 1.05em; height: 1.05em; vertical-align: -0.17em; margin-right: .18em; display: inline-block; }
 
 /* Etkinlik şeridi (harita) ve takvim */
-.ev-strip { position: absolute; z-index: 1; right: 8px; bottom: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; cursor: pointer; max-width: 72%; }
+.ev-strip { position: absolute; z-index: 1; right: 6px; bottom: 6px; zoom: .7; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; cursor: pointer; max-width: 72%; }
 .ev { display: flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border-radius: 14px; font-size: 12px; line-height: 1.2;
   background: rgba(31,78,85,.55); border: 1px solid rgba(230,196,118,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   color: var(--paper); text-shadow: 0 1px 2px #000; white-space: nowrap; }

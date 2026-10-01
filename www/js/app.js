@@ -572,13 +572,15 @@ const rouletteColor = (n) => n === 0 ? 'green' : RED.includes(n) ? 'red' : 'blac
 // Kart: "10♥" → küçük kart; gizli kart → kart arkası görseli
 const cardHtml = (c) => c === '🂠' ? `<span class="pcard back">${img('casino/kart', '', '')}</span>`
   : `<span class="pcard ${/[♥♦]/.test(c) ? 'red' : ''}"><b>${c.slice(0, -1)}</b><i>${c.slice(-1)}</i></span>`;
-const hand = (label) => (label || '').split(' ').filter(Boolean).map(cardHtml).join('');
+const cards = (label) => (label || '').split(' ').filter(Boolean);
+// Sadece yeni gelen kart dağıtılma animasyonuyla girer (seen: o eldeki önceden görülen kart sayısı)
+const hand = (list, seen = 0) => list.map((c, i) => cardHtml(c).replace('class="pcard', `class="pcard${i >= seen ? ' new' : ''}`)).join('');
 
 function casinoSection() {
   const c = extra.casino, max = S.player.max_bet, just = c && !c.shown;
   if (c) c.shown = true;   // animasyon sadece sonuç ilk çizildiğinde
   // Her oyunun kendi bahis kutusu + hızlı fişler
-  const bet = (g) => `<div class="bet-row"><input id="f-bet-${g}" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric">
+  const bet = (g) => `<div class="bet-row"><input id="f-bet-${g}" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric" value="${extra.bets?.[g] ?? ''}">
     ${[[100, 'fis_teal'], [1000, 'fis_bordo']].filter(([v]) => v <= max).map(([v, ic]) =>
       `<button class="bet-chip" data-act="betset" data-game="${g}" data-id="${v}">${img('casino/' + ic, '', '')}<span>${v >= 1000 ? v / 1000 + 'B' : v}</span></button>`).join('')}
     <button class="bet-chip max" data-act="betset" data-game="${g}" data-id="${max}"><span>Max</span></button></div>`;
@@ -615,17 +617,22 @@ function casinoSection() {
 function bjSection() {
   const g = extra.bj;
   const max = S.player.max_bet;
-  const betRow = `<div class="bet-row"><input id="f-bet-bj" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric">
+  const betRow = `<div class="bet-row"><input id="f-bet-bj" type="number" min="10" max="${max}" placeholder="Bahis $" inputmode="numeric" value="${extra.bets?.bj ?? ''}">
     <button class="bet-chip" data-act="betset" data-game="bj" data-id="100">${img('casino/fis_teal', '', '')}<span>100</span></button>
     <button class="bet-chip max" data-act="betset" data-game="bj" data-id="${max}"><span>Max</span></button></div>`;
-  if (!g || g.done) {
-    const res = g ? `<div class="bj-row"><span class="bj-who">Krupiye${g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(g.dealer)}</div>
-      <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(g.hand)}</div>
-      <div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${richText(g.msg)}</div>` : `<p class="muted small">Krupiye 17'de durur, blackjack 3:2 öder.</p>`;
-    return `<div class="felt">${res}${betRow}<button class="btn primary" data-act="bjstart">${g ? 'Yeni el' : 'Kart dağıt'}</button></div>`;
-  }
-  return `<div class="felt"><div class="bj-row"><span class="bj-who">Krupiye${g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(g.dealer)}</div>
-    <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(g.hand)}</div>
+  if (!g) return `<div class="felt"><p class="muted small">Krupiye 17'de durur, blackjack 3:2 öder.</p>${betRow}
+    <button class="btn primary" data-act="bjstart">Kart dağıt</button></div>`;
+  // El bitince krupiye kartlarını tek tek açar (bjReveal: şu an açık kart sayısı)
+  const seen = extra.bjSeen || { d: 0, p: 0 }, dc = cards(g.dealer), pc = cards(g.hand);
+  const revealing = g.done && extra.bjReveal != null && extra.bjReveal < dc.length;
+  const shownD = revealing ? [...dc.slice(0, extra.bjReveal), ...(extra.bjReveal < 2 ? ['🂠'] : [])] : dc;
+  extra.bjSeen = { d: revealing ? extra.bjReveal : shownD.length, p: pc.length };
+  const rows = `<div class="bj-row"><span class="bj-who">Krupiye${!revealing && g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(shownD, seen.d)}</div>
+    <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(pc, seen.p)}</div>`;
+  if (revealing) return `<div class="felt">${rows}<div class="muted small">Krupiye kart açıyor…</div></div>`;
+  if (g.done) return `<div class="felt">${rows}<div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${richText(g.msg)}</div>
+    ${betRow}<button class="btn primary" data-act="bjstart">Yeni el</button></div>`;
+  return `<div class="felt">${rows}
     <div class="muted small">Bahis ${money(g.bet)}</div>` +
     `<div class="market-actions"><button class="btn primary" data-act="bjhit">Kart çek</button>
         <button class="btn" data-act="bjstand">Dur</button></div></div>`;
@@ -832,7 +839,7 @@ function familyTab() {
   }).join('') + `</div>`;
 
   const last = F.messages.filter(m => m.nick).at(-1);
-  h += `<div class="card clickable chat-link" data-act="gochat"><span class="icon emoji">💬</span><div class="grow">
+  h += `<div class="card clickable chat-link" data-act="gochat"><span class="icon emoji">${ico('sohbet', '💬')}</span><div class="grow">
       <div class="title">Aile sohbeti</div><div class="muted small ellipsis">${last ? `${esc(last.nick)}: ${esc(last.text)}` : 'Henüz mesaj yok.'}</div></div>
       <span class="muted">›</span></div>
     <div class="card clickable guide-link" data-act="evcal"><span class="icon emoji">📅</span><div class="grow">
@@ -1502,7 +1509,7 @@ document.addEventListener('click', async (e) => {
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
     case 'scratch':    return act('scratch_card');
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
-    case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; return;
+    case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; extra.bets = { ...extra.bets, [b.dataset.game]: id }; return;
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
@@ -1520,11 +1527,21 @@ async function playCasino(b) {
     const r = a === 'casino' ? await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice })
       : a === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })
       : await api.rpc(a === 'bjhit' ? 'bj_hit' : 'bj_stand');
+    if (game && bet) extra.bets = { ...extra.bets, [game]: bet };   // aynı bahisle tekrar oynanabilsin
     if (!r.ok) toast(r.msg, 'bad');
     else if (a === 'casino') extra.casino = r;
-    else extra.bj = r;
+    else {
+      if (a === 'bjstart') extra.bjSeen = { d: 0, p: 0 };
+      extra.bj = r;
+      extra.bjReveal = r.done ? 1 : null;
+    }
     S = await api.rpc('get_state'); render();
-    if (game && $('#f-bet-' + game)) $('#f-bet-' + game).value = bet;   // aynı bahisle tekrar oynanabilsin
+    // Krupiye: gizli kartı çevirir, sonra gerekirse tek tek çeker
+    while (extra.bj === r && r.done && extra.bjReveal != null && extra.bjReveal < cards(r.dealer).length) {
+      await new Promise(res => setTimeout(res, 750));
+      if (extra.bj !== r) break;
+      extra.bjReveal++; render();
+    }
   } finally { busy = false; }
 }
 
