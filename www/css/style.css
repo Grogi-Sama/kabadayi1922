@@ -718,3 +718,4 @@ nav button[data-badge]:not([data-badge=""])::after {
 .game p { overflow-wrap: anywhere; }
 .game:not(.wide) .bet-row { flex-wrap: wrap; justify-content: center; }
 .game:not(.wide) .bet-row input { flex: 1 0 100%; text-align: center; }
+.guide summary .g-ic { width: 30px; height: 30px; vertical-align: middle; margin-right: 8px; }

@@ -1211,10 +1211,11 @@ function guideSections() {
 }
 
 function guideView() {
-  return banner('ui/defter_bant', 'Rehber', 'Merak ettiğin kurala dokun') +
+  return banner(hasAsset('ui/rehber_bant') ? 'ui/rehber_bant' : 'ui/defter_bant', 'Rehber', 'Merak ettiğin kurala dokun') +
     `<p><button class="btn sm" data-act="logmain">← Defter</button>
       <button class="btn sm" data-act="tutorial">▶ Hızlı eğitimi tekrar izle</button></p>` +
-    guideSections().map(([id, title, body]) => `<details class="guide" id="g-${id}"><summary>${title}</summary><div class="g-body">${body}</div></details>`).join('');
+    guideSections().map(([id, title, body]) => `<details class="guide" id="g-${id}"><summary>${hasAsset('rehber/' + id)
+      ? img('rehber/' + id, 'g-ic', '') + title.replace(/^\S+\s/, '') : title}</summary><div class="g-body">${body}</div></details>`).join('');
 }
 
 // ═════════════════ HIZLI EĞİTİM ═════════════════

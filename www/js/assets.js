@@ -18,7 +18,8 @@ export const ALL = [
   ...['kitlik', 'altin_saat', 'baskin_gecesi', 'kelle_haftasi', 'fabrika_kazasi', 'polis_baskini', 'liman_firtinasi'].map(e => `events/${e}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
-  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant', 'ui/logo', 'ui/kumar_bant',
+  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant', 'ui/logo', 'ui/kumar_bant', 'ui/rehber_bant',
+  ...'basla rutbe suc araba liman silah olum kelle banka aile mekan ekip kumar sohbet etkinlik sezon'.split(' ').map(n => `rehber/${n}`),
 ];
 
 const have = new Set();
