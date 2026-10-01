@@ -14,7 +14,7 @@ export const ALL = [
   ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
-  'ui/splash', 'ui/emblem',
+  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant',
 ];
 
 const have = new Set();

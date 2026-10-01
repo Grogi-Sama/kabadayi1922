@@ -32,5 +32,24 @@ begin
     jsonb_build_object('avatar', (select avatar from players where id = auth.uid())));
 end $$;
 
+-- Aile ekranları için portreler: listede Don'unki, aile ekranında her üyeninki
+alter function get_families() rename to families_spots;
+create or replace function get_families() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(f || jsonb_build_object('don_avatar', (select p.avatar from players p where p.nick = f->>'don'))
+    order by i), '[]')
+  from jsonb_array_elements(families_spots()) with ordinality t(f, i)
+$$;
+
+alter function get_family() rename to family_spots;
+create or replace function get_family() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r jsonb := family_spots();
+begin
+  if jsonb_typeof(r->'members') is distinct from 'array' then return r; end if;
+  return jsonb_set(r, '{members}', (select coalesce(jsonb_agg(m || jsonb_build_object('avatar', p.avatar) order by i), '[]')
+    from jsonb_array_elements(r->'members') with ordinality t(m, i) left join players p on p.nick = m->>'nick'));
+end $$;
+
 insert into api_rpcs values ('set_avatar(integer)');
 select apply_grants();

@@ -100,15 +100,123 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .icon { width: 52px; height: 52px; border-radius: 8px; flex: 0 0 auto; object-fit: cover; border: 1px solid #4a3a26; }
 .icon.emoji { display: grid; place-items: center; font-size: 28px; background: #1a140f; }
 
-/* Resimli iş kartı */
+/* ─── Sekme başı bandı (İşler / Aile) ─── */
+.banner {
+  position: relative; margin: -4px -16px 6px; height: 150px; overflow: hidden;
+  border-bottom: 2px solid var(--gold); background: linear-gradient(180deg, #1f3b44, #2a2119);
+}
+.banner-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.banner::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(21,17,13,.15) 0%, rgba(21,17,13,.1) 45%, rgba(21,17,13,.85) 100%); }
+.banner-title {
+  position: absolute; z-index: 1; left: 0; right: 0; bottom: 12px; text-align: center;
+  font: 28px var(--display); letter-spacing: 4px; text-transform: uppercase; color: var(--gold-hi);
+  text-shadow: 0 2px 0 #000, 0 0 14px #000;
+}
+.banner-title small { display: block; font: 600 12px var(--body); letter-spacing: 2px; text-transform: none; color: var(--paper); }
+
+/* ─── Resimli iş kartı ─── */
 .job { padding: 0; overflow: hidden; flex-direction: column; align-items: stretch; gap: 0; }
+.job-art { position: relative; border-bottom: 1px solid #4a3a26; }
+.job-art::before, .job-art::after {   /* altın art-deco köşeler */
+  content: ''; position: absolute; z-index: 1; width: 14px; height: 14px; border: 2px solid var(--gold); pointer-events: none;
+}
+.job-art::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.job-art::after { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
 .job .art { aspect-ratio: 16 / 10; width: 100%; object-fit: cover; display: block; }
-.job .art.ph { display: grid; place-items: center; font-size: 42px;
-  background: repeating-linear-gradient(45deg, #241c14 0 14px, #1d1610 14px 28px); }
-.job .body { padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.job-art.wide .art { aspect-ratio: 16 / 7; }
+.job .art.ph { display: grid; place-items: center; font-size: 34px;
+  background: radial-gradient(ellipse at 50% 60%, #3a2e22, #17120d 75%); }
+.job .coin {
+  position: absolute; z-index: 1; right: 6px; bottom: 6px; padding: 2px 8px; border-radius: 10px;
+  font: 700 11px var(--body); color: #1b140c; background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  border: 1px solid #8a6a26; box-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.job .lock { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.job .lock span { font-size: 22px; filter: drop-shadow(0 2px 2px #000); }
+.job .lock em { font: 600 11px var(--body); font-style: normal; padding: 2px 10px; border-radius: 3px;
+  background: var(--burgundy); color: var(--paper); border: 1px solid #000; }
+.job.locked { opacity: 1; }
+.job.locked .art { filter: grayscale(.7) brightness(.35); }
+.job.locked .art.ph { font-size: 0; }   /* kilitliyken emoji kilidin arkasında karışmasın */
+.job.locked .title { color: var(--muted); }
+.job .body { padding: 8px 10px 10px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
 .jobs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .jobs-grid .card { margin: 0; }
-.jobs-grid .job .body { flex-direction: column; align-items: stretch; text-align: center; }
+.jobs-grid .job .body { text-align: center; }
+.jobs-grid .job .title { font-size: 14px; line-height: 1.2; min-height: 2.4em; display: grid; place-items: center; }
+/* Şans / ilerleme çubuğu */
+.odds { position: relative; height: 16px; border-radius: 8px; background: #120e0a; border: 1px solid #4a3a26; overflow: hidden; }
+.odds div { height: 100%; background: linear-gradient(90deg, var(--teal), #3f8a7a); }
+.odds span { position: absolute; inset: 0; display: grid; place-items: center; font: 700 10px var(--body); color: var(--paper); text-shadow: 0 1px 1px #000; }
+
+/* ─── Ekip işleri ─── */
+.crew .title { font-size: 16px; }
+.slots { display: flex; gap: 6px; flex-wrap: wrap; }
+.slot { flex: 1 1 60px; min-width: 60px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px; font-size: 11px; }
+.slot-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 19px; background: #1a140f;
+  border: 2px dashed #5a4a36; }
+.slot.ok .slot-av { border: 2px solid var(--green); }
+.slot.wait .slot-av { border: 2px solid var(--gold); }
+.slot.no .slot-av { border: 2px solid var(--red); }
+.slot b { font-weight: 600; color: var(--gold-hi); }
+.slot span { color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crew-actions { display: flex; gap: 6px; }
+.crew-actions .btn { flex: 1; }
+.crew-form summary { list-style: none; text-align: center; }
+.crew-form summary::-webkit-details-marker { display: none; }
+.crew-form[open] summary { display: none; }
+.crew-form input { width: 100%; margin-bottom: 6px; padding: 10px; }
+.crew-form .btn { width: 100%; }
+.news { color: var(--muted); border-left: 2px solid var(--gold); padding-left: 8px; }
+
+/* ─── Aile ─── */
+.crest {
+  --hue: 30; flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 35%, hsl(var(--hue) 45% 34%), hsl(var(--hue) 50% 16%));
+  border: 2px solid var(--gold); box-shadow: 0 0 0 3px var(--panel), 0 0 0 4px rgba(201,161,74,.5);
+}
+.crest span { font: 24px var(--display); color: var(--gold-hi); text-shadow: 0 2px 0 #000; }
+.crest.on-banner { position: absolute; z-index: 1; left: 50%; top: 16px; transform: translateX(-50%); width: 58px; height: 58px; }
+.fam-card .don { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin: 2px 0; }
+.avatar.xs { width: 22px; height: 22px; border-width: 1px; font-size: 13px; }
+.stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.stat { font-size: 12px; padding: 1px 7px; border-radius: 9px; background: #1a140f; border: 1px solid #4a3a26; }
+.locked-card .title { color: var(--muted); }
+.req { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.req .odds div { background: linear-gradient(90deg, var(--burgundy), var(--gold)); }
+.vault { flex-direction: column; align-items: stretch; }
+.vault-head { display: flex; align-items: baseline; justify-content: space-between; }
+.vault-sum { font: 26px var(--display); color: var(--gold-hi); letter-spacing: 1px; }
+.vault .form-row:last-child { margin-bottom: 0; }
+.member-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.member { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 10px 4px 8px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid #4a3a26; border-radius: 10px; min-width: 0; }
+.member .avatar { width: 54px; height: 54px; }
+.member.don .avatar { border-color: var(--gold-hi); box-shadow: 0 0 0 2px var(--burgundy); }
+.member .on { position: absolute; top: 10px; right: calc(50% - 30px); width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid var(--panel); }
+.member .ribbon { margin-top: -8px; position: relative; padding: 1px 8px; font: 700 10px var(--body); letter-spacing: .5px; text-transform: uppercase;
+  background: var(--burgundy); color: var(--paper); border: 1px solid #000; border-radius: 2px; }
+.member.don .ribbon { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: #1b140c; }
+.member .m-nick { font-weight: 700; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member .m-ctl { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 4px 4px 0; }
+.member .m-ctl select, .member .m-ctl .btn { width: 100%; font-size: 12px; padding: 5px; }
+.chat.paper { background: linear-gradient(180deg, #e8d9bb, #d9c59c); color: #2a1f14; border: 1px solid #8a6a26;
+  box-shadow: inset 0 0 18px rgba(90,60,20,.35); }
+.chat.paper .muted { color: #6b5636; }
+/* Mekân ızgarası */
+.spot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 10px; }
+.spot-tile { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px; padding: 6px 4px 8px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid #4a3a26; border-radius: 10px; min-width: 0; font-size: 12px; }
+.spot-tile.mine { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.spot-img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.spot-img.ph { display: grid; place-items: center; font-size: 30px; }
+.spot-tile b { font-size: 12px; line-height: 1.15; }
+.spot-tile .tag { position: absolute; top: 4px; right: 4px; font: 700 9px var(--body); padding: 1px 5px; border-radius: 8px;
+  background: var(--burgundy); color: #fff; border: 1px solid #000; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spot-tile .tag.mine { background: var(--teal); }
+.spot-tile .tag.ok { background: #3c5a2e; }
+.spot-city { font: 13px var(--display); letter-spacing: 1px; color: var(--gold); margin-top: 8px; }
 
 .pct { font-variant-numeric: tabular-nums; }
 .form-row { display: flex; gap: 6px; margin-bottom: 10px; }
