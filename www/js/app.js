@@ -144,7 +144,18 @@ function show(id) {
   for (const s of ['loading', 'onboard', 'banned', 'game']) $('#' + s).classList.toggle('hidden', s !== id);
 }
 
+// Açılışta ad kutusu ekranın altında kalıyor: portreler görünene kadar "aşağı kaydır" oku
+let hintWatch;
+function watchScrollHint() {
+  if (hintWatch) return;
+  const hint = $('#scroll-hint'), target = $('#onboard-portraits');
+  hintWatch = new IntersectionObserver(([e]) => hint.classList.toggle('gone', e.isIntersecting), { threshold: 0.3 });
+  hintWatch.observe(target);
+  hint.addEventListener('click', () => target.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+}
+
 function renderOnboard() {
+  watchScrollHint();
   $('#onboard-art').innerHTML = img('ui/splash', 'splash-art', '');
   $('#onboard-portraits').innerHTML = Array.from({ length: 8 }, (_, i) =>
     `<button type="button" data-pick="${i + 1}" class="${pickedAvatar === i + 1 ? 'on' : ''}">${img(`portraits/p${i + 1}`, '', PORTRAIT_EMOJI[i])}</button>`).join('');
