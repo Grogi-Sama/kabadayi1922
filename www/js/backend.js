@@ -33,11 +33,16 @@ const deleteLocalDb = () => new Promise(r => {
 });
 
 async function localBackend() {
-  const { PGlite } = await import('/node_modules/@electric-sql/pglite/dist/index.js');
-  const load = async (p) => (await fetch(p)).text();
-  const sql = [await load('/supabase/local-shim.sql'),
-    ...await Promise.all(MIGRATIONS.map(m => load('/supabase/migrations/' + m))),
-    await load('/supabase/local-seed.sql')];
+  // Yollar sayfaya göre: localhost:5180/www/ ve GitHub Pages (/kabadayi1922/www/) ikisinde de çalışsın.
+  // PGlite yerelde node_modules'tan, yayında (node_modules yok) CDN'den gelir.
+  const rel = (p) => new URL('../' + p, location.href).href;
+  let PGlite;
+  try { ({ PGlite } = await import(rel('node_modules/@electric-sql/pglite/dist/index.js'))); }
+  catch { ({ PGlite } = await import('https://cdn.jsdelivr.net/npm/@electric-sql/pglite@0.5.8/dist/index.js')); }
+  const load = async (p) => (await fetch(rel(p))).text();
+  const sql = [await load('supabase/local-shim.sql'),
+    ...await Promise.all(MIGRATIONS.map(m => load('supabase/migrations/' + m))),
+    await load('supabase/local-seed.sql')];
   const version = String(sql.join('').split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0));
 
   let db = new PGlite('idb://kabadayi-dev');
