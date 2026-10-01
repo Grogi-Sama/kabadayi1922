@@ -127,7 +127,7 @@ def main():
         fill = (0, 0, 0, 0) if transparent else tuple(int(v) for v in bg) + (255,)
         canvas = Image.new('RGBA', (side, side), fill)
         ox = (side - w) // 2
-        oy = side - h - int(side * pad) if bottom else (side - h) // 2
+        oy = side - h if bottom else (side - h) // 2  # --bottom: zemine tam bassın, alt boşluk yok
         canvas.paste(obj, (ox, oy), obj)
         out = canvas.resize((size, size), Image.LANCZOS)
         if not transparent:

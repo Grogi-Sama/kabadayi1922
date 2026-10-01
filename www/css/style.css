@@ -196,14 +196,14 @@ nav button[data-badge]:not([data-badge=""])::after {
 /* Her sokak: binalar kaldırım çizgisine basar, altta arnavut kaldırımı şeridi */
 .street {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; align-items: end;
-  padding: 10px 0 8px; position: relative;
+  padding: 10px 0 30px; position: relative;   /* alt boşluk = kaldırım yüksekliği: binalar kaldırımın üst çizgisine basar */
 }
 /* Binaların arkasında duvar (üstte taş harpuşta), önünde arnavut kaldırımı */
 .street::before {
   content: ''; position: absolute; left: -8px; right: -8px; top: 0; bottom: 30px; z-index: -2;
   background:
     linear-gradient(180deg, #a08a62 0, #a08a62 5px, #4a3a26 5px, #4a3a26 7px, transparent 7px),
-    linear-gradient(180deg, transparent 60%, rgba(0,0,0,.35)),
+    linear-gradient(180deg, rgba(18,12,8,.45), rgba(18,12,8,.3) 50%, rgba(10,7,4,.6)),
     var(--tex-duvar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Crect width='48' height='24' fill='%233b2c20'/%3E%3Cg fill='%237a5236'%3E%3Crect x='1' y='1' width='22' height='10' rx='1'/%3E%3Crect x='25' y='1' width='22' height='10' rx='1' fill='%23704b31'/%3E%3Crect x='-11' y='13' width='22' height='10' rx='1' fill='%23704b31'/%3E%3Crect x='13' y='13' width='22' height='10' rx='1' fill='%23845a3c'/%3E%3Crect x='37' y='13' width='22' height='10' rx='1' fill='%23704b31'/%3E%3C/g%3E%3C/svg%3E")) 0 7px / var(--duvar-size, 48px 24px);
 }
 .street::after {
@@ -218,8 +218,14 @@ nav button[data-badge]:not([data-badge=""])::after {
   transition: transform .12s;
 }
 .bld.empty { visibility: hidden; }
-.bld-art { width: 100%; aspect-ratio: 1; display: flex; align-items: flex-end; justify-content: center; }
-.bld img { width: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,.6)); transition: filter .15s; }
+.bld-art { position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: flex-end; justify-content: center; margin-bottom: -3px; }
+/* Zemin gölgesi: binanın kaldırıma bastığı yer */
+.bld-art::after {
+  content: ''; position: absolute; left: 4%; right: 4%; bottom: -5px; height: 12px; z-index: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,.65), transparent 70%);
+}
+.bld img { position: relative; z-index: 1; width: 100%; display: block; transition: filter .15s;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,.9)) drop-shadow(0 0 6px rgba(0,0,0,.55)) saturate(1.1) contrast(1.05); }
 .bld:hover img { filter: drop-shadow(0 0 2px #f3d27a) drop-shadow(0 0 7px rgba(243,210,122,.65)); }
 .bld:active { transform: scale(.96); }
 .bld:active img { filter: drop-shadow(0 0 3px #fff2c4) drop-shadow(0 0 12px rgba(243,210,122,.9)); }
@@ -229,7 +235,7 @@ nav button[data-badge]:not([data-badge=""])::after {
   clip-path: polygon(0 18%, 50% 0, 100% 18%, 100% 100%, 0 100%); padding-top: 12%;
 }
 .bld .plate {
-  margin-top: 3px; max-width: 100%; padding: 2px 6px; font: 600 10.5px/1.15 var(--body); letter-spacing: .3px; text-align: center;
+  position: absolute; z-index: 2; bottom: -26px; left: 50%; transform: translateX(-50%); max-width: 100%; padding: 2px 6px; font: 600 10.5px/1.15 var(--body); letter-spacing: .3px; text-align: center;
   background: #15110d; color: var(--gold-hi); border: 1px solid var(--gold); border-radius: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
