@@ -118,3 +118,9 @@ Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*
 |---|---|---|
 | `splash.png` | 1080×1920 | lone kabadayı in a long coat and fez standing on the Galata Bridge at night, Istanbul skyline and moon behind him, fog |
 | `emblem.png` | 1024×1024 | Art Deco emblem: crossed pistol and prayer beads (tespih) inside a gold sunburst medallion, charcoal background |
+
+## Sığınak — `www/assets/buildings/siginak.png` · kare 1024×1024 · **SAYDAM PNG** (arka planı sil)
+Bina sayfasını referans olarak ekle. Gelince haritada yuvarlak düğmenin yerine geçer.
+```
+Same style as the reference image. A single game map object, isolated on a plain flat solid light green background (#9FD8B8), centered, full object visible, seen from the front and slightly above like the buildings in the reference. Istanbul, 1922. A secret underground shelter entrance set into a small patch of cobblestone pavement against a low weathered stone wall: a rectangular stone frame in the ground with a steep stone staircase leading down into darkness. The entrance is covered by a heavy wooden double cellar door with iron straps and hinges, the two leaves open upwards like a hatch. The left leaf is closed and lies flat; the right leaf is half open, raised at an angle. A man dressed as a 1920s private detective (long trench coat, fedora hat) is stepping down the stairs, crouching as he enters, seen from the side and slightly behind; with one hand he holds up the edge of the half-open right leaf above his head, his other arm close to his body. A faint warm lantern glow comes from below the stairs, the rest is dark and secretive. A small gas street lamp beside the wall. Flat vector illustration, clean silhouettes, thin gold outlines, subtle paper grain, palette: antique gold #C9A14A, deep burgundy #7A2331, petrol teal #1F4E55, cream #E8D9BB, charcoal #15110D, warm dusk lighting. Not pixel art, not photorealistic, no 3D render. No text, no signs, no letters, no numbers, no watermark.
+```
