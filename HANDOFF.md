@@ -8,10 +8,10 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - **Teknoloji:** HTML/JS (`www/`) → ileride Capacitor. Sunucu: Supabase (henüz hesap yok). Bütün kurallar sunucu tarafı SQL RPC'lerinde.
 
 ## Durum
-- `supabase/migrations/001–015`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012), yetki kademeleri sahip/moderatör (013), ayrıntılı küfür filtresi + takma ad kuralları (014), aile armaları (015).
+- `supabase/migrations/001–016`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012), yetki kademeleri sahip/moderatör (013), ayrıntılı küfür filtresi + takma ad kuralları (014), aile armaları (015), tablo kilidi: RLS + istemciye tablo yetkisi yok (016).
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
 - Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Sohbet · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
-- Testler: `npm test` → 14 dosya, 88 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
+- Testler: `npm test` → 14 dosya, 90 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
 - Git: `origin` = https://github.com/Grogi-Sama/kabadayi1922 (private), dal `main`. **Kullanıcı açıkça "al"/"push edelim" demeden push yok.**
 
 ## Nasıl çalıştırılır
@@ -29,5 +29,5 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 
 ## Sıradaki adımlar
 1. **Görseller** (`ASSET_PROMPTS.md`, 60 görsel / 26 üretim): küçükler (bina, eşya, portre) 4 toplu ızgara sayfası olarak `art/sheets/` altına gelir → `python tools/slice_all.py` keser, `www/assets/` altına koyar (bina sayfası kullanıcıdan saydam gelir; betik saydamlık üretmez). Stil çapası: `bg/istanbul` + binalar sayfası + portreler sayfası → tutarlılığı kontrol et, sonra kalanı. Görsel klasöre konunca kod otomatik kullanır (`www/js/assets.js`). Harita artık ızgara: sokak sıraları `STREETS` (app.js), binalar üst üste binmez; arka plan görseli istenirse `bg/<şehir>.png` (opsiyonel). Yatay kaydırmalı panorama denendi, kullanıcı beğenmedi (panorama `art/panorama/`).
-2. **Supabase:** kullanıcı hesap açıp Project URL + anon key verecek → `config.js`, migration'ları çalıştır, Anonymous sign-in aç, admin UID'sini `admins`'e ekle (PLAN.md'de adımlar). `local-shim.sql` ve `local-seed.sql` canlıda ÇALIŞTIRILMAZ.
+2. **Supabase:** kurulum dosyası `python tools/build_deploy_sql.py` → `supabase/deploy.sql` (SQL Editor'e bir kez yapıştırılır). kullanıcı hesap açıp Project URL + anon key verecek → `config.js`, migration'ları çalıştır, Anonymous sign-in aç, admin UID'sini `admins`'e ekle (PLAN.md'de adımlar). `local-shim.sql` ve `local-seed.sql` canlıda ÇALIŞTIRILMAZ.
 3. Sonra: Capacitor paketleme, push bildirimleri, AdMob ödüllü reklam + sunucu doğrulaması, denge ayarları.

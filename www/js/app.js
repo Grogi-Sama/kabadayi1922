@@ -1016,6 +1016,7 @@ function guideSections() {
       `Birini vurmak için önce Dedektif Bürosu'ndan dedektif tutup nerede olduğunu bulmalısın (1 dedektif %10, 10 dedektif %100 şans). Bulgu 1 saat geçerli.`,
       `Hedefle aynı şehirde olmalısın. Gereken kurşun hedefin rütbesine, korumalarına, canına ve senin silahınla nişancılığına göre değişir.`,
       `Az kurşun sıkarsan sadece yaralarsın. Her atıştan sonra ${mins(st.kill_cooldown_s)} beklersin.`,
+      `Öldürürsen hedefin cebindeki paradan %${Math.round(st.kill_loot_share * 100)} pay alırsın (en fazla hedefin rütbe sırası × ${money(st.kill_loot_cap_rank)}; aynı kişiden ${st.kill_loot_cooldown_h} saatte bir).`,
       `Öldürülürsen: cebindeki paradan %${Math.round(st.kill_cash_loss * 100)}, kurşunlarından %${Math.round(st.kill_bullet_loss * 100)} gider; ${mins(st.hospital_s)} hastanede yatarsın. Kalıcı ölüm yok.`,
       `Korunmak için: parayı bankaya koy, koruma tut, canını doldur, gerekirse Sığınak'a in ya da şehir değiştir.`])],
     ['kelle', '🎯 Kelle listesi', li([

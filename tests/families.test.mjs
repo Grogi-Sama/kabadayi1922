@@ -91,10 +91,11 @@ const hl = await as(K, `select get_hitlist()`);
 assert.equal(hl[0].nick, 'Lale'); assert.equal(Number(hl[0].amount), 20000);
 await db.query(`insert into detective_searches (player_id, target_id, success, city_found, ready_at, resolved)
   values ($1, $2, true, 'istanbul', now(), true)`, [K, L]);
+const laleCash = Number((await get(L)).cash);
 const r = await as(K, `select shoot('Lale', 5000)`);
 assert.equal(r.killed, true, JSON.stringify(r));
 assert.ok(r.msg.includes('Kelle ödülü'));
-assert.equal((await get(K)).cash, 20000);
+assert.equal(Number((await get(K)).cash), 20000 + Math.floor(laleCash * 0.10), 'kelle ödülü + cebinden %10 pay');
 assert.equal((await as(K, `select get_hitlist()`)).length, 0);
 ok('aile içi ateş yasak, kelle ödülü öldürene gider');
 

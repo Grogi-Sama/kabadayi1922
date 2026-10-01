@@ -20,6 +20,14 @@ for (const sig of ['admin_act_core(text, text, integer, text, bigint)', 'admin_d
 await assert.rejects(db.query(`insert into admins (user_id, role) values ($1, 'owner')`, [MOD]), /one_owner|duplicate/, 'tek sahip');
 ok('iç fonksiyonlar kapalı, tek sahip');
 
+// ─── Tablolar istemciye tamamen kapalı (Supabase REST ile doğrudan okuma/yazma yok)
+const open_ = (await db.query(`select tablename from pg_tables where schemaname = 'public' and not rowsecurity`)).rows;
+assert.deepEqual(open_, [], 'RLS kapalı tablo kalmamalı');
+const priv = (await db.query(`select table_name, privilege_type from information_schema.role_table_grants
+  where table_schema = 'public' and grantee in ('anon', 'authenticated', 'PUBLIC')`)).rows;
+assert.deepEqual(priv, [], 'istemci rollerinin tablo yetkisi olmamalı');
+ok('tablolar kilitli');
+
 // ─── Moderatörü sadece sahip atar / alır
 await assert.rejects(as(A, `select admin_grant('OyuncuIki')`), /NOT_OWNER/);
 assert.equal((await as(OWNER, `select admin_grant('Moderator')`)).ok, true);

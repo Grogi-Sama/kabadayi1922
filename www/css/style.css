@@ -597,3 +597,10 @@ nav button[data-badge]:not([data-badge=""])::after {
 .tut-nav .btn { flex: 1; padding: 12px; }
 .tut-next { width: 100%; padding: 14px; line-height: 1.35; }
 .tut-guide { width: 100%; margin-top: 8px; }
+
+/* İş kartları: resim biraz kısa, düğme belirgin (resim/düğme oranı dengeli) */
+.jobs-grid .job .art { aspect-ratio: 16 / 9; }
+.job .body .btn { padding: 11px 12px; font-size: 16px; border-radius: 9px; }
+.jobs-grid .job .body { gap: 8px; padding: 9px 10px 11px; }
+.job .odds { height: 18px; }
+.job .odds span { font-size: 11px; }

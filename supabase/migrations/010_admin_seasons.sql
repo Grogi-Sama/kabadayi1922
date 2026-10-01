@@ -224,7 +224,7 @@ language plpgsql as $$
 begin
   delete from bj_games; delete from lottery_tickets; delete from market_listings;
   delete from race_entries; delete from races; delete from crew_members; delete from crews;
-  delete from player_cooldowns; delete from bounties; delete from detective_searches;
+  delete from player_cooldowns; delete from bounties; delete from detective_searches; delete from kill_loot;
   delete from player_cars; delete from player_goods; delete from family_applications;
   update city_bullets set owner_family = null, stock = 1500, price = 6, restocked_at = now();
   update spots set owner_family = null, defense = 0, collected_at = now(), protected_until = now();

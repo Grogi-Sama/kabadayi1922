@@ -60,11 +60,13 @@ ok(`yaralama: Bora'nın canı ${b.health}`);
 
 // yeterli kurşunla öldürür → para/kurşun kaybı, hastane
 await ready(A);
-const cashBefore = b.cash, bulletsBefore = b.bullets;
+const cashBefore = b.cash, bulletsBefore = b.bullets, killerCash = Number((await get(A)).cash);
 const r2 = await as(A, `select shoot('Bora', 2000)`);
 assert.equal(r2.killed, true, JSON.stringify(r2));
 b = await get(B);
 assert.equal(b.cash, cashBefore - Math.floor(cashBefore * 0.25));
+assert.equal(Number((await get(A)).cash), killerCash + Math.floor(cashBefore * 0.10), 'öldüren cebin %10 kadarını alır');
+assert.match(r2.msg, /Cebinden \$4000 aldın/);
 assert.equal(b.bullets, bulletsBefore - Math.floor(bulletsBefore * 0.5));
 assert.equal(b.deaths, 1);
 assert.equal(b.health, 100);
@@ -74,6 +76,21 @@ assert.equal((await get(A)).kills, 1);
 await ready(A);
 assert.equal((await as(A, `select shoot('Bora', 100)`)).success, false);
 ok('öldürme: %25 para, %50 kurşun kaybı, hastane, hastanede dokunulmazlık');
+
+// ─── Öldürme ödülü: aynı hedeften 24 saatte bir kez; üst sınır rütbe × 20.000
+await db.exec(`update players set hospital_until = now() where nick = 'Bora'`);
+await set(B, { cash: 40000 }); await set(A, { bullets: 10000 }); await ready(A);
+await db.query(`update detective_searches set ready_at = now() where player_id = $1`, [A]);
+const before2 = Number((await get(A)).cash);
+const r4 = await as(A, `select shoot('Bora', 5000)`);
+assert.equal(r4.killed, true, JSON.stringify(r4));
+assert.equal(Number((await get(A)).cash), before2, '24 saat dolmadan aynı hedeften para alınmaz');
+assert.equal((await get(B)).cash, 30000, 'hedef yine %25 kaybeder');
+await db.exec(`update kill_loot set at = now() - interval '25 hours'`);
+const cap = (await db.query(`select least(floor(1000000 * 0.10), rank_of(xp) * 20000)::bigint c from players where nick = 'Bora'`)).rows[0].c;
+assert.equal(Number(cap), 5 * 20000, 'Külhanbeyi için üst sınır 100.000');
+await db.exec(`update players set kills = 1 where nick = 'Ahmet'; update players set deaths = 1, hospital_until = now() where nick = 'Bora'`);
+ok('öldürme ödülü: %10, rütbe × 20.000 sınırı, aynı hedeften 24 saatte bir');
 
 // hedef şehir değiştirdiyse iz soğur, kurşun gitmez
 await ready(A); await ready(B);

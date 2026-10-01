@@ -18,7 +18,19 @@ insert into game_settings values
   ('transfer_fee',      0.05),
   ('heal_cost_per_hp',      40),
   ('kill_cash_loss',     0.25),
-  ('kill_bullet_loss',   0.50);
+  ('kill_bullet_loss',   0.50),
+  ('kill_loot_share',    0.10),   -- öldüren, hedefin cebindeki paranın bu kadarını alır (kaybın bir parçası; kalanı yok olur)
+  ('kill_loot_cap_rank', 20000),  -- tek seferde en fazla: hedefin rütbesi × bu tutar
+  ('kill_loot_cooldown_h', 24);   -- aynı hedeften bu süre içinde ikinci kez para alınmaz (ikinci hesapla para taşımayı zorlaştırır)
+
+-- Kimin kimden ne zaman para aldığı (aynı hedefi tekrar tekrar soymayı engeller)
+create table kill_loot (
+  killer_id uuid not null references players(id) on delete cascade,
+  victim_id uuid not null references players(id) on delete cascade,
+  amount    bigint not null,
+  at        timestamptz not null default now()
+);
+create index on kill_loot (killer_id, victim_id, at desc);
 
 -- Rütbe başına "bu rütbeyi tek seferde öldürmek için gereken" temel kurşun
 alter table ranks add column kill_bullets int not null default 0;
@@ -282,7 +294,7 @@ end $$;
 
 create or replace function shoot(p_nick text, p_bullets int) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare p players; t players; need int; dmg int; lost_cash bigint; lost_bullets int; msg text;
+declare p players; t players; need int; dmg int; lost_cash bigint; lost_bullets int; loot bigint := 0; msg text;
 begin
   p := me_for_update();
   if blocked_msg(p) is not null then return jsonb_build_object('ok', false, 'msg', blocked_msg(p)); end if;
@@ -323,8 +335,15 @@ begin
     lost_bullets := floor(t.bullets * setting('kill_bullet_loss'));
     update players set cash = cash - lost_cash, bullets = bullets - lost_bullets, health = 100, deaths = deaths + 1,
       hospital_until = now() + make_interval(secs => setting('hospital_s')) where id = t.id;
-    update players set kills = kills + 1, xp = xp + 50 + 10 * rank_of(t.xp) where id = p.id;
-    msg := t.nick || ' yere serildi! (' || p_bullets || ' kurşun)';
+    -- Kaybın bir kısmı öldürene geçer (sınırlı); aynı hedeften 24 saatte bir kez
+    if not exists (select 1 from kill_loot where killer_id = p.id and victim_id = t.id
+                   and at > now() - make_interval(hours => setting('kill_loot_cooldown_h')::int)) then
+      loot := least(floor(t.cash * setting('kill_loot_share')), rank_of(t.xp) * setting('kill_loot_cap_rank'));
+      if loot > 0 then insert into kill_loot (killer_id, victim_id, amount) values (p.id, t.id, loot); end if;
+    end if;
+    update players set kills = kills + 1, xp = xp + 50 + 10 * rank_of(t.xp), cash = cash + loot where id = p.id;
+    msg := t.nick || ' yere serildi! (' || p_bullets || ' kurşun)'
+      || case when loot > 0 then ' Cebinden $' || loot || ' aldın.' else '' end;
     perform log_event(p.id, msg);
     perform log_event(t.id, p.nick || ' seni ' || p_bullets || ' kurşunla indirdi. $' || lost_cash
       || ' ve ' || lost_bullets || ' kurşun kaybettin, hastanelik oldun.');
