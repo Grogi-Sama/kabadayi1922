@@ -144,13 +144,10 @@ function renderOnboard() {
 
 // Yeniden çizimde yazılan input değerleri kaybolmasın
 function keepInputs(el, fn) {
-  const keep = {}, scroll = {};
+  const keep = {};
   el.querySelectorAll('input[id], select[id]').forEach(i => keep[i.id] = i.value);
-  el.querySelectorAll('[data-keep-scroll]').forEach(i => scroll[i.dataset.keepScroll] = i.scrollLeft);
   el.innerHTML = fn();
   for (const [id, v] of Object.entries(keep)) { const i = el.querySelector('#' + id); if (i) i.value = v; }
-  for (const [k, v] of Object.entries(scroll)) { const i = el.querySelector(`[data-keep-scroll="${k}"]`); if (i) i.scrollLeft = v; }
-  parallax();
 }
 
 function renderTab() {
@@ -159,72 +156,51 @@ function renderTab() {
 }
 
 // ═════════════════ ŞEHİR HARİTASI ═════════════════
-// Yatay kaydırılan rıhtım caddesi: binalar soldan sağa tek sırada, arkada şehir panoraması (paralaks).
-// h = binanın yüksekliği (harita yüksekliğinin %'si); genişlik görselin oranından gelir.
+// Konumlar haritanın yüzdesi (x, y = sol üst; w = genişlik). Her şehirde aynı yerleşim.
 const BUILDINGS = {
-  karakol:  { name: 'Karakol',          emoji: '⛓', h: 24 },
-  banka:    { name: 'Banka',            emoji: '🏦', h: 27 },
-  hastane:  { name: 'Hastane',          emoji: '🏥', h: 26 },
-  fabrika:  { name: 'Kurşun Fabrikası', emoji: '🏭', h: 25 },
-  silahci:  { name: 'Silahçı',          emoji: '🔫', h: 19 },
-  dedektif: { name: 'Dedektif Bürosu',  emoji: '🕵', h: 21 },
-  garaj:    { name: 'Garaj',            emoji: '🚗', h: 18 },
-  carsi:    { name: 'Çarşı',            emoji: '🛍', h: 22 },
+  karakol:  { name: 'Karakol',          emoji: '⛓', x: 3,  y: 35, w: 30 },
+  banka:    { name: 'Banka',            emoji: '🏦', x: 35, y: 33, w: 30 },
+  hastane:  { name: 'Hastane',          emoji: '🏥', x: 67, y: 35, w: 30 },
+  fabrika:  { name: 'Kurşun Fabrikası', emoji: '🏭', x: 35, y: 50, w: 30 },
+  silahci:  { name: 'Silahçı',          emoji: '🔫', x: 4,  y: 66, w: 28 },
+  dedektif: { name: 'Dedektif Bürosu',  emoji: '🕵', x: 36, y: 65, w: 28 },
+  garaj:    { name: 'Garaj',            emoji: '🚗', x: 6,  y: 80, w: 30 },
+  carsi:    { name: 'Çarşı',            emoji: '🛍', x: 58, y: 80, w: 34 },
 };
-const SPOT_H = { gazino: 27, meyhane: 22, kahvehane: 19, antrepo: 21 };
+const SPOT_SLOTS = [{ x: 2, y: 50, w: 31 }, { x: 67, y: 50, w: 31 }, { x: 68, y: 66, w: 30 }];
 const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
 const HOTSPOTS = {
-  liman:   { name: 'Liman',   emoji: '⚓' },
-  siginak: { name: 'Sığınak', emoji: '🕳' },
+  liman:   { name: 'Liman',   emoji: '⚓', x: 4,  y: 25 },
+  siginak: { name: 'Sığınak', emoji: '🕳', x: 43, y: 91 },
 };
-// Caddedeki sıra; 'spot:<tür>' o türdeki mekânların yeri (şehirde yoksa atlanır)
-const STREET = ['liman', 'spot:antrepo', 'karakol', 'spot:gazino', 'banka', 'hastane', 'spot:meyhane', 'spot:kahvehane',
-  'fabrika', 'silahci', 'dedektif', 'garaj', 'carsi', 'siginak'];
 
-function buildingHtml(id, h, asset, emoji, name, tagHtml = '') {
-  return `<div class="bld" data-open="${id}" style="--h:${h}">
+function buildingHtml(id, b, asset, emoji, name, tagHtml = '') {
+  return `<div class="bld" data-open="${id}" style="left:${b.x}%;top:${b.y}%;width:${b.w}%;z-index:${Math.round(b.y)}">
     ${tagHtml}${img(asset, '', `<div class="ph">${emoji}</div>`)}<div class="plate">${esc(name)}</div></div>`;
 }
 
 function cityTab() {
   const p = S.player, spotsHere = (extra.spots?.spots || []).filter(s => s.city === p.city);
   const jailed = left(p.jail_until) > 0;
-  let row = '';
-  for (const slot of STREET) {
-    if (slot.startsWith('spot:')) {
-      for (const sp of spotsHere.filter(x => x.kind === slot.slice(5))) {
-        const tag = sp.owner ? `<span class="tag ${sp.mine ? 'mine' : ''}">${esc(sp.owner)}</span>` : '<span class="tag ok">sahipsiz</span>';
-        row += buildingHtml('spot:' + sp.id, SPOT_H[sp.kind], `buildings/${sp.kind}`, SPOT_EMOJI[sp.kind], sp.name, tag);
-      }
-    } else if (HOTSPOTS[slot]) {
-      const hs = HOTSPOTS[slot];
-      row += `<div class="hotspot" data-open="${slot}"><div class="dot">${hs.emoji}</div>${hs.name}</div>`;
-    } else {
-      const b = BUILDINGS[slot];
-      let tag = '';
-      if (slot === 'garaj' && !waiting(p.car_ready_at)) tag = '<span class="tag ok">hazır</span>';
-      if (slot === 'karakol' && jailed) tag = '<span class="tag">içeridesin</span>';
-      if (slot === 'hastane' && p.health < 100) tag = `<span class="tag">❤ ${p.health}</span>`;
-      if (slot === 'fabrika') tag = `<span class="tag mine">${money(S.factory.price)}</span>`;
-      row += buildingHtml(slot, b.h, `buildings/${slot}`, b.emoji, b.name, tag);
-    }
+  let h = `<div class="map">${img(`bg/${p.city}`, 'bgimg', '')}
+    <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>`;
+  for (const [id, b] of Object.entries(BUILDINGS)) {
+    let tag = '';
+    if (id === 'garaj' && !waiting(p.car_ready_at)) tag = '<span class="tag ok">hazır</span>';
+    if (id === 'karakol' && jailed) tag = '<span class="tag">içeridesin</span>';
+    if (id === 'hastane' && p.health < 100) tag = `<span class="tag">❤ ${p.health}</span>`;
+    if (id === 'fabrika') tag = `<span class="tag mine">${money(S.factory.price)}</span>`;
+    h += buildingHtml(id, b, `buildings/${id}`, b.emoji, b.name, tag);
   }
-  return `<div class="map">${img(`bg/${p.city}`, 'pano', '')}
-    <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>
-    <div class="map-scroll" data-keep-scroll="map"><div class="street">${row}</div></div></div>
-    <p class="muted small map-hint">⇠ Kaydır, binalara dokun ⇢</p>`;
+  spotsHere.slice(0, 3).forEach((sp, i) => {
+    const tag = sp.owner ? `<span class="tag ${sp.mine ? 'mine' : ''}">${esc(sp.owner)}</span>` : '<span class="tag ok">sahipsiz</span>';
+    h += buildingHtml('spot:' + sp.id, SPOT_SLOTS[i], `buildings/${sp.kind}`, SPOT_EMOJI[sp.kind], sp.name, tag);
+  });
+  for (const [id, hs] of Object.entries(HOTSPOTS)) {
+    h += `<div class="hotspot" data-open="${id}" style="left:${hs.x}%;top:${hs.y}%;z-index:99"><div class="dot">${hs.emoji}</div>${hs.name}</div>`;
+  }
+  return h + `</div><p class="muted small map-hint">Binalara dokun. Suçlar ve ekip işleri <b>İşler</b> sekmesinde.</p>`;
 }
-
-// Panorama caddeden yavaş kayar: cadde sonuna gelince panoramanın da sonu görünür
-function parallax() {
-  const sc = $('.map-scroll'), pano = $('.map .pano');
-  if (!sc || !pano) return;
-  const span = sc.scrollWidth - sc.clientWidth, panoSpan = pano.offsetWidth - sc.clientWidth;
-  pano.style.transform = `translateX(${span > 0 && panoSpan > 0 ? -sc.scrollLeft * panoSpan / span : 0}px)`;
-}
-document.addEventListener('scroll', e => { if (e.target.classList?.contains('map-scroll')) parallax(); }, true);
-document.addEventListener('load', e => { if (e.target.classList?.contains('pano')) parallax(); }, true);
-addEventListener('resize', parallax);
 
 // ── Binaya dokununca açılan panel
 function panelInfo(id) {
