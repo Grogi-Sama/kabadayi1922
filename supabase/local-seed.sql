@@ -26,3 +26,6 @@ insert into messages (from_id, to_id, text)
 insert into reports (reporter_id, target_id, kind, ref_id, snapshot, reason)
   select b.id, a.id, 'message', m.id, m.text, 'tehdit ve küfür'
   from players a, players b, messages m where a.nick = 'Topal_Osman' and b.nick = 'Kör_Salih' and m.from_id = a.id;
+
+-- Sahte oyuncular farklı portrelerle görünsün
+update players set avatar = 1 + (abs(hashtext(nick)) % 8);

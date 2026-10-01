@@ -679,8 +679,10 @@ function familyTab() {
   const role = F.my_role, isDon = role === 'don', leader = ['don', 'sottocapo', 'consigliere'].includes(role);
   const treasurer = ['don', 'sottocapo'].includes(role);
   let h = banner('ui/aile_bant', esc(F.family.name), `${ROLES[role]} olarak`, crest(F.family.name, 'on-banner'));
+  const mySpots = (extra.spots?.spots || []).filter(x => x.mine).length;
   h += `<div class="card vault"><div class="vault-head"><span class="muted small">Aile kasası</span>
       <b class="vault-sum">${money(F.family.bank)}</b></div>
+    <div class="stats">${stat(ico('uye', '👤'), F.members.length, 'üye')}${stat(ico('fabrika', '🏭'), F.factories.length, 'fabrika')}${stat(ico('mekan', '🏠'), mySpots, 'mekân')}</div>
     <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy $" inputmode="numeric">
       <button class="btn primary" data-act="famdeposit">Koy</button></div>
     ${treasurer ? `<div class="form-row"><input id="f-pay-nick" placeholder="Üyeye" autocomplete="off" autocapitalize="off">
@@ -697,10 +699,12 @@ function familyTab() {
       <div class="muted small">${esc(rankName(m.rank))}</div>${controls || kick ? `<div class="m-ctl">${controls}${kick}</div>` : ''}</div>`;
   }).join('') + `</div>`;
 
+  const av = Object.fromEntries(F.members.map(m => [m.nick, m.avatar || 1]));
   h += `<h2>Sohbet</h2><div class="chat paper" id="chat">${F.messages.map(m => m.nick
-      ? `<div><b>${esc(m.nick)}:</b> ${esc(m.text)}${m.nick !== S.player.nick
-          ? ` <a class="flag" data-report="family_message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`
-      : `<div class="muted small">— ${esc(m.text)}</div>`).join('')}</div>
+      ? `<div class="msg ${m.nick === S.player.nick ? 'me' : ''}">${portrait(av[m.nick] || 1, 'avatar xs')}<div class="bubble">
+          <b>${esc(m.nick)}</b> ${esc(m.text)}${m.nick !== S.player.nick
+          ? ` <a class="flag" data-report="family_message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div></div>`
+      : `<div class="sys">— ${esc(m.text)} —</div>`).join('')}</div>
     <form class="form-row" id="chat-form"><input id="f-chat" maxlength="300" placeholder="Mesaj yaz…" autocomplete="off">
       <button class="btn primary">Gönder</button></form>`;
 
@@ -759,7 +763,8 @@ function seasonSection() {
   const secs = left(X.ends_at);
   const days = Math.floor(secs / 86400);
   let h = `<h2>${esc(X.name)}</h2>
-    <div class="season-box"><div class="season-count">${days > 0 ? `${days} gün ${Math.floor(secs % 86400 / 3600)} saat` : fmt(secs)}</div>
+    <div class="season-box">${X.starts_at ? pctBar(100 * (1 - secs / ((new Date(X.ends_at) - new Date(X.starts_at)) / 1000)), 'sezonun ilerleyişi') : ''}
+    <div class="season-count">${days > 0 ? `${days} gün ${Math.floor(secs % 86400 / 3600)} saat` : fmt(secs)}</div>
     <div class="muted small">sonra sezon biter: ilk 3'e girenler kalıcı rozet alır, sonra herkes sıfırdan başlar.</div></div>`;
   if (X.badges.length) h += `<p class="small">Rozetlerin: ${badgeList(X.badges)}</p>`;
   if (X.last) {
@@ -781,27 +786,56 @@ function messagesSection() {
   }
   return `<h2>Mesajlar${S.player.unread ? ` (${S.player.unread} yeni)` : ''}</h2>` +
     (extra.inbox.length ? extra.inbox.map(c => `<div class="card clickable" data-act="openconv" data-id="${esc(c.nick)}">
-      <div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
+      <span class="icon emoji">${c.unread > 0 ? '📩' : '✉'}</span><div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
       <div class="muted small ellipsis">${esc(c.last)}</div></div></div>`).join('')
       : `<p class="muted small">Mesaj yok. Birine yazmak için profiline dokun.</p>`);
 }
 
+const tile = (icon, label, v) => `<div class="tile"><span class="t-ic">${icon}</span><b>${v}</b><span>${label}</span></div>`;
+const MEDAL_CLS = ['gold', 'silver', 'bronze'];
+
+// Olaylar: güne göre gruplanmış gazete sütunu
+function eventsSection() {
+  if (!S.events.length) return `<p class="muted small">Henüz kayda değer bir şey olmadı.</p>`;
+  let day = '', h = '<div class="gazette">';
+  for (const e of S.events) {
+    const d = new Date(e.at), dd = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+    if (dd !== day) { h += `<div class="g-day">${dd}</div>`; day = dd; }
+    h += `<div class="g-item"><time>${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time><p>${esc(e.text)}</p></div>`;
+  }
+  return h + '</div>';
+}
+
 function logTab() {
   const p = S.player, pl = extra.players;
-  return (p.is_admin ? `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>` : '') +
-    seasonSection() + messagesSection() +
-    (p.proposals.length ? `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
-      `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`)).join('') : '') +
-    `<h2>Sicil</h2>
-    <p class="small">💍 ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'} ·
-      🤝 saygı ${p.respect} (bu hafta verebileceğin: ${p.respect_left})</p>
-    <p class="small">☠ ${p.kills} öldürme · ⚰ ${p.deaths} ölüm · 🔓 ${p.busts} kurtarma · 🎯 nişancılık ${p.kill_skill}</p>` +
-    (pl ? `<h2>Çevrimiçi (${pl.online.length})</h2><p class="small">${pl.online.map(o => nickLink(o.nick)).join(' · ') || '—'}</p>
-      <h2>En Büyükler</h2><ol class="top">${pl.top.map(t => `<li>${nickLink(t.nick)} <span class="muted small">${esc(rankName(t.rank))} · ☠ ${t.kills}</span></li>`).join('')}</ol>` : '') +
-    `<h2>Olaylar</h2><ul class="log">` + S.events.map(e =>
-      `<li>${esc(e.text)}<time>${new Date(e.at).toLocaleString('tr-TR')}</time></li>`).join('') + `</ul>` +
-    (api.mode === 'local' ? `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
-      <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>` : '');
+  let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
+  if (p.is_admin) h += `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>`;
+
+  h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
+      <div class="d-nick">${esc(p.nick)}</div>
+      <div class="muted small">${esc(rankName(p.rank))}${p.family ? ` · ${esc(p.family)}` : ''}</div>
+      <div class="small d-line">💍 ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'}</div>
+      <div class="small d-line">🤝 saygı <b>${p.respect}</b> <span class="muted">· bu hafta verebileceğin: ${p.respect_left}</span></div>
+    </div></div>
+    <div class="tiles">${tile('☠', 'öldürme', p.kills)}${tile('⚰', 'ölüm', p.deaths)}${tile('🔓', 'kurtarma', p.busts)}${tile('🎯', 'nişancılık', p.kill_skill)}</div>`;
+
+  h += seasonSection();
+  if (p.proposals.length) h += `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
+    `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`, '<span class="icon emoji">💍</span>')).join('');
+  h += messagesSection();
+
+  if (pl) {
+    h += `<h2>En Büyükler</h2><div class="board">` + pl.top.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
+        <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
+        <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))}</div></div>
+        <span class="b-kills">☠ ${t.kills}</span></div>`).join('') + `</div>`;
+    h += `<h2>Çevrimiçi (${pl.online.length})</h2><div class="online">` + (pl.online.map(o =>
+        `<div class="on-chip">${portrait(o.avatar || 1, 'avatar sm')}${nickLink(o.nick)}</div>`).join('') || '<span class="muted small">Kimse yok.</span>') + `</div>`;
+  }
+  h += `<h2>Olaylar</h2>` + eventsSection();
+  if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
+      <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
+  return h;
 }
 
 // ═════════════════ PROFİL ═════════════════

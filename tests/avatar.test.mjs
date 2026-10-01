@@ -20,4 +20,9 @@ assert.equal((await as(A, `select get_family()`)).members[0].avatar, 5);
 const B = await player('Ailesiz');
 assert.equal((await as(B, `select get_family()`)).family, null);
 ok('aile ekranında portreler');
+
+const pl = await as(A, `select get_players()`);
+assert.equal(pl.top.find(t => t.nick === 'Portreci').avatar, 5);
+assert.ok(Array.isArray(pl.online));
+ok('sıralamada portreler');
 done('avatar');

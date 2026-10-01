@@ -443,3 +443,48 @@ nav button[data-badge]:not([data-badge=""])::after {
 .slot-av .ico { width: 26px; height: 26px; vertical-align: middle; }
 .job .lock span .ico { width: 30px; height: 30px; }
 #h-stats .ico { width: 16px; height: 16px; vertical-align: -3px; }
+
+/* ─── Defter ─── */
+.avatar.lg { width: 76px; height: 76px; font-size: 38px; }
+.avatar.sm { width: 34px; height: 34px; font-size: 18px; border-width: 1px; }
+.dossier { align-items: center; gap: 14px; }
+.dossier .d-nick { font: 22px var(--display); color: var(--gold-hi); letter-spacing: 1px; }
+.dossier .d-line { margin-top: 3px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.tile { display: flex; flex-direction: column; align-items: center; padding: 8px 2px; border-radius: 10px; border: 1px solid #4a3a26;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
+.tile .t-ic { font-size: 18px; }
+.tile b { font: 20px var(--display); color: var(--gold-hi); line-height: 1.2; }
+.tile span:last-child { font-size: 11px; color: var(--muted); }
+.season-box .odds { margin-bottom: 8px; }
+.season-box .odds div { background: linear-gradient(90deg, var(--burgundy), var(--gold)); }
+.board { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.b-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid #4a3a26;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
+.b-row.me { border-color: var(--gold); }
+.b-place { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; font: 700 13px var(--body);
+  background: #1a140f; border: 1px solid #5a4a36; color: var(--muted); }
+.b-place.gold { background: linear-gradient(180deg, #f3d27a, #b8892e); color: #1b140c; border-color: #8a6a26; }
+.b-place.silver { background: linear-gradient(180deg, #e6e6e6, #9a9a9a); color: #1b140c; border-color: #6a6a6a; }
+.b-place.bronze { background: linear-gradient(180deg, #e0a070, #9a5a2e); color: #1b140c; border-color: #6a3a1a; }
+.b-kills { font-size: 13px; color: var(--muted); }
+.online { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; scrollbar-width: none; }
+.on-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; min-width: 56px; }
+.on-chip .avatar { box-shadow: 0 0 0 2px var(--green); }
+/* Olaylar: gazete sütunu */
+.gazette { background: linear-gradient(180deg, #e8d9bb, #d9c59c); color: #2a1f14; border: 1px solid #8a6a26; border-radius: 6px;
+  padding: 4px 12px 10px; box-shadow: inset 0 0 18px rgba(90,60,20,.35); }
+.g-day { font: 15px var(--display); letter-spacing: 1px; text-align: center; color: #5a3a1a; padding: 8px 0 4px;
+  border-bottom: 2px double #8a6a26; margin-bottom: 4px; }
+.g-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px dotted rgba(90,60,20,.35); }
+.g-item:last-child { border-bottom: 0; }
+.g-item time { flex: 0 0 auto; font: 700 11px var(--body); color: #7a5a30; padding-top: 2px; }
+.g-item p { margin: 0; font-size: 14px; line-height: 1.3; }
+/* Aile sohbeti: portreli balonlar */
+.chat.paper .msg { display: flex; align-items: flex-end; gap: 6px; margin: 6px 0; }
+.chat.paper .msg.me { flex-direction: row-reverse; align-self: stretch; background: none; padding: 0; border-radius: 0; }
+.chat.paper .bubble { max-width: 78%; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.55); border: 1px solid rgba(138,106,38,.5); font-size: 14px; }
+.chat.paper .msg.me .bubble { background: rgba(31,78,85,.15); }
+.chat.paper .bubble b { display: block; font-size: 11px; color: #7a2331; }
+.chat.paper .sys { text-align: center; font-size: 12px; color: #6b5636; margin: 6px 0; font-style: italic; }
+.vault .stats { margin: 4px 0 10px; }

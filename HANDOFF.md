@@ -11,7 +11,7 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - `supabase/migrations/001–011`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre.
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
 - Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
-- Testler: `npm test` → 11 dosya, 72 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
+- Testler: `npm test` → 11 dosya, 73 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
 - Git: yerel `main`, remote yok. **Kullanıcı açıkça "al" demeden push yok.**
 
 ## Nasıl çalıştırılır

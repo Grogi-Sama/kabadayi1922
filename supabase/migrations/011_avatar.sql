@@ -51,5 +51,17 @@ begin
     from jsonb_array_elements(r->'members') with ordinality t(m, i) left join players p on p.nick = m->>'nick'));
 end $$;
 
+-- Defter: çevrimiçi ve en büyükler listesinde portreler
+alter function get_players() rename to players_core;
+create or replace function get_players() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select r || jsonb_build_object(
+    'online', (select coalesce(jsonb_agg(o || jsonb_build_object('avatar', p.avatar) order by i), '[]')
+      from jsonb_array_elements(r->'online') with ordinality t(o, i) left join players p on p.nick = o->>'nick'),
+    'top', (select coalesce(jsonb_agg(o || jsonb_build_object('avatar', p.avatar) order by i), '[]')
+      from jsonb_array_elements(r->'top') with ordinality t(o, i) left join players p on p.nick = o->>'nick'))
+  from (select players_core() r) x
+$$;
+
 insert into api_rpcs values ('set_avatar(integer)');
 select apply_grants();
