@@ -68,33 +68,26 @@ Kesim sırası: p1 … p8
 
 # Tek tek üretilenler
 
-## 1) Şehir haritaları (2.5D, binalar görselin içinde) — `www/assets/bg/` · dikey 9:16, en yüksek çözünürlük · 6 adet
-Binalar ayrı yerleştirilmiyor; şehir tek görsel. Dokunma alanlarını, isim tabelalarını ve vurgu çizgilerini kod üstüne ekliyor.
-Önce İstanbul üretilir, dokunma alanları ona göre ayarlanır, sonra aynı yerleşimle diğer şehirler.
-Promptun tamamı ve şehir değişkenleri: aşağıdaki "Harita promptu" bölümü.
-
-### Harita promptu (İstanbul)
+## 1) Liman panoraması (haritanın en üstü) — `www/assets/harbor/` · geniş 21:9 · 6 adet
+Haritanın tepesinde silüet + su görünür, Liman düğmesi bunun üstünde. ✅ `istanbul.png` hazır.
+Referans olarak bina sayfasını ekle. Şehir cümlesini değiştirerek kullan:
 ```
-Same style as the reference image. Vertical 9:16 illustrated city map for a mobile game, 2.5D three-quarter top-down view: the camera looks down at about 45 degrees, so every building shows its front facade and its roof. Istanbul in 1922. All buildings use the same viewing angle and the same light from the upper left.
-Layout from top to bottom:
-- Top 15%: dusk sky with the distant skyline silhouette: Galata Tower, Hagia Sophia and Süleymaniye domes and minarets.
-- 15–30%: the Golden Horn waterfront. On the far left a wooden pier with a steam ferry and small boats (the harbor). On the quay to the right of the pier: a stone bonded warehouse with big arched cargo doors and stacked crates. On the far right of the quay: a stern Ottoman police station and jail with barred windows and a gas lamp.
-- 30–55%: a cobblestone square. In the center a neoclassical bank with columns and a heavy bronze door. On the left a white hospital with a red crescent on the pediment and an ambulance carriage. On the right a glamorous Art Deco casino with gold marquee lights and a red carpet.
-- 55–75%: a street row. From left to right: a brick munitions workshop with a tall chimney and ammunition crates; a narrow gunsmith shop with rifles in the window and a pistol-shaped hanging sign; a shadowy two-storey private detective office with venetian blinds and one lit window; a small Ottoman tavern with a wooden bay window, lanterns and a grapevine over the door.
-- 75–100%: the lower street. On the left an automobile garage with open doors and a 1920s car inside. In the center-right a covered bazaar with a domed roof and stalls with rugs and brass goods. At the bottom center a small hidden cellar door with steps going down, half in shadow.
-Every building stands alone on its own block, separated by streets, stairs or small trees, with clear space around it. No building overlaps or hides another. Each building has a strong dark outline so it reads clearly against the street. Small people and carts may be on the streets but never in front of building entrances.
-Art Deco travel poster illustration, flat colors with subtle paper grain, limited palette: antique gold #C9A14A, deep burgundy #7A2331, petrol teal #1F4E55, cream #E8D9BB, charcoal #15110D. Clean silhouettes, thin gold outlines, warm dusk lighting. Flat vector illustration, not pixel art, not photorealistic. No text, no signs with words, no letters, no numbers, no watermark, no signature.
+Same style as the reference image. Ultra-wide panoramic backdrop of [ŞEHİR] in 1922 at dusk, seen from across the water. The skyline stretches across the whole width: [SİLÜET]. In front of the skyline lies calm [SU] with a few small steam ferries and rowing boats. The lower part of the image is only calm water. No buildings or objects in the foreground. Warm sunset sky in gold and soft burgundy. Flat vector illustration, clean shapes, thin gold outlines, subtle paper grain, palette: antique gold, deep burgundy, petrol teal, cream, charcoal. Not pixel art, not photorealistic. No text, no letters, no numbers, no watermark.
 ```
+| Dosya | [ŞEHİR] | [SİLÜET] | [SU] |
+|---|---|---|---|
+| `izmir.png` | Izmir | the Konak clock tower, Kordon seafront houses, palm trees, Mount Pagos behind | Gulf of Izmir water |
+| `selanik.png` | Thessaloniki | the White Tower, Byzantine church domes, the old town on the hill | Thermaic Gulf water |
+| `pire.png` | Piraeus | harbor warehouses and cranes, the Acropolis on a distant hill | harbor water with cargo steamers |
+| `iskenderiye.png` | Alexandria | Qaitbay citadel, the Corniche curve, palm trees, minarets | Mediterranean water with felucca sails |
+| `beyrut.png` | Beirut | red-tiled Ottoman houses on hills, snowy Mount Lebanon behind, a harbor lighthouse | Mediterranean water |
 
-### Diğer şehirler (aynı promptu kopyala, sadece bunları değiştir)
-| Dosya | "Istanbul in 1922" yerine | Silüet (Top 15%) | Kıyı (15–30%) | Kıyıdaki mekân (depo yerine) | 55–75% sondaki mekân (meyhane yerine) |
-|---|---|---|---|---|---|
-| `izmir.png` | Izmir in 1922 | Mount Pagos and the Konak clock tower | the Kordon seafront with palm trees | aynı (depo) | a modest coffeehouse with a striped awning, small tables and a hookah by the door |
-| `selanik.png` | Thessaloniki in 1922 | the White Tower and Byzantine church domes | the harbor quay with cranes | aynı (depo) | aynı (meyhane) |
-| `pire.png` | Piraeus in 1922 | the Acropolis faintly on a distant hill | a busy port with cargo steamers and cranes | a modest coffeehouse with a striped awning, small tables and a hookah by the door | aynı (meyhane) |
-| `iskenderiye.png` | Alexandria in 1922 | Qaitbay citadel and palm trees | the Corniche curve with felucca sails | aynı (depo) | a modest coffeehouse with a striped awning, small tables and a hookah by the door |
-| `beyrut.png` | Beirut in 1922 | red-tiled houses on hills and snowy Mount Lebanon | the harbor with a lighthouse | aynı (depo) | a modest coffeehouse with a striped awning, small tables and a hookah by the door |
-(Mekânlar şehirlerin gerçek mekân listesine göre seçildi: `supabase/migrations/007_spots.sql`.)
+## 1b) Dokular (sokak duvarı ve kaldırım) — `www/assets/tex/` · kare 1024×1024 · **kenarları birleşen (seamless) desen** · 2 adet
+Şu an kodla çizilmiş tuğla ve kaldırım var; dosya gelince otomatik onun yerine geçer.
+| Dosya | Prompt |
+|---|---|
+| `duvar.png` | `Seamless tileable texture, flat front view: old Istanbul street wall of warm brown bricks alternating with bands of pale cut stone (Ottoman masonry), slightly worn, dark mortar lines. Even lighting, no shadows from objects, no windows, no doors, no plants. Flat vector illustration with subtle paper grain, muted palette of brown, ochre and charcoal. The pattern repeats perfectly on all four edges. No text.` |
+| `kaldirim.png` | `Seamless tileable texture, straight top-down view: old cobblestone street (arnavut kaldırımı), rounded grey-brown stones of slightly different sizes in loose rows, dark gaps between stones. Even lighting. Flat vector illustration with subtle paper grain, muted palette of grey, brown and charcoal. The pattern repeats perfectly on all four edges. No text.` |
 
 ## 2) İş illüstrasyonları — `www/assets/jobs/` · 1024×640 (yatay) · 9 adet
 Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*

@@ -10,7 +10,7 @@ const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [
-  ...CITIES.map(c => `bg/${c}`), ...BUILDINGS.map(b => `buildings/${b}`),
+  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
   'ui/splash', 'ui/emblem',
