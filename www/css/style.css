@@ -227,7 +227,8 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .qtybar .btn.on { border-color: var(--gold); color: var(--gold); }
 .market-actions { display: flex; gap: 6px; align-items: center; }
 .cash-sm { color: var(--gold); font-weight: 700; }
-.nick-link { color: var(--gold); text-decoration: underline dotted; cursor: pointer; }
+.nick-link { color: var(--gold); text-decoration: none; cursor: pointer; font-weight: 600; }
+.nick-link:active { color: var(--gold-hi); }
 .flag { color: var(--muted); cursor: pointer; font-size: 12px; margin-left: 4px; text-decoration: none; }
 .flag:hover { color: var(--red); }
 .pill { background: var(--red); color: #fff; border-radius: 9px; padding: 0 6px; font-size: 12px; }
@@ -488,3 +489,8 @@ nav button[data-badge]:not([data-badge=""])::after {
 .chat.paper .bubble b { display: block; font-size: 11px; color: #7a2331; }
 .chat.paper .sys { text-align: center; font-size: 12px; color: #6b5636; margin: 6px 0; font-style: italic; }
 .vault .stats { margin: 4px 0 10px; }
+
+/* Bina panellerinin başındaki açıklama */
+.help { font-size: 13px; line-height: 1.4; color: var(--paper); margin: 2px 0 12px; padding: 8px 10px 8px 12px;
+  border-left: 3px solid var(--gold); background: rgba(201,161,74,.08); border-radius: 0 8px 8px 0; }
+.vault-help { margin: 2px 0 8px; }

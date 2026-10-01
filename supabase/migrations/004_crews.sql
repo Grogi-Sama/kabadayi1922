@@ -17,7 +17,7 @@ create table crew_types (
 );
 insert into crew_types values
   ('soygun',   'Tren Soygunu',       3, array['lider', 'sofor'],                          3 * 3600, 0.55,  30000, 120000,  40,  5000,  900,  300),
-  ('organize', 'Osmanlı Bankası İşi', 4, array['lider', 'sofor', 'silahci', 'patlayici'], 12 * 3600, 0.45, 150000, 480000, 100, 25000, 1600,  900);
+  ('organize', 'Banka Soygunu', 4, array['lider', 'sofor', 'silahci', 'patlayici'], 12 * 3600, 0.45, 150000, 480000, 100, 25000, 1600,  900);
 
 insert into game_settings values
   ('crew_gunner_bullets', 100),     -- silahçı bu kadar kurşun harcar

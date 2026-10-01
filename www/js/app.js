@@ -265,9 +265,42 @@ function renderSheet() {
   if (!info) { panel = null; $('#sheet').classList.add('hidden'); return; }
   $('#sheet-icon').innerHTML = (info.asset && img(info.asset, '', '')) || `<span class="ph-icon">${info.emoji}</span>`;
   $('#sheet-title').textContent = info.name;
-  keepInputs($('#sheet-body'), info.render);
+  keepInputs($('#sheet-body'), () => helpBox(panel) + info.render());
   $('#sheet').classList.remove('hidden');
 }
+
+// Her binanın başında kısa "burada ne yapılır" notu
+const pct = (v) => `%${Math.round(v * 100)}`;
+function panelHelp(id) {
+  const st = S.settings;
+  if (id.startsWith('spot:')) {
+    const sp = (extra.spots?.spots || []).find(s => 'spot:' + s.id === id);
+    return `Mekânlar ailelerin gelir kaynağıdır: sahibi olan aile her saat haraç toplar, para aile kasasına girer.
+      Ailenin yöneticileri kurşunla baskın yapıp mekânı ele geçirebilir; sahibi kurşun bırakıp mekânı tahkim eder.` +
+      (sp?.kind === 'gazino' ? ' Gazinoda kumar da oynanır; kaybedilen bahislerin bir payı gazinonun sahibi aileye gider.' : '');
+  }
+  return {
+    karakol: `Yakalananlar burada yatar. İçerideysen firar etmeyi deneyebilirsin (hakkın sınırlı). Dışarıdaysan
+      mahkûmları kurtarıp itibar kazanırsın ama gardiyana yakalanırsan sen de içeri girersin.`,
+    hastane: `Vurulunca canın düşer; canın ne kadar azsa seni öldürmek o kadar az kurşun ister. Burada parayla canını doldurursun.
+      Öldürülürsen bir süre burada yatarsın.`,
+    banka: `Öldürülürsen cebindeki paranın ${pct(st.kill_cash_loss)}'ini kaybedersin; bankadaki paraya kimse dokunamaz.
+      Kazancını bankaya yatır (yatırırken ${pct(st.bank_fee)} komisyon). Buradan başka oyunculara para da gönderebilirsin.`,
+    fabrika: `Kurşun; adam vurmak, mekân baskını ve ekip işleri için gerekir. Şehrin fabrikasından saatlik bir sınırla alırsın.
+      Fabrikayı bir aile satın alırsa fiyatı o aile belirler ve satışların parası onun kasasına gider.`,
+    silahci: `Silahın yoksa kimseyi vuramazsın; iyi silah aynı işi daha az kurşunla görür. Korumalar seni öldürmeyi zorlaştırır,
+      şişe atışı nişancılığını artırıp gereken kurşunu azaltır.`,
+    dedektif: `Birini vurmak için önce nerede olduğunu bulmalısın: dedektif tut, hedefin hangi şehirde olduğunu öğren.
+      Aynı şehirdeysen infaz edebilirsin. Kelle listesine ödül koyarak işi başkalarına da yaptırabilirsin.`,
+    garaj: `Sokaktan araba çal; sat ya da hurdada ezip kurşuna çevir. Arabanla yarışa girip para kazanabilirsin.
+      Ekip işlerinde şoförün belli değerde bir arabası olması gerekir.`,
+    carsi: `Oyuncular arası pazar: fazla kurşununu ya da arabanı satışa koy, başkalarının ilanlarını satın al.`,
+    liman: `Kaçak mal ticareti ve şehirler arası yolculuk burada. Bir şehirde ucuza alıp fiyatın yüksek olduğu limanda sat.
+      Daha hızlı bir tekne ya da uçak alırsan seferler arasındaki bekleme kısalır.`,
+    siginak: `Tehlikedeysen para verip yer altına in: bu sürede seni kimse bulamaz ve vuramaz, ama sen de iş yapamazsın.`,
+  }[id] || '';
+}
+const helpBox = (id) => { const t = panelHelp(id); return t ? `<div class="help">${t}</div>` : ''; };
 
 async function openPanel(id) {
   panel = id;
@@ -682,6 +715,8 @@ function familyTab() {
   const mySpots = (extra.spots?.spots || []).filter(x => x.mine).length;
   h += `<div class="card vault"><div class="vault-head"><span class="muted small">Aile kasası</span>
       <b class="vault-sum">${money(F.family.bank)}</b></div>
+    <p class="muted small vault-help">Ailenin ortak parası. Üyeler buraya para koyar; mekân haraçları, ailenin fabrikasının kurşun
+      satışları ve gazino payı da buraya gelir. Don ve Sottocapo kasadan üyelere ödeme yapar, fabrika satın alır.</p>
     <div class="stats">${stat(ico('uye', '👤'), F.members.length, 'üye')}${stat(ico('fabrika', '🏭'), F.factories.length, 'fabrika')}${stat(ico('mekan', '🏠'), mySpots, 'mekân')}</div>
     <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy $" inputmode="numeric">
       <button class="btn primary" data-act="famdeposit">Koy</button></div>

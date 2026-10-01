@@ -55,7 +55,7 @@ Kaynak: 2006 tarihli Omerta oyuncu rehberi (omertaholic.blogspot.com), Omerta Be
 | Aile objeleri: kurşun fabrikası | Fabrika sahipliği + fiyat + gelir | ✅ 003 |
 | Hitlist | Kelle listesi | ✅ 003 |
 | Heist (2 kişi, 3 sa) | Tren Soygunu | ✅ 004 |
-| Organized Crime (4 kişi, 12 sa) | Osmanlı Bankası İşi | ✅ 004 |
+| Organized Crime (4 kişi, 12 sa) | Banka Soygunu | ✅ 004 |
 | Kumarhane: slot, rulet, blackjack | Zar, rulet, slot | ✅ 005 (blackjack yok) |
 | Özel mesajlar (inbox) | Mesajlar + engelle + şikâyet + küfür filtresi | ✅ 006 |
 | Honour points | Saygı puanı (haftalık) | ✅ 006 |
