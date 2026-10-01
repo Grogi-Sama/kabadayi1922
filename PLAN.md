@@ -75,7 +75,7 @@ Kaynak: 2006 tarihli Omerta oyuncu rehberi (omertaholic.blogspot.com), Omerta Be
 - ✅ Admin paneli (`www/admin.html`, 010): şikâyetler + kanıt, oyuncu dosyası, uyar/sustur/ban (gerekçe zorunlu, oyuncu görür), mesaj silme, işlem geçmişi
 - ✅ Sezonlar (010): 8 hafta, 4 kategoride şeref listesi (itibar, infaz, servet, aile), ilk 3'e kalıcı rozet, sonra dünya sıfırlanır (hesap, isim, evlilik, saygı, mesajlar kalır)
 
-**Admin olmak (Supabase açılınca, bir kez):** oyunu telefonda/tarayıcıda aç → Supabase panel → Authentication → Users'ta kendi kullanıcının UID'sini kopyala → SQL Editor: `insert into admins (user_id, role) values ('<UID>', 'owner');` — sahip tek kişidir; moderatörleri oyun içinden Yönetim → Yetkililer'den oyuncu adıyla atarsın (013_roles).
+**Admin olmak (Supabase açılınca, bir kez):** oyunu telefonda/tarayıcıda aç → Supabase panel → Authentication → Users'ta kendi kullanıcının UID'sini kopyala → SQL Editor: `insert into admins (user_id, role) values ('<UID>', 'owner');` — admin tek kişidir; moderatörleri Yönetim → Yetkililer'den oyuncu adıyla atarsın (013_roles). Admin araçları (itirazlar, yetkililer, kalıcı ban, sezon) panelde sadece kendi bilgisayarından (localhost) görünür.
 Not: anonim hesap uygulama silinince kaybolur; yayından önce admin hesabı e-postaya bağlanmalı.
 
 ### Yayın için kalanlar

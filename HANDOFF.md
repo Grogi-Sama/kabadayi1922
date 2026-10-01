@@ -8,10 +8,10 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - **Teknoloji:** HTML/JS (`www/`) → ileride Capacitor. Sunucu: Supabase (henüz hesap yok). Bütün kurallar sunucu tarafı SQL RPC'lerinde.
 
 ## Durum
-- `supabase/migrations/001–016`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012), yetki kademeleri sahip/moderatör (013), ayrıntılı küfür filtresi + takma ad kuralları (014), aile armaları (015), tablo kilidi: RLS + istemciye tablo yetkisi yok (016).
+- `supabase/migrations/001–017`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012), yetki kademeleri sahip/moderatör (013), ayrıntılı küfür filtresi + takma ad kuralları (014), aile armaları (015), tablo kilidi: RLS + istemciye tablo yetkisi yok (016), ceza itirazı (017). Adminin (role='owner') araçları panelde sadece localhost'ta görünür.
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
 - Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Sohbet · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
-- Testler: `npm test` → 14 dosya, 90 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
+- Testler: `npm test` → 15 dosya, 94 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
 - Git: `origin` = https://github.com/Grogi-Sama/kabadayi1922 (private), dal `main`. **Kullanıcı açıkça "al"/"push edelim" demeden push yok.**
 
 ## Nasıl çalıştırılır

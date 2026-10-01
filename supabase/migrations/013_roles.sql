@@ -1,6 +1,6 @@
--- Yetki kademeleri: SAHİP (tek kişi, oyunun sahibi) ve MODERATÖR (sahibin oyun içinden yetki verdiği oyuncular).
+-- Yetki kademeleri: ADMİN (veritabanında role = 'owner'; tek kişi, oyunun sahibi) ve MODERATÖR (adminin oyun içinden yetki verdiği oyuncular).
 -- Amaç: yetki yanlış ele geçse bile topluluğa verilebilecek zararı sınırlamak.
---  • Sahip sadece veritabanından (SQL editörü) bir kez atanır; oyun içinden kimse sahip olamaz.
+--  • Admin sadece veritabanından (SQL editörü) bir kez atanır; oyun içinden kimse admin olamaz.
 --      insert into admins (user_id, role) values ('<sahibin auth uid>', 'owner');
 --  • Moderatörü sadece sahip atar/alır (oyuncu adıyla). Moderatör başka yetkili atayamaz.
 --  • Moderatör: ban en fazla 7 gün, susturma en fazla 72 saat, saatlik işlem sınırı var (toplu ban yapılamaz).
@@ -57,16 +57,16 @@ begin
   if t.id is null then return fail('Oyuncu yok.'); end if;
   if t.id = auth.uid() then return fail('Kendine işlem yapamazsın.'); end if;
   select role into t_role from admins where user_id = t.id;
-  if t_role = 'owner' then return fail('Oyunun sahibine işlem yapılamaz.'); end if;
+  if t_role = 'owner' then return fail('Admine işlem yapılamaz.'); end if;
 
   if me = 'moderator' then
-    if t_role is not null then return fail('Başka bir yetkiliye işlem yapamazsın; sahibine bildir.'); end if;
+    if t_role is not null then return fail('Başka bir yetkiliye işlem yapamazsın; admine bildir.'); end if;
     if p_action = 'ban' then
       if p_hours is null or p_hours > setting('mod_max_ban_h') then
-        return fail('Moderatör en fazla ' || setting('mod_max_ban_h') / 24 || ' gün ban verebilir; kalıcı ban sahibin işi.');
+        return fail('Moderatör en fazla ' || setting('mod_max_ban_h') / 24 || ' gün ban verebilir; kalıcı ban adminin işi.');
       end if;
       if mod_recent('ban') >= setting('mod_bans_per_hour') then
-        return fail('Saatlik ban sınırına ulaştın. Toplu bir sorun varsa sahibine bildir.');
+        return fail('Saatlik ban sınırına ulaştın. Toplu bir sorun varsa admine bildir.');
       end if;
     elsif p_action = 'mute' then
       if p_hours is not null and p_hours > setting('mod_max_mute_h') then
@@ -78,7 +78,7 @@ begin
       select * into last_ban from moderation_actions where target_id = t.id and action = 'ban' order by id desc limit 1;
       if t.banned_until > now() + interval '50 years'
          or (select role from admins where user_id = last_ban.admin_id) = 'owner' then
-        return fail('Bu banı sadece oyunun sahibi kaldırabilir.');
+        return fail('Bu banı sadece admin kaldırabilir.');
       end if;
     end if;
   end if;
@@ -146,7 +146,7 @@ begin
   perform require_owner();
   t := player_by_nick(p_nick);
   if t.id is null then return fail('Böyle bir oyuncu yok.'); end if;
-  if (select role from admins where user_id = t.id) = 'owner' then return fail('Sahip yetkisi buradan alınamaz.'); end if;
+  if (select role from admins where user_id = t.id) = 'owner' then return fail('Admin yetkisi buradan alınamaz.'); end if;
   delete from admins where user_id = t.id and role = 'moderator';
   if not found then return fail(t.nick || ' zaten yetkili değil.'); end if;
   insert into moderation_actions (admin_id, target_id, action) values (auth.uid(), t.id, 'revoke');

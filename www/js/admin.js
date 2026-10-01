@@ -8,12 +8,16 @@ const when = (t) => t ? new Date(t).toLocaleString('tr-TR') : '—';
 const KIND = { message: 'Özel mesaj', family_message: 'Aile sohbeti', chat_message: 'Genel/şehir sohbeti', player: 'Oyuncu' };
 const ACTION = { warn: 'Uyarı', mute: 'Susturma', unmute: 'Susturma kaldırıldı', ban: 'Ban', unban: 'Ban kaldırıldı',
   delete_message: 'Mesaj silindi', dismiss: 'Şikâyet kapatıldı', resolve: 'Şikâyet çözüldü',
-  grant: 'Moderatör yapıldı', revoke: 'Moderatörlük alındı', season: 'Sezon' };
-const ROLE = { owner: 'Sahip', moderator: 'Moderatör' };
+  grant: 'Moderatör yapıldı', revoke: 'Moderatörlük alındı', season: 'Sezon',
+  appeal_accept: 'İtiraz kabul', appeal_reject: 'İtiraz ret', staff_warn: 'Yetkili uyarıldı' };
+const ROLE = { owner: 'Admin', moderator: 'Moderatör' };
+// Admin araçları (yetkililer, itirazlar, kalıcı ban, sezon) sadece adminin kendi bilgisayarından (localhost) açılır.
+// Asıl güvenlik sunucuda: bu işlemler admin hesabı dışında her yerden reddedilir. Bu ek bir katmandır.
+const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 
 // me.role: 'owner' | 'moderator' — sadece görünüm için; asıl kontrol sunucuda her çağrıda yapılır
-let api, me = {}, view = 'overview', reportStatus = 'open', playerNick = '';
-const isOwner = () => me.role === 'owner';
+let api, me = {}, view = 'overview', reportStatus = 'open', playerNick = '', appealStatus = 'open';
+const isOwner = () => me.role === 'owner' && LOCAL;
 
 let toastTimer;
 function toast(msg, bad) {
@@ -29,20 +33,23 @@ async function call(name, args) {
 }
 
 // ─────────────── Görünümler ───────────────
-function showCount(n) {
+function showCount(n, ap = 0) {
   $('#open-count').textContent = n;
   $('#open-count').classList.toggle('hidden', !n);
+  const a = $('#appeal-count');
+  if (a) { a.textContent = ap; a.classList.toggle('hidden', !ap); }
 }
 
 async function overview() {
   const o = await api.rpc('admin_overview');
-  showCount(o.open_reports);
+  showCount(o.open_reports, o.open_appeals);
   return `<div class="stats-grid">
       <div class="stat"><b>${o.players}</b>oyuncu</div>
       <div class="stat"><b>${o.online}</b>şu an çevrimiçi</div>
       <div class="stat"><b>${o.active_24h}</b>son 24 saatte</div>
       <div class="stat"><b class="${o.open_reports ? 'warn' : ''}">${o.open_reports}</b>açık şikâyet</div>
       <div class="stat"><b>${o.banned}</b>banlı</div>
+      ${isOwner() ? `<div class="stat"><b class="${o.open_appeals ? 'warn' : ''}">${o.open_appeals}</b>açık itiraz</div>` : ''}
     </div>
     <h2>Sezon</h2>
     <div class="report"><b>${esc(o.season.name)}</b>
@@ -51,7 +58,7 @@ async function overview() {
         <button class="btn" data-a="season-set">Bitişi değiştir</button>
         <button class="btn danger" data-a="season-end">Sezonu şimdi bitir</button></div>
       <p class="meta">Sezon bitince şeref listesi kaydedilir ve herkesin ilerlemesi sıfırlanır. Geri alınamaz.</p>`
-      : `<p class="meta">Sezonu sadece oyunun sahibi değiştirebilir.</p>`}</div>`;
+      : `<p class="meta">Sezonu sadece admin değiştirebilir.</p>`}</div>`;
 }
 
 async function reports() {
@@ -123,19 +130,43 @@ async function team() {
   const list = await api.rpc('admin_team');
   return `<h2>Yetkililer</h2>
     <p class="meta">Moderatörler şikâyetlere bakar; en fazla 7 gün ban, 72 saat susturma verebilir, saatte en fazla 10 ban atabilir.
-      Kalıcı ban, sezon ve yetki dağıtmak sadece sende. Sana ve diğer yetkililere işlem yapamazlar.</p>` +
+      Kalıcı ban, sezon ve yetki dağıtmak sadece adminde. Admine ve diğer yetkililere işlem yapamazlar.</p>` +
     list.map(a => `<div class="report"><b>${esc(a.nick || '(silinmiş)')}</b> · ${ROLE[a.role]}
-      <div class="meta">Yetki: ${when(a.granted_at)} · son 24 saatte ${a.actions_24h} işlem</div>
+      <div class="meta">Yetki: ${when(a.granted_at)} · son 24 saatte ${a.actions_24h} işlem
+        ${a.role === 'moderator' ? ` · haksız bulunan ceza: <b class="${a.overturned ? 'warn' : ''}">${a.overturned}</b> · uyarı: ${a.staff_warns}` : ''}</div>
       ${a.role === 'moderator' ? `<div class="actions"><button class="btn sm danger" data-a="revoke" data-nick="${esc(a.nick)}">Yetkiyi al</button></div>` : ''}</div>`).join('') +
     `<h2>Moderatör ekle</h2><form id="grant-form" class="actions"><input id="grant-nick" placeholder="Oyuncu adı" autocomplete="off">
       <button class="btn primary">Moderatör yap</button></form>
     <p class="meta">Sadece güvendiğin, tanıdığın kişilere ver. Yetkiyi istediğin an buradan geri alabilirsin.</p>`;
 }
 
+const PEN = { warn: 'Uyarı', mute: 'Susturma', ban: 'Ban' };
+async function appeals() {
+  const list = await api.rpc('admin_appeals', { p_status: appealStatus });
+  return `<h2>Ceza itirazları</h2><div class="actions">${['open', 'accepted', 'rejected'].map(s => `<button class="btn sm ${appealStatus === s ? 'primary' : ''}"
+      data-astatus="${s}">${{ open: 'Açık', accepted: 'Kabul edilen', rejected: 'Reddedilen' }[s]}</button>`).join('')}</div>` +
+    (list.length ? list.map(a => `<div class="report">
+      <b><a class="nick-link" data-nick="${esc(a.player.nick)}">${esc(a.player.nick)}</a></b>
+      <span class="meta">· katılış ${when(a.player.joined)} · ${a.player.reports_against} şikâyet · toplam ${a.player.penalties_total} ceza
+        ${a.player.banned ? ' · <b class="warn">banlı</b>' : ''}${a.player.muted ? ' · susturulmuş' : ''}</span>
+      <div class="meta">Ceza: <b>${PEN[a.penalty.action]}</b> · ${when(a.penalty.at)} ${a.penalty.until ? `· bitiş ${when(a.penalty.until)}` : ''}</div>
+      <div class="meta">Cezayı veren: <b>${esc(a.staff.nick || '?')}</b> (${ROLE[a.staff.role] || 'yetkisi alınmış'}) · daha önce haksız bulunan cezası: ${a.staff.overturned}</div>
+      <div class="meta">Gerekçe: ${esc(a.penalty.reason || '—')}</div>
+      ${a.penalty.evidence ? `<div class="quote">Kanıt: ${esc(a.penalty.evidence)}</div>` : ''}
+      <div class="quote">İtiraz (${when(a.at)}): ${esc(a.text)}</div>
+      ${a.status === 'open' ? `<input id="resp-${a.id}" placeholder="Oyuncuya not (isteğe bağlı)">
+        <div class="actions"><button class="btn sm primary" data-a="appeal-accept" data-id="${a.id}">Haklı: cezayı kaldır</button>
+          <button class="btn sm" data-a="appeal-reject" data-id="${a.id}">Haksız: reddet</button></div>
+        ${a.staff.role === 'moderator' ? `<div class="actions"><input id="sw-${a.id}" placeholder="Moderatöre uyarı gerekçesi">
+          <button class="btn sm danger" data-a="warn-staff" data-nick="${esc(a.staff.nick)}" data-id="${a.id}">${esc(a.staff.nick)} adlı moderatörü uyar</button></div>` : ''}`
+      : `<div class="meta">Sonuç: ${a.status === 'accepted' ? 'kabul' : 'ret'} · ${when(a.resolved_at)} ${a.response ? '· ' + esc(a.response) : ''}</div>`}
+    </div>`).join('') : '<p class="muted">Bu listede itiraz yok.</p>');
+}
+
 async function render() {
   try {
-    $('#view').innerHTML = await ({ overview, reports, player, log, team })[view]();
-    if (view !== 'overview') showCount((await api.rpc('admin_overview')).open_reports);
+    $('#view').innerHTML = await ({ overview, reports, player, log, team, appeals })[view]();
+    if (view !== 'overview') { const o = await api.rpc('admin_overview'); showCount(o.open_reports, o.open_appeals); }
   } catch (e) {
     console.error(e);
     $('#view').innerHTML = /NOT_ADMIN/.test(e.message)
@@ -153,6 +184,8 @@ function go(v) {
 document.addEventListener('click', async (e) => {
   const nav = e.target.closest('[data-view]');
   if (nav) return go(nav.dataset.view);
+  const ast = e.target.closest('[data-astatus]');
+  if (ast) { appealStatus = ast.dataset.astatus; return render(); }
   const st = e.target.closest('[data-status]');
   if (st) { reportStatus = st.dataset.status; return render(); }
   const nick = e.target.closest('[data-nick]:not([data-a])');
@@ -169,6 +202,12 @@ document.addEventListener('click', async (e) => {
     await call('admin_delete_message', { p_kind: b.dataset.kind, p_id: +b.dataset.ref, p_report: report });
   } else if (a === 'dismiss') {
     await call('admin_act', { p_nick: null, p_action: 'dismiss', p_hours: null, p_reason: reason, p_report: report });
+  } else if (a === 'appeal-accept' || a === 'appeal-reject') {
+    const accept = a === 'appeal-accept';
+    if (accept && !confirm('Ceza kaldırılsın mı?')) return;
+    await call('admin_resolve_appeal', { p_id: +b.dataset.id, p_accept: accept, p_response: $(`#resp-${b.dataset.id}`)?.value || null });
+  } else if (a === 'warn-staff') {
+    await call('admin_warn_staff', { p_nick: b.dataset.nick, p_reason: $(`#sw-${b.dataset.id}`)?.value || '' });
   } else if (a === 'revoke') {
     if (!confirm(`${b.dataset.nick} moderatörlükten alınsın mı?`)) return;
     await call('admin_revoke', { p_nick: b.dataset.nick });
@@ -208,7 +247,10 @@ if (!me.role) {
   $('#view').innerHTML = `<p class="err">Bu sayfayı görme yetkin yok.</p>`;
 } else {
   $('#admin-who').textContent = `${me.nick} · ${ROLE[me.role]}`;
-  if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend', '<button data-view="team">Yetkililer</button>');
+  if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend',
+    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="team">Yetkililer</button>');
+  else if (me.role === 'owner') $('#view').insertAdjacentHTML('beforebegin',
+    '<p class="meta" style="padding:0 16px">Admin araçları (itirazlar, yetkililer, kalıcı ban, sezon) sadece kendi bilgisayarından açılır.</p>');
   render();
 }
 setInterval(() => { if (me.role && view === 'overview' && !document.hidden) render(); }, 30000);

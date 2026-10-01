@@ -29,7 +29,7 @@ async function refresh() {
 async function loadTabData() {
   const rpc = api.rpc;
   if (tab === 'city') extra.spots = await rpc('get_spots');
-  else if (tab === 'log') [extra.players, extra.inbox, extra.season] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season')]);
+  else if (tab === 'log') [extra.players, extra.inbox, extra.season, extra.penalties] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season'), rpc('my_penalties')]);
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
@@ -122,7 +122,9 @@ function render() {
   if (S.banned) {
     $('#ban-reason').textContent = 'Gerekçe: ' + (S.banned.reason || '—');
     $('#ban-until').textContent = S.banned.until ? 'Bitiş: ' + new Date(S.banned.until).toLocaleString('tr-TR') : 'Süresiz.';
-    show('banned'); return;
+    show('banned');
+    api.rpc('my_penalties').then(list => { extra.penalties = list; $('#ban-appeal').innerHTML = penaltiesHtml(list, true); });
+    return;
   }
   if (!S.player) { renderOnboard(); show('onboard'); return; }
   show('game');
@@ -957,6 +959,7 @@ function logTab() {
     </div></div>
     <div class="tiles">${tile('☠', 'öldürme', p.kills)}${tile('⚰', 'ölüm', p.deaths)}${tile('🔓', 'kurtarma', p.busts)}${tile('🎯', 'nişancılık', p.kill_skill)}</div>`;
 
+  if (extra.penalties?.length) h += `<h2>Cezalarım</h2>` + penaltiesHtml(extra.penalties);
   h += seasonSection();
   if (p.proposals.length) h += `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
     `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`, '<span class="icon emoji">💍</span>')).join('');
@@ -974,6 +977,27 @@ function logTab() {
   if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
   return h;
+}
+
+// ═════════════════ CEZALAR VE İTİRAZ ═════════════════
+const PEN = { warn: '⚠ Uyarı', mute: '🔇 Susturma', ban: '⛔ Ban' };
+const APPEAL = { open: 'İtirazın inceleniyor', accepted: 'İtirazın kabul edildi, ceza kaldırıldı', rejected: 'İtirazın reddedildi' };
+function penaltiesHtml(list, onBanScreen = false) {
+  if (!list?.length) return onBanScreen ? '' : '';
+  return (onBanScreen ? `<h2>Cezaların</h2>` : '') + list.map(x => `<div class="card col penalty">
+      <div class="title">${PEN[x.action]} <span class="muted small">· ${new Date(x.at).toLocaleString('tr-TR')}</span></div>
+      <div class="small">Gerekçe: ${esc(x.reason || '—')}</div>
+      ${x.until ? `<div class="muted small">Bitiş: ${new Date(x.until).getFullYear() > 2100 ? 'süresiz' : new Date(x.until).toLocaleString('tr-TR')}</div>` : ''}
+      ${x.appeal ? `<div class="appeal-status ${x.appeal.status}">${APPEAL[x.appeal.status]}${x.appeal.response ? `<br><span class="muted small">Not: ${esc(x.appeal.response)}</span>` : ''}</div>`
+        : `<button class="btn sm" data-act="appeal" data-id="${x.id}">⚖ Haksız mı? İtiraz et</button>`}</div>`).join('') +
+    `<p class="muted small">Cezanın haksız olduğunu düşünüyorsan ${S?.settings?.appeal_window_days ?? 30} gün içinde bir kez itiraz edebilirsin. İtirazları yönetim inceler.</p>`;
+}
+function openAppeal(id) {
+  $('#modal-body').innerHTML = `<div class="logo-sm">İtiraz</div>
+    <p class="small">Cezanın neden haksız olduğunu kısaca anlat. Ne olduğunu, kiminle konuştuğunu yazarsan daha hızlı sonuçlanır.</p>
+    <textarea id="f-appeal" maxlength="600" rows="5" placeholder="En az 10 karakter…"></textarea>
+    <button class="btn primary" data-act="sendappeal" data-id="${id}" style="width:100%;margin-top:8px">İtirazı gönder</button>`;
+  $('#modal').classList.remove('hidden');
 }
 
 // ═════════════════ REHBER ═════════════════
@@ -1299,6 +1323,15 @@ document.addEventListener('click', async (e) => {
     case 'block':      closeModal(); return confirm(`${id} engellensin mi? Mesajlarını görmezsin.`) && act('block_player', { p_nick: id });
     case 'unblock':    closeModal(); return act('unblock_player', { p_nick: id });
     case 'reportplayer': return openReport('player', null, id);
+    case 'appeal':     return openAppeal(id);
+    case 'sendappeal': {
+      const r = await api.rpc('submit_appeal', { p_action: +id, p_text: $('#f-appeal').value });
+      toast(r.msg, r.ok ? 'good' : 'bad');
+      if (!r.ok) return;
+      closeModal(); extra.penalties = await api.rpc('my_penalties');
+      if (S.banned) $('#ban-appeal').innerHTML = penaltiesHtml(extra.penalties, true); else renderTab();
+      return;
+    }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
     case 'logmain':    logView = 'main'; renderTab(); $('main').scrollTop = 0; return;
     case 'tutorial':   return showTutorial(true);

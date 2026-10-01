@@ -544,12 +544,19 @@ nav button[data-badge]:not([data-badge=""])::after {
 
 /* Mesaja dokununca açılan menü + şikâyet gerekçeleri */
 .chat .msg.tap { cursor: pointer; }
+/* Cezalar ve itiraz */
+.penalty .title { font-size: 15px; }
+.appeal-status { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: #1a140f; border-left: 3px solid var(--gold); }
+.appeal-status.accepted { border-color: var(--green); }
+.appeal-status.rejected { border-color: var(--red); }
+.ban-appeal { width: min(380px, 100%); text-align: left; }
+#modal textarea { width: 100%; font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #1a140f; color: var(--paper); resize: vertical; }
 .chat .msg.tap:active .bubble { filter: brightness(.92); }
 .menu-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
 .menu-list .btn { width: 100%; text-align: left; }
 
 /* Arma görseli + Don'un arma seçicisi */
-.crest.img { background: #15110d; overflow: hidden; }
+.crest.img { background: none; border: 0; box-shadow: none; overflow: visible; }
 .crest.img img { width: 100%; height: 100%; object-fit: cover; }
 .crest-pick { margin: -2px 0 10px; text-align: center; }
 .crest-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 8px 0; justify-items: center; }
