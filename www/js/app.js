@@ -17,7 +17,7 @@ const fmt = (s) => s >= 3600 ? `${Math.floor(s / 3600)} sa ${Math.floor(s % 3600
 // ─────────────── Veri ───────────────
 async function refresh() {
   // açık konuşmayı önce oku ki okunmamış sayacı doğru gelsin
-  if (S?.player && tab === 'log' && extra.conv) extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
+  if (S?.player && tab === 'chat' && chatCh === 'dm' && extra.conv) extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
   S = await api.rpc('get_state');
   if (S.player) {
     clockOffset = new Date(S.now) - Date.now();
@@ -29,16 +29,20 @@ async function refresh() {
 async function loadTabData() {
   const rpc = api.rpc;
   if (tab === 'city') [extra.spots, extra.events] = await Promise.all([rpc('get_spots'), rpc('get_events')]);
-  else if (tab === 'log') [extra.players, extra.inbox, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
+  else if (tab === 'log') [extra.players, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
   if (tab === 'log') extra.friends = await rpc('get_friends');
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
 }
 
-// Sohbet sekmesi: genel, şehir ya da aile kanalı
+// Sohbet sekmesi: genel, şehir, aile kanalı ya da özel mesajlar (dm)
 let chatCh = 'global';
 async function loadChat() {
+  if (chatCh === 'dm') {
+    [extra.inbox, extra.convMsgs] = await Promise.all([api.rpc('get_inbox'), extra.conv ? api.rpc('get_conversation', { p_nick: extra.conv }) : []]);
+    return;
+  }
   if (chatCh === 'family') { await loadFamily(); if (!extra.family?.family) chatCh = 'global'; else return; }
   extra.chat = await api.rpc('get_chat', { p_channel: chatCh });
 }
@@ -138,7 +142,7 @@ function render() {
   $('#h-cash').innerHTML = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
   $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`;
-  $('[data-go="log"]').dataset.badge = p.unread > 0 ? p.unread : '';
+  $('[data-go="chat"]').dataset.badge = p.unread > 0 ? p.unread : '';
   $('#xpbar div').style.width = next ? `${100 * (p.xp - rank.min_xp) / (next.min_xp - rank.min_xp)}%` : '100%';
   renderTab();
   tick();
@@ -925,8 +929,10 @@ function openReport(kind, ref, nick) {
 
 function chatTab() {
   const p = S.player, F = extra.family, inFam = !!p.family;
-  const tabs = [['global', 'Genel'], ['city', cityName(p.city)], ...(inFam ? [['family', 'Aile']] : [])];
-  let h = `<div class="chat-tabs">${tabs.map(([k, label]) => `<button class="${chatCh === k ? 'on' : ''}" data-act="chatch" data-id="${k}">${esc(label)}</button>`).join('')}</div>`;
+  const tabs = [['global', 'Genel'], ['city', cityName(p.city)], ...(inFam ? [['family', 'Aile']] : []), ['dm', 'Mesajlar']];
+  let h = `<div class="chat-tabs">${tabs.map(([k, label]) => `<button class="${chatCh === k ? 'on' : ''}" data-act="chatch" data-id="${k}">${esc(label)}${
+    k === 'dm' && p.unread > 0 ? ` <span class="pill">${p.unread}</span>` : ''}</button>`).join('')}</div>`;
+  if (chatCh === 'dm') return h + messagesSection();
   const note = { global: 'Bütün oyuncular burada. Saygılı ol; küfür otomatik sansürlenir, hakaret ve taciz şikâyet edilir.',
     city: `Sadece şu an ${cityName(p.city)} şehrinde olanlar görür. Başka şehre gidince o şehrin sohbetine geçersin.`,
     family: 'Sadece ailen görür.' }[chatCh];
@@ -974,17 +980,17 @@ function seasonSection() {
 function messagesSection() {
   if (extra.conv) {
     return `<h2>${esc(extra.conv)}</h2>
-      <p><button class="btn sm" data-act="closeconv">← Gelen kutusu</button></p>
+      <p><button class="btn sm" data-act="closeconv">← Mesajlar</button></p>
       <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)}${!m.mine
         ? ` <a class="flag" data-report="message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`).join('') || '<div class="muted small">Henüz mesaj yok.</div>'}</div>
       <form class="form-row" id="dm-form"><input id="f-dm" maxlength="500" placeholder="Mesaj yaz…" autocomplete="off">
         <button class="btn primary">Gönder</button></form>`;
   }
-  return `<h2>Mesajlar${S.player.unread ? ` (${S.player.unread} yeni)` : ''}</h2>` +
+  return `<p class="muted small chat-note">Sadece arkadaşlarınla yazışırsın. Arkadaş eklemek için Defter'deki Arkadaşlar bölümüne bak.</p>` +
     (extra.inbox.length ? extra.inbox.map(c => `<div class="card clickable" data-act="openconv" data-id="${esc(c.nick)}">
       <span class="icon emoji">${c.unread > 0 ? '📩' : '✉'}</span><div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
       <div class="muted small ellipsis">${esc(c.last)}</div></div></div>`).join('')
-      : `<p class="muted small">Mesaj yok. Arkadaşlarına yazabilirsin: Arkadaşlar listesinde ✉'ye dokun.</p>`);
+      : `<p class="muted small">Henüz mesaj yok. Arkadaşına yazmak için Defter → Arkadaşlar listesinde ✉'ye dokun.</p>`);
 }
 
 const tile = (icon, label, v) => `<div class="tile"><span class="t-ic">${icon}</span><b>${v}</b><span>${label}</span></div>`;
@@ -1024,7 +1030,7 @@ function logTab() {
   h += seasonSection();
   if (p.proposals.length) h += `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
     `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`, '<span class="icon emoji">💍</span>')).join('');
-  h += friendsSection() + messagesSection();
+  h += friendsSection();
   h += `<div class="card clickable" data-act="suggest"><span class="icon emoji">💡</span><div class="grow">
       <div class="title">Öneri kutusu</div><div class="muted small">Yeni özellik, etkinlik, mod ya da değişiklik fikrini yönetime gönder</div></div>
       <span class="muted">›</span></div>`;
@@ -1344,9 +1350,9 @@ const num = (id) => parseInt(val(id), 10) || 0;
 const closeModal = () => $('#modal').classList.add('hidden');
 
 async function openConv(nick) {
-  extra.conv = nick;
+  extra.conv = nick; chatCh = 'dm';
   closePanel();
-  if (tab !== 'log') return $('[data-go="log"]').click();
+  if (tab !== 'chat') return $('[data-go="chat"]').click();
   await refresh(); scrollChat();
 }
 
@@ -1503,7 +1509,7 @@ document.addEventListener('click', async (e) => {
     case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı (${moneyText(S.settings.marriage_cost)}) senden çıkar.`) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
-    case 'chatch':     chatCh = id; extra.chat = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
+    case 'chatch':     chatCh = id; extra.chat = null; extra.conv = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
     case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
     // kumarhane
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
@@ -1516,6 +1522,7 @@ document.addEventListener('click', async (e) => {
 });
 
 // Kumarhane: sonucu panelde gösterir, bahis kutusu dolu kalır (aynı bahisle tekrar oynansın)
+const buzz = (win) => { try { navigator.vibrate?.(win ? [40, 60, 40, 60, 120] : [180]); } catch {} };
 async function playCasino(b) {
   if (busy) return;
   const a = b.dataset.act, game = a === 'bjstart' ? 'bj' : b.dataset.game, bet = num('f-bet-' + game);
@@ -1538,10 +1545,12 @@ async function playCasino(b) {
     S = await api.rpc('get_state'); render();
     // Krupiye: gizli kartı çevirir, sonra gerekirse tek tek çeker
     while (extra.bj === r && r.done && extra.bjReveal != null && extra.bjReveal < cards(r.dealer).length) {
-      await new Promise(res => setTimeout(res, 750));
+      await new Promise(res => setTimeout(res, 2000));   // her kart arası 2 sn: gerilim
       if (extra.bj !== r) break;
       extra.bjReveal++; render();
     }
+    // Sonuç belli olunca telefona kısa titreşim (destekleyen tarayıcılarda; iOS Safari desteklemez)
+    if (r.ok && (a === 'casino' || (r.done && extra.bj === r))) buzz(r.win > 0);
   } finally { busy = false; }
 }
 
@@ -1594,15 +1603,12 @@ document.addEventListener('submit', async (e) => {
 });
 
 const scrollChat = () => { for (const c of [$('#chat'), $('#dm')]) if (c) c.scrollTop = c.scrollHeight; };
-// Aile sohbeti ya da özel mesaj açıkken 10 sn'de bir tazele (yazarken bölme)
+// Sohbet sekmesi (kanal ya da özel mesaj) açıkken 10 sn'de bir tazele (yazarken bölme)
 setInterval(async () => {
   if (document.hidden || !S?.player) return;
   if (tab === 'chat') {
-    if ([$('#f-chat'), $('#f-gchat')].some(i => i && i === document.activeElement && i.value)) return;
+    if ([$('#f-chat'), $('#f-gchat'), $('#f-dm')].some(i => i && i === document.activeElement && i.value)) return;
     await loadChat();
-  } else if (tab === 'log' && extra.conv) {
-    if ($('#f-dm') === document.activeElement && val('f-dm')) return;
-    extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
   } else return;
   renderTab(); scrollChat();
 }, 6000);
