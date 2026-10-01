@@ -184,10 +184,10 @@ const STREETS = [
 // Süsler: her sokağa bir set. x = sokak genişliğinin %'si (parçanın ortası; 33/67 bina araları),
 // top = duvardaki yükseklik (px), yoksa kaldırıma basar; h = boy (px). Duvardakiler binaların arkasında kalır.
 const DECOR = [
-  [{ d: 'sarmasik', x: 3, top: 0, h: 46 }, { d: 'fener', x: 33.4, top: 18, h: 30 }, { d: 'afis', x: 66.6, top: 26, h: 34 }, { d: 'kedi', x: 33.4, h: 22 }],
-  [{ d: 'fener', x: 33.4, top: 20, h: 28 }, { d: 'balkon', x: 66.6, top: 4, h: 30 }, { d: 'kasa', x: 33.4, h: 28 }],
-  [{ d: 'afis', x: 33.4, top: 24, h: 32 }, { d: 'camasir', x: 66.6, top: 2, h: 24 }, { d: 'fici', x: 66.6, h: 26 }, { d: 'boyaci', x: 3, h: 20 }],
-  [{ d: 'fener', x: 66.6, top: 20, h: 28 }, { d: 'sarmasik', x: 97, top: 0, h: 44 }, { d: 'incir', x: 33.4, h: 42 }],
+  [{ d: 'sarmasik', x: 3, top: 0, h: 46 }, { d: 'afis', x: 66.6, top: 26, h: 34 }, { d: 'kedi', x: 33.4, h: 22 }],
+  [{ d: 'sarmasik', x: 97, top: 0, h: 44 }, { d: 'kasa', x: 33.4, h: 28 }],
+  [{ d: 'afis', x: 33.4, top: 24, h: 32 }, { d: 'fici', x: 66.6, h: 26 }, { d: 'boyaci', x: 3, h: 20 }],
+  [{ d: 'sarmasik', x: 66.6, top: 0, h: 40 }, { d: 'incir', x: 33.4, h: 42 }],
 ];
 const CITY_ORDER = ['istanbul', 'izmir', 'selanik', 'pire', 'iskenderiye', 'beyrut'];
 
