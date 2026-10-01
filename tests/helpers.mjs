@@ -11,6 +11,8 @@ export async function setup() {
     try { await db.exec(readFileSync(new URL('migrations/' + f, dir), 'utf8')); }
     catch (e) { throw new Error(`${f}: ${e.message}${e.where ? ' @ ' + e.where : ''}`); }
   }
+  // Planlı etkinlikler gerçek saate bağlı: testler hangi saatte çalışırsa çalışsın etkilenmesin (events testi açar)
+  await db.exec(`update game_settings set value = 0 where key = 'ev_planned'`);
 
   const as = async (uid, sql, params = []) => {
     await db.query(`select set_config('test.uid', $1, false)`, [uid]);

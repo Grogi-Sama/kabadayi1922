@@ -611,3 +611,82 @@ nav button[data-badge]:not([data-badge=""])::after {
 .jobs-grid .job .body { gap: 8px; padding: 9px 10px 11px; }
 .job .odds { height: 18px; }
 .job .odds span { font-size: 11px; }
+
+/* Kilitli iş açıklaması + ekip işi nasıl yapılır */
+.lock-note { font-size: 12px; line-height: 1.35; color: var(--muted); }
+.lock-note b { color: var(--gold-hi); }
+.howto { font-size: 13px; text-align: left; }
+.howto summary { color: var(--gold); cursor: pointer; font-weight: 600; }
+.howto ol { margin: 6px 0 4px; padding-left: 18px; }
+.howto li { margin: 3px 0; }
+
+/* ─── Kumarhane ─── */
+.casino-hero { position: relative; margin: 0 -16px 8px; height: 120px; overflow: hidden; border-bottom: 2px solid var(--gold); }
+.casino-hero img { width: 100%; height: 100%; object-fit: cover; }
+.casino-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(21,17,13,.85)); }
+.ch-title { position: absolute; z-index: 1; left: 0; right: 0; bottom: 8px; text-align: center; font: 24px var(--display); letter-spacing: 3px;
+  color: var(--gold-hi); text-shadow: 0 2px 0 #000; text-transform: uppercase; }
+.bet-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.bet-row input { flex: 1; min-width: 0; padding: 10px; }
+.bet-chip { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; flex: 0 0 auto; }
+.bet-chip img { width: 100%; height: 100%; }
+.bet-chip span { position: absolute; inset: 0; display: grid; place-items: center; font: 700 11px var(--body); color: #fff; text-shadow: 0 1px 2px #000; }
+.bet-chip.max { border-radius: 50%; background: radial-gradient(circle, var(--gold-hi), #8a6a26); }
+.bet-chip.max span { color: #1b140c; text-shadow: none; }
+.bet-chip:active { transform: scale(.92); }
+.games { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.game { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 12px; text-align: center;
+  background: radial-gradient(ellipse at 50% 30%, #1f5a52, #12332f 75%); border: 2px solid #8a6a26; box-shadow: inset 0 0 0 3px #0e2a26; }
+.game.wide { grid-column: 1 / -1; }
+.g-head { font: 16px var(--display); letter-spacing: 1px; color: var(--gold-hi); }
+.g-res { min-height: 1.4em; font-size: 14px; }
+.g-btns { display: flex; gap: 6px; width: 100%; }
+.g-btns .btn { flex: 1; padding: 8px 4px; }
+.g-btns input { flex: 1; min-width: 0; padding: 8px; text-align: center; }
+.btn.red { background: linear-gradient(180deg, #b3453a, #7a2331); color: #fff; border-color: #5a1822; }
+.btn.black { background: linear-gradient(180deg, #3a3a3a, #111); color: #fff; border-color: #000; }
+.dice { display: flex; gap: 10px; padding: 6px 0; }
+.die { width: 46px; height: 46px; border-radius: 9px; background: linear-gradient(145deg, #fff8e6, #e2d2ad); box-shadow: 0 3px 6px rgba(0,0,0,.5), inset 0 -3px 0 rgba(0,0,0,.12);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 6px; }
+.die i { border-radius: 50%; margin: 2px; }
+.die i.on { background: #1b2a2a; }
+.die.roll { animation: roll .6s ease-out; }
+@keyframes roll { 0% { transform: rotate(-360deg) scale(.6); } 70% { transform: rotate(15deg) scale(1.08); } 100% { transform: none; } }
+.wheel { width: 96px; height: 96px; }
+.wheel img { width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.wheel.spin img { animation: wheel 1.4s cubic-bezier(.2,.8,.3,1); }
+@keyframes wheel { from { transform: rotate(-1080deg); } to { transform: none; } }
+.rnum { display: inline-grid; place-items: center; min-width: 34px; height: 34px; border-radius: 50%; font: 700 16px var(--body); color: #fff; border: 2px solid var(--gold); }
+.rnum.red { background: #a8322c; } .rnum.black { background: #111; } .rnum.green { background: #1f7a3a; }
+.slotm { position: relative; width: min(240px, 80%); }
+.slotm .frame { width: 100%; display: block; }
+.reels { position: absolute; left: 13%; right: 17%; top: 33%; height: 33%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4%; }
+.reels span { display: grid; place-items: center; background: #fff8e6; border-radius: 4px; overflow: hidden; }
+.reels .sym { max-width: 80%; max-height: 80%; object-fit: contain; font-size: 22px; }
+.reels.spin span { animation: reel .9s cubic-bezier(.2,.8,.3,1) both; }
+.reels.spin span:nth-child(2) { animation-duration: 1.1s; } .reels.spin span:nth-child(3) { animation-duration: 1.3s; }
+@keyframes reel { 0% { transform: translateY(-120%); filter: blur(3px); } 80% { filter: none; } 100% { transform: none; } }
+.felt { padding: 12px; border-radius: 14px; text-align: center; background: radial-gradient(ellipse at 50% 30%, #1f5a52, #12332f 75%);
+  border: 2px solid #8a6a26; box-shadow: inset 0 0 0 3px #0e2a26; }
+.bj-row { display: flex; align-items: center; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 6px 0; min-height: 70px; }
+.bj-who { width: 100%; font-size: 13px; color: var(--gold-hi); }
+.pcard { width: 46px; height: 66px; border-radius: 6px; background: #fffaf0; color: #15110d; box-shadow: 0 3px 6px rgba(0,0,0,.5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; animation: deal .35s ease-out both; }
+.pcard b { font: 700 18px var(--body); } .pcard i { font-style: normal; font-size: 20px; }
+.pcard.red { color: #b3262f; }
+.pcard.back { background: none; padding: 0; overflow: hidden; } .pcard.back img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes deal { from { transform: translateY(-30px) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .die.roll, .wheel.spin img, .reels.spin span, .pcard { animation: none; } }
+
+/* Para: sikke simgesi + sayı */
+.money { white-space: nowrap; }
+.coin-ic { width: 1.05em; height: 1.05em; vertical-align: -0.17em; margin-right: .18em; display: inline-block; }
+
+/* Etkinlik şeridi (harita) ve takvim */
+.ev-strip { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: rgba(21,17,13,.92); border-bottom: 2px solid var(--gold); cursor: pointer; }
+.ev { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ev b { color: var(--gold-hi); }
+.ev span:last-child { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev.on .ev-ic { animation: pulse 1.6s ease-in-out infinite; display: inline-block; }
+.ev.soon b { color: var(--paper); }
+.ev-card.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }

@@ -66,7 +66,9 @@ begin
   update players set cash = cash - p_bet + win,
     casino_ready_at = now() + make_interval(secs => setting('casino_cooldown_s')) where id = p.id;
   if win >= p_bet * 20 then perform log_event(p.id, 'Kumarhanede büyük vurgun: $' || win || '!'); end if;
-  return jsonb_build_object('ok', true, 'success', win > 0, 'win', win, 'detail', detail,
+  return jsonb_build_object('ok', true, 'success', win > 0, 'win', win, 'detail', detail, 'game', p_game,
+    -- ekranda zar/rulet/slot çizebilmek için ayrı alanlar
+    'd1', d1, 'd2', d2, 'num', case when p_game = 'rulet' then n end, 'reels', to_jsonb(reels),
     'msg', detail || ' — ' || case when win > 0 then '$' || win || ' kazandın!' else '$' || p_bet || ' kaybettin.' end);
 end $$;
 

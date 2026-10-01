@@ -321,8 +321,8 @@ begin
   t := player_by_nick(p_nick);
   if t.id is null or t.id = p.id then return fail('Geçersiz hedef.'); end if;
   if rank_of(t.xp) < setting('protect_rank') then return fail('Çaylakların başına ödül konmaz.'); end if;
-  fee := ceil(p_amount * setting('bounty_fee'));
-  if p.cash < p_amount + fee then return fail('Ödül + %10 aracı payı: $' || (p_amount + fee)); end if;
+  fee := ceil(p_amount * setting('bounty_fee') * ev_bounty_fee());   -- kelle haftasında yarı (018_events)
+  if p.cash < p_amount + fee then return fail('Ödül + aracı payı: $' || (p_amount + fee)); end if;
   update players set cash = cash - p_amount - fee where id = p.id;
   insert into bounties (target_id, placer_id, amount) values (t.id, p.id, p_amount);
   perform log_event(t.id, 'Birisi başına $' || p_amount || ' ödül koydu!');

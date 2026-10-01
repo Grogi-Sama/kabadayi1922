@@ -239,7 +239,7 @@ end $$;
 
 create or replace function do_crime(p_crime text) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare p players; c crimes; rk int; reward int; msg text;
+declare p players; c crimes; rk int; reward int; xg int; msg text;
 begin
   p := me_for_update();
   select * into c from crimes where id = p_crime;
@@ -253,12 +253,14 @@ begin
 
   update players set crime_ready_at = now() + make_interval(secs => setting('crime_cooldown_s')) where id = p.id;
 
-  if random() < crime_chance(c, rk) then
-    reward := c.reward_min + floor(random() * (c.reward_max - c.reward_min + 1))::int;
-    update players set cash = cash + reward, xp = xp + c.xp where id = p.id;
+  -- ev_*: etkinlik çarpanları (018_events: polis baskını, altın saat); etkinlik yoksa 1
+  if random() < crime_chance(c, rk) * ev_crime_chance(p.city_id) then
+    reward := floor((c.reward_min + floor(random() * (c.reward_max - c.reward_min + 1))) * ev_crime_reward(p.city_id))::int;
+    xg := round(c.xp * ev_crime_xp())::int;
+    update players set cash = cash + reward, xp = xp + xg where id = p.id;
     msg := c.name || ': başarılı! $' || reward || ' kazandın.';
-    if rank_of(p.xp + c.xp) > rk then
-      msg := msg || ' Terfi ettin: ' || (select name from ranks where id = rank_of(p.xp + c.xp)) || '!';
+    if rank_of(p.xp + xg) > rk then
+      msg := msg || ' Terfi ettin: ' || (select name from ranks where id = rank_of(p.xp + xg)) || '!';
     end if;
     perform log_event(p.id, msg);
     return jsonb_build_object('ok', true, 'success', true, 'msg', msg);

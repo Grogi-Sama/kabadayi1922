@@ -3,7 +3,7 @@ import { probeAssets, img, hasAsset, assetUrl, ico } from './assets.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
+import { money, moneyText, richText } from './locale.js';
 
 let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1;
 // sekmeye / panele girince çekilen listeler
@@ -28,8 +28,8 @@ async function refresh() {
 
 async function loadTabData() {
   const rpc = api.rpc;
-  if (tab === 'city') extra.spots = await rpc('get_spots');
-  else if (tab === 'log') [extra.players, extra.inbox, extra.season, extra.penalties] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season'), rpc('my_penalties')]);
+  if (tab === 'city') [extra.spots, extra.events] = await Promise.all([rpc('get_spots'), rpc('get_events')]);
+  else if (tab === 'log') [extra.players, extra.inbox, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
@@ -89,7 +89,7 @@ async function act(name, args, opts = {}) {
 let toastTimer;
 function toast(msg, kind, art) {
   const t = $('#toast');
-  t.innerHTML = (art && hasAsset(art) ? `<img src="${assetUrl(art)}" alt="">` : '') + `<span>${esc(msg)}</span>`;
+  t.innerHTML = (art && hasAsset(art) ? `<img src="${assetUrl(art)}" alt="">` : '') + `<span>${richText(msg)}</span>`;
   t.className = 'toast ' + (kind || '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), art ? 4200 : 3200);
@@ -134,7 +134,7 @@ function render() {
   $('#h-nick').textContent = p.nick;
   $('#h-rank').textContent = rank.name + (next ? ` · ${p.xp}/${next.min_xp}` : ' · zirvede')
     + (p.family ? ` · ${p.family}` : '') + (p.bounty > 0 ? ` · 🎯 ${money(p.bounty)}` : '');
-  $('#h-cash').textContent = money(p.cash);
+  $('#h-cash').innerHTML = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
   $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`;
   $('[data-go="log"]').dataset.badge = p.unread > 0 ? p.unread : '';
@@ -265,7 +265,7 @@ function cityTab() {
       <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>
       <div class="hotspot" data-open="liman"><div class="dot">⚓</div>Liman</div>
     </div>
-    <div class="town">${town}</div></div>`;
+    ${eventStrip()}<div class="town">${town}</div></div>`;
 }
 
 // ── Binaya dokununca açılan panel
@@ -431,7 +431,7 @@ function hitlistSection() {
         ? ` · ${ico('kum', '⏳')} ${fmt(left(b.expires_at))}` : ''}`,
       `<span class="cash-sm">${money(b.amount)}</span>`)).join('') : `<p class="muted small">Listede kimse yok.</p>`) +
     `<div class="form-row"><input id="f-bounty-nick" placeholder="Kimin başına" autocomplete="off" autocapitalize="off">
-      <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül $" inputmode="numeric">
+      <input id="f-bounty-amt" type="number" min="1" placeholder="Ödül (sikke)" inputmode="numeric">
       <button class="btn primary" data-act="bounty">Koy</button></div>
     <p class="muted small">En az ${money(S.settings.bounty_min)}. Aracıya %${Math.round(S.settings.bounty_fee * 100)} pay. Ödülü onu öldüren alır.
       ${S.settings.bounty_days} gün içinde kimse öldürmezse ödül bankana geri döner (aracı payı dönmez).</p>`;
@@ -468,7 +468,7 @@ function raceSection() {
         <button class="btn sm primary" data-act="racejoin" data-id="${r.id}">Katıl</button></div>` : '')).join('');
   if (!inRace) {
     h += here.length ? `<div class="form-row">${carSelect('f-race-car')}
-        <input id="f-race-fee" type="number" min="1000" placeholder="Giriş $" inputmode="numeric">
+        <input id="f-race-fee" type="number" min="1000" placeholder="Giriş (sikke)" inputmode="numeric">
         <button class="btn primary" data-act="racecreate">Yarış aç</button></div>`
       : `<p class="muted small">Yarışmak için bu şehirde bir araban olmalı.</p>`;
   }
@@ -521,11 +521,11 @@ function marketSection() {
       l.kind === 'bullets' ? `<span class="icon emoji">🔫</span>` : `<span class="icon emoji">🚗</span>`)).join('')
     : `<p class="muted small">Pazarda ilan yok.</p>`;
   h += `<h2>Sat</h2><div class="form-row"><input id="f-sell-bullets" type="number" min="1" placeholder="Kurşun adedi" inputmode="numeric">
-      <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam $" inputmode="numeric">
+      <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam (sikke)" inputmode="numeric">
       <button class="btn" data-act="listbullets">Sat</button></div>`;
   if (S.cars.length) h += `<div class="form-row"><select id="f-sell-car">${S.cars.map(c =>
       `<option value="${c.id}">${esc(c.name)} · ${esc(cityName(c.city))}</option>`).join('')}</select>
-      <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat $" inputmode="numeric">
+      <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat (sikke)" inputmode="numeric">
       <button class="btn" data-act="listcar">Sat</button></div>`;
   return h;
 }
@@ -561,36 +561,65 @@ function spotPanel(sp) {
   return h;
 }
 
+// ── Kumarhane: zar, rulet, slot görsel; blackjack masada kartlarla
+const DIE_PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+const die = (n, roll) => `<span class="die ${roll ? 'roll' : ''}">${Array.from({ length: 9 }, (_, i) =>
+  `<i class="${DIE_PIPS[n]?.includes(i + 1) ? 'on' : ''}"></i>`).join('')}</span>`;
+// Sunucudaki slot sembolleri → görseller (sıklık sırası: fes en sık, amblem en nadir)
+const SLOT_SYM = { '🍒': 'casino/s_fes', '🍋': 'casino/s_raki', '🔔': 'casino/s_tespih', '🍀': 'casino/fis_bordo', '💎': 'casino/s_sikke', '7️⃣': 'ui/emblem' };
+const slotSym = (e) => img(SLOT_SYM[e] || 'casino/s_fes', 'sym', `<span class="sym">${e}</span>`);
+const RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+const rouletteColor = (n) => n === 0 ? 'green' : RED.includes(n) ? 'red' : 'black';
+// Kart: "10♥" → küçük kart; gizli kart → kart arkası görseli
+const cardHtml = (c) => c === '🂠' ? `<span class="pcard back">${img('casino/kart', '', '')}</span>`
+  : `<span class="pcard ${/[♥♦]/.test(c) ? 'red' : ''}"><b>${c.slice(0, -1)}</b><i>${c.slice(-1)}</i></span>`;
+const hand = (label) => (label || '').split(' ').filter(Boolean).map(cardHtml).join('');
+
 function casinoSection() {
-  const c = extra.casino;
-  return `<h2>Kumarhane</h2>
-    <p class="muted small">Oyun parasıyla oynanır. Rütbene göre en fazla bahis: <b>${money(S.player.max_bet)}</b>. Kasa her zaman biraz önde.</p>
-    <div class="form-row"><input id="f-bet" type="number" min="10" placeholder="Bahis $" inputmode="numeric"></div>
-    <div class="casino">
-      <button class="btn" data-act="casino" data-game="zar" data-choice="yuksek">🎲 Yüksek (8-12)</button>
-      <button class="btn" data-act="casino" data-game="zar" data-choice="dusuk">🎲 Düşük (2-6)</button>
-      <button class="btn" data-act="casino" data-game="rulet" data-choice="kirmizi">🔴 Kırmızı</button>
-      <button class="btn" data-act="casino" data-game="rulet" data-choice="siyah">⚫ Siyah</button>
-      <button class="btn primary" data-act="casino" data-game="slot">🎰 Slot çevir</button>
-      <div class="form-row"><input id="f-rulet-n" type="number" min="0" max="36" placeholder="Sayı 0-36" inputmode="numeric">
-        <button class="btn" data-act="casino" data-game="rulet" data-choice="num">×36</button></div>
+  const c = extra.casino, max = S.player.max_bet, just = c && !c.shown;
+  if (c) c.shown = true;   // animasyon sadece sonuç ilk çizildiğinde
+  const chips = [[100, 'fis_teal'], [1000, 'fis_bordo'], [10000, 'fis_siyah']].filter(([v]) => v <= max);
+  return `<div class="casino-hero">${img('ui/kumar_bant', '', '')}<div class="ch-title">Kumarhane</div></div>
+    <p class="muted small">Oyun parasıyla oynanır. Rütbene göre en yüksek bahis: <b>${money(max)}</b>. Kasa her zaman biraz önde.</p>
+    <div class="bet-row"><input id="f-bet" type="number" min="10" placeholder="Bahis" inputmode="numeric">
+      ${chips.map(([v, ic]) => `<button class="bet-chip" data-act="betset" data-id="${v}">${img('casino/' + ic, '', '')}<span>${v >= 1000 ? v / 1000 + 'B' : v}</span></button>`).join('')}
+      <button class="bet-chip max" data-act="betset" data-id="${max}"><span>Max</span></button></div>
+    <div class="games">
+      <div class="game"><div class="g-head">Zar</div>
+        <div class="dice">${die(c?.game === 'zar' ? c.d1 : 6, just && c.game === 'zar')}${die(c?.game === 'zar' ? c.d2 : 1, just && c.game === 'zar')}</div>
+        ${c?.game === 'zar' ? `<div class="g-res">${c.d1} + ${c.d2} = <b>${c.d1 + c.d2}</b></div>` : '<div class="g-res muted">İki zarın toplamını bil</div>'}
+        <div class="g-btns"><button class="btn sm" data-act="casino" data-game="zar" data-choice="yuksek">Yüksek 8-12</button>
+          <button class="btn sm" data-act="casino" data-game="zar" data-choice="dusuk">Düşük 2-6</button></div></div>
+      <div class="game"><div class="g-head">Rulet</div>
+        <div class="wheel ${just && c.game === 'rulet' ? 'spin' : ''}">${img('casino/rulet', '', '🎡')}</div>
+        ${c?.game === 'rulet' ? `<div class="g-res"><span class="rnum ${rouletteColor(c.num)}">${c.num}</span></div>` : '<div class="g-res muted">Renk ya da sayı seç</div>'}
+        <div class="g-btns"><button class="btn sm red" data-act="casino" data-game="rulet" data-choice="kirmizi">Kırmızı</button>
+          <button class="btn sm black" data-act="casino" data-game="rulet" data-choice="siyah">Siyah</button></div>
+        <div class="g-btns"><input id="f-rulet-n" type="number" min="0" max="36" placeholder="0-36" inputmode="numeric">
+          <button class="btn sm" data-act="casino" data-game="rulet" data-choice="num">×36</button></div></div>
+      <div class="game wide"><div class="g-head">Slot</div>
+        <div class="slotm">${img('casino/slot', 'frame', '')}<div class="reels ${just && c.game === 'slot' ? 'spin' : ''}">
+          ${(c?.game === 'slot' ? c.reels : ['🍒', '💎', '7️⃣']).map(e => `<span>${slotSym(e)}</span>`).join('')}</div></div>
+        <button class="btn primary" data-act="casino" data-game="slot">Kolu çek</button>
+        <p class="muted small">Üç amblem ×250 · üç sikke ×60 · üç fiş ×25 · üç tespih ×14 · üç rakı ×8 · üç fes ×5 · iki fes ×3 · tek fes ×1,2</p></div>
     </div>
-    ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${esc(c.msg)}</div>` : ''}
+    ${c ? `<div class="casino-result ${c.win > 0 ? 'good' : 'bad'}">${richText(c.msg)}</div>` : ''}
     <h2>Blackjack</h2>${bjSection()}
-    <h2>Kazı Kazan</h2>` + card('Tanesi ' + money(S.settings.scratch_price), 'Büyük ikramiye $100.000',
+    <h2>Kazı Kazan</h2>` + card('Tanesi ' + money(S.settings.scratch_price), `Büyük ikramiye ${money(100000)}`,
       `<button class="btn sm primary" data-act="scratch">Kazı</button>`) + lotterySection();
 }
 
 function bjSection() {
   const g = extra.bj;
-  if (!g) return `<p class="muted small">Bahsi yukarıdaki kutuya yaz. Krupiye 17'de durur, blackjack 3:2 öder.</p>
-    <button class="btn primary" data-act="bjstart">Kart dağıt</button>`;
-  return `<div class="bj"><div>Krupiye: <b>${esc(g.dealer)}</b>${g.dealer_value != null ? ` (${g.dealer_value})` : ''}</div>
-    <div>Sen: <b>${esc(g.hand)}</b> (${g.hand_value}) · bahis ${money(g.bet)}</div></div>` +
-    (g.done ? `<div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${esc(g.msg)}</div>
+  if (!g) return `<div class="felt"><p class="muted small">Bahsi yukarıdaki kutuya yaz. Krupiye 17'de durur, blackjack 3:2 öder.</p>
+    <button class="btn primary" data-act="bjstart">Kart dağıt</button></div>`;
+  return `<div class="felt"><div class="bj-row"><span class="bj-who">Krupiye${g.dealer_value != null ? ` · ${g.dealer_value}` : ''}</span>${hand(g.dealer)}</div>
+    <div class="bj-row"><span class="bj-who">Sen · ${g.hand_value}</span>${hand(g.hand)}</div>
+    <div class="muted small">Bahis ${money(g.bet)}</div>` +
+    (g.done ? `<div class="casino-result ${g.win > 0 ? 'good' : 'bad'}">${richText(g.msg)}</div>
        <button class="btn primary" data-act="bjstart">Yeni el</button>`
      : `<div class="market-actions"><button class="btn primary" data-act="bjhit">Kart çek</button>
-        <button class="btn" data-act="bjstand">Dur</button></div>`);
+        <button class="btn" data-act="bjstand">Dur</button></div>`) + `</div>`;
 }
 
 function lotterySection() {
@@ -622,7 +651,8 @@ function crimeTab() {
         ${locked ? `<div class="lock"><span>${ico('kilit', '🔒')}</span><em>${esc(rankName(c.min_rank))}</em></div>`
           : `<span class="coin">${money(c.reward_min)}–${money(c.reward_max)}</span>`}</div>
       <div class="body"><div class="title">${esc(c.name)}</div>
-        ${locked ? '' : pctBar(pct, `%${pct} şans`)}
+        ${locked ? `<div class="lock-note">Bu işi açmak için en az <b>${esc(rankName(c.min_rank))}</b> rütbesinde olmalısın. Suç işledikçe itibar kazanır, rütbe atlarsın.</div>`
+          : pctBar(pct, `%${pct} şans`)}
         ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(wait)}>${
           wait && !blocked() ? ico('kum', '⏳') + ' ' + fmt(left(S.player.crime_ready_at)) : 'Yap'}</button>`}</div>
     </div>`;
@@ -638,6 +668,14 @@ const roleIcon = (r) => { const k = r.replace(/\d+$/, ''); return ico(k, ROLE_IC
 // Ekip yuvası: rol simgesi, rol adı, kim (boşsa kesikli çember)
 const slot = (role, nick, state = 'empty') => `<div class="slot ${state}"><div class="slot-av">${roleIcon(role)}</div>
   <b>${roleLabel(role)}</b><span>${nick ? nickLink(nick) : 'boş'}</span></div>`;
+
+// Ekip işi nasıl yapılır: kısa açıklama (kilitli ve açık kartlarda)
+const crewHowTo = (t) => `<details class="howto"><summary>Ekip işi nasıl yapılır?</summary>
+  <ol><li>Sen <b>lider</b> olursun. "Ekibi kur"a dokun.</li>
+  <li>Diğer rollere (${t.roles.slice(1).map(roleLabel).join(', ')}) oyuncuları <b>takma adlarıyla</b> yaz ve davet et.</li>
+  <li>Davet edilenler İşler sekmesinde daveti görüp <b>Katıl</b> der. Herkes aynı şehirde olmalı.</li>
+  <li>Herkes katılınca <b>Başlat</b>. Şoförün arabası, silahçının kurşunu yeterliyse iş başlar; ganimet paylaşılır.</li></ol>
+  <p class="muted small">Ekip bulmak için Sohbet sekmesini ya da aileni kullan.</p></details>`;
 
 function crewSection() {
   const X = extra.crews;
@@ -674,7 +712,9 @@ function crewSection() {
           : `<span class="coin">${money(t.payout_min)}–${money(t.payout_max)}</span>`}</div>`;
       if (locked) {
         h += `<div class="card job crew locked">${art}<div class="body"><div class="title">${esc(t.name)}</div>
-          <div class="slots">${t.roles.map(r => slot(r, '')).join('')}</div></div></div>`;
+          <div class="slots">${t.roles.map(r => slot(r, '')).join('')}</div>
+          <div class="lock-note">Bu işi açmak için en az <b>${esc(rankName(t.min_rank))}</b> rütbesinde olmalısın.</div>
+          ${crewHowTo(t)}</div></div>`;
         continue;
       }
       const req = [`lider ${money(t.leader_cost)} + silah + ${X.settings.leader_bullets} kurşun`,
@@ -685,6 +725,7 @@ function crewSection() {
         <div class="title">${esc(t.name)}</div>
         <div class="slots">${t.roles.map((r, i) => slot(r, i === 0 ? S.player.nick : '', i === 0 ? 'ok' : 'empty')).join('')}</div>
         <div class="muted small">${req}. Herkes aynı şehirde olmalı.</div>
+        ${crewHowTo(t)}
         ${wait ? `<div class="muted small">${ico('kum', '⏳')} ${fmt(wait)} sonra tekrar</div>` : `
         <details class="crew-form" id="crew-${t.id}"><summary class="btn primary">Ekibi kur</summary>
           ${t.roles.slice(1).map(r => `<input id="f-crew-${t.id}-${r}" placeholder="${roleLabel(r)} (takma ad)" autocomplete="off" autocapitalize="off">`).join('')}
@@ -765,10 +806,10 @@ function familyTab() {
     <p class="muted small vault-help">Ailenin ortak parası. Üyeler buraya para koyar; mekân haraçları, ailenin fabrikasının kurşun
       satışları ve gazino payı da buraya gelir. Don ve Sottocapo kasadan üyelere ödeme yapar, fabrika satın alır.</p>
     <div class="stats">${stat(ico('uye', '👤'), F.members.length, 'üye')}${stat(ico('fabrika', '🏭'), F.factories.length, 'fabrika')}${stat(ico('mekan', '🏠'), mySpots, 'mekân')}</div>
-    <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy $" inputmode="numeric">
+    <div class="form-row"><input id="f-fam-dep" type="number" min="1" placeholder="Kasaya koy (sikke)" inputmode="numeric">
       <button class="btn primary" data-act="famdeposit">Koy</button></div>
     ${treasurer ? `<div class="form-row"><input id="f-pay-nick" placeholder="Üyeye" autocomplete="off" autocapitalize="off">
-      <input id="f-pay-amt" type="number" min="1" placeholder="$" inputmode="numeric">
+      <input id="f-pay-amt" type="number" min="1" placeholder="Sikke" inputmode="numeric">
       <button class="btn" data-act="fampay">Öde</button></div>` : ''}</div>`;
 
   h += `<h2>Üyeler (${F.members.length})</h2>` + rolesHelp() + `<div class="member-grid">` + F.members.map(m => {
@@ -784,6 +825,9 @@ function familyTab() {
   const last = F.messages.filter(m => m.nick).at(-1);
   h += `<div class="card clickable chat-link" data-act="gochat"><span class="icon emoji">💬</span><div class="grow">
       <div class="title">Aile sohbeti</div><div class="muted small ellipsis">${last ? `${esc(last.nick)}: ${esc(last.text)}` : 'Henüz mesaj yok.'}</div></div>
+      <span class="muted">›</span></div>
+    <div class="card clickable guide-link" data-act="evcal"><span class="icon emoji">📅</span><div class="grow">
+      <div class="title">Etkinlik takvimi</div><div class="muted small">${(extra.events || []).filter(evActive).map(e => EVENTS[e.kind].name).join(', ') || 'Kıtlık, altın saat, baskın gecesi ve sürprizler'}</div></div>
       <span class="muted">›</span></div>`;
 
   if (leader && F.applications?.length) {
@@ -796,7 +840,7 @@ function familyTab() {
   h += `<h2>Kurşun Fabrikaları</h2>` + (F.factories.length ? F.factories.map(f =>
       card(esc(f.city), `Fiyat ${money(f.price)} · stok ${f.stock}`, '', facIcon)).join('') : `<p class="muted small">Ailenin fabrikası yok.</p>`);
   if (here.mine && treasurer) {
-    h += `<div class="form-row"><input id="f-fac-price" type="number" min="2" max="20" placeholder="Buradaki fiyat ($2-20)">
+    h += `<div class="form-row"><input id="f-fac-price" type="number" min="2" max="20" placeholder="Buradaki fiyat (2-20 sikke)">
       <button class="btn primary" data-act="facprice">Ayarla</button></div>`;
   } else if (!here.owner) {
     h += card(`${esc(cityName(S.player.city))} fabrikası sahipsiz`, `Kasadan ${money(F.factory_price)}. Satılan her kurşunun parası kasaya girer.`,
@@ -937,13 +981,14 @@ function eventsSection() {
   for (const e of S.events) {
     const d = new Date(e.at), dd = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
     if (dd !== day) { h += `<div class="g-day">${dd}</div>`; day = dd; }
-    h += `<div class="g-item"><time>${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time><p>${esc(e.text)}</p></div>`;
+    h += `<div class="g-item"><time>${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time><p>${richText(e.text)}</p></div>`;
   }
   return h + '</div>';
 }
 
 function logTab() {
   if (logView === 'guide') return guideView();
+  if (logView === 'events') return eventsView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
   h += `<div class="card clickable guide-link" data-act="guide"><span class="icon emoji">📖</span><div class="grow">
@@ -977,6 +1022,43 @@ function logTab() {
   if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
   return h;
+}
+
+// ═════════════════ ETKİNLİKLER ═════════════════
+const EVENTS = {
+  kitlik:          { icon: '📉', name: 'Kıtlık', desc: (e) => `${S.market.find(g => g.id === e.good)?.name || 'Mal'} piyasada yok: satın alınamaz, satışta +%${Math.round(S.settings.ev_shortage_bonus * 100)} (en fazla ${S.settings.ev_shortage_cap} kasa).` },
+  altin_saat:      { icon: '⭐', name: 'Altın saat', desc: () => `Bütün suçlardan +%${Math.round(S.settings.ev_golden_xp * 100)} itibar.` },
+  baskin_gecesi:   { icon: '🔥', name: 'Baskın gecesi', desc: () => 'Mekân baskınlarından sonraki bekleme yarıya iner.' },
+  kelle_haftasi:   { icon: '🎯', name: 'Kelle haftası', desc: () => 'Kelle listesi aracı payı yarıya iner.' },
+  fabrika_kazasi:  { icon: '💥', name: 'Fabrika kazası', desc: (e) => `${cityName(e.city)} kurşun fabrikası kapalı.` },
+  polis_baskini:   { icon: '🚨', name: 'Polis baskını', desc: (e) => `${cityName(e.city)}: suçlarda yakalanma riski artar, ödül +%${Math.round((S.settings.ev_police_reward - 1) * 100)}.` },
+  liman_firtinasi: { icon: '🌊', name: 'Liman fırtınası', desc: (e) => `${cityName(e.city)} limanına ve limanından sefer yok.` },
+};
+const evActive = (e) => new Date(e.starts) <= Date.now() + clockOffset;
+const hm = (d) => new Date(d).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+// Haritada: bu şehirde süren ya da birazdan başlayacak etkinlikler
+function eventStrip() {
+  const p = S.player, soon = Date.now() + clockOffset + S.settings.ev_notice_minutes * 60e3;
+  const list = (extra.events || []).filter(e => (!e.city || e.city === p.city) && new Date(e.starts) <= soon);
+  if (!list.length) return '';
+  return `<div class="ev-strip" data-act="evcal">${list.map(e => `<div class="ev ${evActive(e) ? 'on' : 'soon'}">
+    <span class="ev-ic">${EVENTS[e.kind].icon}</span><b>${EVENTS[e.kind].name}</b>
+    <span>${evActive(e) ? `${fmt(left(e.ends))} kaldı` : `${fmt(left(e.starts))} sonra`}</span></div>`).join('')}</div>`;
+}
+
+function eventsView() {
+  const all = extra.events || [];
+  const now = all.filter(evActive), later = all.filter(e => !evActive(e));
+  const row = (e) => `<div class="card ev-card ${evActive(e) ? 'on' : ''}"><span class="icon emoji">${EVENTS[e.kind].icon}</span><div class="grow">
+    <div class="title">${EVENTS[e.kind].name}${e.city ? ` · ${esc(cityName(e.city))}` : ''}</div>
+    <div class="muted small">${evActive(e) ? `Sürüyor · ${fmt(left(e.ends))} kaldı` : `${new Date(e.starts).toLocaleDateString('tr-TR', { weekday: 'long' })} ${hm(e.starts)}–${hm(e.ends)}`}${e.planned ? '' : ' · sürpriz'}</div>
+    <div class="small">${EVENTS[e.kind].desc(e)}</div></div></div>`;
+  return banner('ui/defter_bant', 'Etkinlikler', 'Takvim ve sürprizler') +
+    `<p><button class="btn sm" data-act="logmain">← Defter</button></p>
+    <p class="muted small">Planlı etkinlikler her hafta aynı saatlerde olur (Türkiye saati). Sürpriz etkinlikler başlamadan ${S.settings.ev_notice_minutes} dakika önce haritada duyurulur.</p>
+    <h2>Şu an</h2>${now.length ? now.map(row).join('') : '<p class="muted small">Şu an süren etkinlik yok.</p>'}
+    <h2>Yaklaşan</h2>${later.slice(0, 20).map(row).join('') || '<p class="muted small">Yakında etkinlik yok.</p>'}`;
 }
 
 // ═════════════════ CEZALAR VE İTİRAZ ═════════════════
@@ -1070,6 +1152,12 @@ function guideSections() {
       `Genel, şehir ve aile sohbeti var. Küfür otomatik sansürlenir.`,
       `Rahatsız eden birinin mesajına ya da portresine dokun: şikâyet et veya engelle.`,
       `Hakaret, taciz, hile ve dolandırıcılık susturma ya da banla sonuçlanır; gerekçe sana gösterilir.`])],
+    ['etkinlik', '📅 Etkinlikler', li([
+      `Kıtlık (her gün 17-18): kahve ya da tütün piyasadan kalkar; elinde olan %${Math.round(st.ev_shortage_bonus * 100)} primle satar (kişi başı ${st.ev_shortage_cap} kasa).`,
+      `Altın saat (her gün 21-22): suçlardan %${Math.round(st.ev_golden_xp * 100)} fazla itibar.`,
+      `Baskın gecesi (Cuma 21-23): baskın bekleme süresi yarıya iner. Kelle haftası (Cumartesi-Pazar): aracı payı yarıya iner.`,
+      `Sürprizler: fabrika kazası, polis baskını, liman fırtınası. Başlamadan ${st.ev_notice_minutes} dakika önce haritada duyurulur.`,
+      `Takvim Defter sekmesinde.`])],
     ['sezon', '🏆 Sezonlar ve diğerleri', li([
       `Sezon ${st.season_days} gün sürer. Sonunda İtibar, İnfaz, Servet ve Aile listelerinde ilk 3'e girenler kalıcı rozet alır, sonra herkes sıfırdan başlar.`,
       `Sığınak: saatlik ücretle (en fazla ${st.hideout_max_h} saat) yer altına inersin; kimse bulamaz ama iş de yapamazsın.`,
@@ -1333,6 +1421,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
+    case 'evcal':      logView = 'events'; if (tab !== 'log') return $('[data-go="log"]').click(); renderTab(); $('main').scrollTop = 0; return;
     case 'logmain':    logView = 'main'; renderTab(); $('main').scrollTop = 0; return;
     case 'tutorial':   return showTutorial(true);
     case 'tutnext':    tutStep++; return renderTut();
@@ -1343,7 +1432,7 @@ document.addEventListener('click', async (e) => {
     case 'reportmsg':  return openReport(b.dataset.kind, b.dataset.ref ? +b.dataset.ref : null, id);
     case 'sendreport': closeModal(); return act('report_content', { p_kind: b.dataset.kind, p_ref: b.dataset.ref ? +b.dataset.ref : null,
       p_nick: b.dataset.kind === 'player' ? b.dataset.nick : null, p_reason: b.dataset.reason });
-    case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı ($${S.settings.marriage_cost}) senden çıkar.`) && act('propose', { p_nick: id });
+    case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı (${moneyText(S.settings.marriage_cost)}) senden çıkar.`) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
     case 'chatch':     chatCh = id; extra.chat = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
@@ -1352,6 +1441,7 @@ document.addEventListener('click', async (e) => {
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
     case 'scratch':    return act('scratch_card');
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
+    case 'betset':     if ($('#f-bet')) $('#f-bet').value = id; return;
     case 'reset':
       if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
@@ -1361,7 +1451,7 @@ document.addEventListener('click', async (e) => {
 async function playCasino(b) {
   if (busy) return;
   const a = b.dataset.act, bet = num('f-bet');
-  if ((a === 'casino' || a === 'bjstart') && bet < 10) return toast('Önce bahsini yaz (en az $10).', 'bad');
+  if ((a === 'casino' || a === 'bjstart') && bet < 10) return toast(`Önce bahsini yaz (en az ${moneyText(10)}).`, 'bad');
   let choice = b.dataset.choice || null;
   if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
   busy = true;
