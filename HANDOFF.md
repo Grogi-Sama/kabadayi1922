@@ -12,7 +12,7 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
 - Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Sohbet · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
 - Testler: `npm test` → 12 dosya, 77 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
-- Git: yerel `main`, remote yok. **Kullanıcı açıkça "al" demeden push yok.**
+- Git: `origin` = https://github.com/Grogi-Sama/kabadayi1922 (private), dal `main`. **Kullanıcı açıkça "al"/"push edelim" demeden push yok.**
 
 ## Nasıl çalıştırılır
 - Geliştirme sunucusu: `.claude/launch.json` → `mafia-dev` (port 5180), adres `http://localhost:5180/www/`.
