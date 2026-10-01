@@ -225,7 +225,7 @@ function cityTab() {
       if (slot === 'spot') {
         const sp = spots[si++];
         if (!sp) { town += '<div class="bld empty"></div>'; continue; }
-        const tag = sp.owner ? `<span class="tag ${sp.mine ? 'mine' : ''}">${esc(sp.owner)}</span>` : '<span class="tag ok">sahipsiz</span>';
+        const tag = sp.owner ? `<span class="tag ${sp.mine ? 'mine' : ''}">${esc(sp.owner)}</span>` : '<span class="tag ok">Sahipsiz</span>';
         town += buildingHtml('spot:' + sp.id, `buildings/${sp.kind}`, SPOT_EMOJI[sp.kind], sp.name, tag);
       } else if (HOTSPOTS[slot]) {
         const hs = HOTSPOTS[slot];
@@ -235,8 +235,8 @@ function cityTab() {
       } else {
         const b = BUILDINGS[slot];
         let tag = '';
-        if (slot === 'garaj' && !waiting(p.car_ready_at)) tag = '<span class="tag ok">hazır</span>';
-        if (slot === 'karakol' && jailed) tag = '<span class="tag">içeridesin</span>';
+        if (slot === 'garaj' && !waiting(p.car_ready_at)) tag = '<span class="tag ok">Hazır</span>';
+        if (slot === 'karakol' && jailed) tag = '<span class="tag">İçeridesin</span>';
         if (slot === 'hastane' && p.health < 100) tag = `<span class="tag">❤ ${p.health}</span>`;
         if (slot === 'fabrika') tag = `<span class="tag mine">${money(S.factory.price)}</span>`;
         town += buildingHtml(slot, `buildings/${slot}`, b.emoji, b.name, tag);
@@ -785,7 +785,7 @@ function familyTab() {
 // Bütün şehirlerdeki mekânlar: bina resimli ızgara (baskın için haritadaki binaya dokunulur)
 function spotTile(sp) {
   return `<div class="spot-tile ${sp.mine ? 'mine' : ''}">${img('buildings/' + sp.kind, 'spot-img', `<div class="spot-img ph">${SPOT_EMOJI[sp.kind]}</div>`)}
-    <span class="tag ${sp.mine ? 'mine' : sp.owner ? '' : 'ok'}">${sp.owner ? esc(sp.owner) : 'sahipsiz'}</span>
+    <span class="tag ${sp.mine ? 'mine' : sp.owner ? '' : 'ok'}">${sp.owner ? esc(sp.owner) : 'Sahipsiz'}</span>
     <b>${esc(sp.name)}</b><span class="muted small">${esc(cityName(sp.city))} · ${money(sp.income)}/sa</span></div>`;
 }
 
