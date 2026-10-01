@@ -21,3 +21,8 @@ body.admin main { max-width: 760px; margin: 0 auto; padding: 12px 16px 40px; }
 .dossier td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .dossier td:first-child { color: var(--muted); width: 40%; }
 .warn { color: #f3c2bb; }
+
+/* Şikâyet/itiraz: konuşma bağlamı */
+.ctx { margin: 6px 0; padding: 6px 8px; border-radius: 6px; background: #120e0a; border: 1px solid #3a2e22; }
+.ctx-line { font-size: 13px; padding: 2px 0; }
+.ctx-line.target { background: rgba(179,69,58,.25); border-left: 3px solid #b3453a; padding-left: 6px; }

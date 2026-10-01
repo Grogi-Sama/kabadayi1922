@@ -46,7 +46,10 @@ export async function setup() {
     travel_ready_at = now(), jail_until = now(), hospital_until = now(), kill_ready_at = now(),
     bust_ready_at = now(), practice_ready_at = now() where id = $1`, [uid]);
 
-  return { db, as, player, set, get, ready };
+  // Özel mesaj için arkadaşlık gerekir (019): testlerde doğrudan arkadaş yap
+  const befriend = (a, b) => db.query(`insert into friendships (low, high, requester, status)
+    values (least($1::uuid, $2::uuid), greatest($1::uuid, $2::uuid), $1, 'accepted') on conflict do nothing`, [a, b]);
+  return { db, as, player, set, get, ready, befriend };
 }
 
 let passed = 0;

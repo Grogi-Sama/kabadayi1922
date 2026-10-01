@@ -2,10 +2,11 @@
 import assert from 'node:assert/strict';
 import { setup, ok, done } from './helpers.mjs';
 
-const { db, as, player, set, get } = await setup();
+const { db, as, player, set, get, befriend } = await setup();
 const A = await player('Ayse', { xp: 3000, cash: 1e6 });
 const B = await player('Bekir', { xp: 800 });
 const C = await player('Cengiz');
+await befriend(A, B); await befriend(A, C); await befriend(B, C);
 
 // ─── Mesajlaşma
 assert.equal((await as(A, `select send_message('Bekir', 'Selam Bekir')`)).ok, true);

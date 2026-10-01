@@ -71,6 +71,7 @@ async function reports() {
       <div><b>${esc(r.reporter)}</b> → <a class="nick-link" data-nick="${esc(r.target)}">${esc(r.target)}</a>
         <span class="meta">(hakkında ${r.target_reports} şikâyet${r.target_banned ? ' · BANLI' : ''}${r.target_muted ? ' · susturulmuş' : ''})</span></div>
       ${r.snapshot ? `<div class="quote">${esc(r.snapshot)}</div>` : ''}
+      ${contextHtml(r.context)}
       <div class="meta">Gerekçe: ${esc(r.reason)}</div>
       ${r.status === 'open' ? `<div class="actions">
         <input id="reason-${r.id}" placeholder="Oyuncunun göreceği gerekçe">
@@ -153,6 +154,7 @@ async function appeals() {
       <div class="meta">Cezayı veren: <b>${esc(a.staff.nick || '?')}</b> (${ROLE[a.staff.role] || 'yetkisi alınmış'}) · daha önce haksız bulunan cezası: ${a.staff.overturned}</div>
       <div class="meta">Gerekçe: ${esc(a.penalty.reason || '—')}</div>
       ${a.penalty.evidence ? `<div class="quote">Kanıt: ${esc(a.penalty.evidence)}</div>` : ''}
+      ${contextHtml(a.penalty.context)}
       <div class="quote">İtiraz (${when(a.at)}): ${esc(a.text)}</div>
       ${a.status === 'open' ? `<input id="resp-${a.id}" placeholder="Oyuncuya not (isteğe bağlı)">
         <div class="actions"><button class="btn sm primary" data-a="appeal-accept" data-id="${a.id}">Haklı: cezayı kaldır</button>
@@ -163,9 +165,28 @@ async function appeals() {
     </div>`).join('') : '<p class="muted">Bu listede itiraz yok.</p>');
 }
 
+// Konuşma bağlamı: şikâyet edilen mesajın öncesi ve sonrası (hedef işaretli)
+const contextHtml = (ctx) => ctx?.length ? `<details class="ctx" open><summary class="meta">Konuşma (öncesi ve sonrası)</summary>
+  ${ctx.map(m => `<div class="ctx-line ${m.target ? 'target' : ''}"><span class="meta">${when(m.at)}</span> <b>${esc(m.nick || '?')}:</b> ${esc(m.text)}</div>`).join('')}</details>` : '';
+
+const SUG_CAT = { ozellik: 'Yeni özellik', etkinlik: 'Etkinlik', mod: 'Oyun modu', denge: 'Denge/değişiklik', hata: 'Hata', diger: 'Diğer' };
+const SUG_ST = { yeni: 'Yeni', okundu: 'Okundu', planlandi: 'Planlandı', yapildi: 'Yapıldı', reddedildi: 'Reddedildi' };
+let sugStatus = 'yeni';
+async function suggestions() {
+  const list = await api.rpc('admin_suggestions', { p_status: sugStatus });
+  return `<h2>Oyuncu önerileri</h2><div class="actions">${['yeni', 'okundu', 'planlandi', 'yapildi', 'reddedildi', 'hepsi'].map(s =>
+      `<button class="btn sm ${sugStatus === s ? 'primary' : ''}" data-sstatus="${s}">${SUG_ST[s] || 'Hepsi'}</button>`).join('')}</div>` +
+    (list.length ? list.map(x => `<div class="report"><b>${SUG_CAT[x.category]}</b> · <a class="nick-link" data-nick="${esc(x.nick || '')}">${esc(x.nick || '?')}</a>
+      <span class="meta">· ${when(x.at)} · ${SUG_ST[x.status]}</span><div class="quote">${esc(x.text)}</div>
+      <input id="sn-${x.id}" placeholder="Oyuncuya not (isteğe bağlı)" value="${esc(x.note || '')}">
+      <div class="actions">${['okundu', 'planlandi', 'yapildi', 'reddedildi'].map(s =>
+        `<button class="btn sm ${s === 'reddedildi' ? '' : 'primary'}" data-a="sug" data-id="${x.id}" data-st="${s}">${SUG_ST[s]}</button>`).join('')}</div></div>`).join('')
+      : '<p class="muted">Bu listede öneri yok.</p>');
+}
+
 async function render() {
   try {
-    $('#view').innerHTML = await ({ overview, reports, player, log, team, appeals })[view]();
+    $('#view').innerHTML = await ({ overview, reports, player, log, team, appeals, suggestions })[view]();
     if (view !== 'overview') { const o = await api.rpc('admin_overview'); showCount(o.open_reports, o.open_appeals); }
   } catch (e) {
     console.error(e);
@@ -184,6 +205,8 @@ function go(v) {
 document.addEventListener('click', async (e) => {
   const nav = e.target.closest('[data-view]');
   if (nav) return go(nav.dataset.view);
+  const sst = e.target.closest('[data-sstatus]');
+  if (sst) { sugStatus = sst.dataset.sstatus; return render(); }
   const ast = e.target.closest('[data-astatus]');
   if (ast) { appealStatus = ast.dataset.astatus; return render(); }
   const st = e.target.closest('[data-status]');
@@ -206,6 +229,8 @@ document.addEventListener('click', async (e) => {
     const accept = a === 'appeal-accept';
     if (accept && !confirm('Ceza kaldırılsın mı?')) return;
     await call('admin_resolve_appeal', { p_id: +b.dataset.id, p_accept: accept, p_response: $(`#resp-${b.dataset.id}`)?.value || null });
+  } else if (a === 'sug') {
+    await call('admin_suggestion_set', { p_id: +b.dataset.id, p_status: b.dataset.st, p_note: $(`#sn-${b.dataset.id}`)?.value || null });
   } else if (a === 'warn-staff') {
     await call('admin_warn_staff', { p_nick: b.dataset.nick, p_reason: $(`#sw-${b.dataset.id}`)?.value || '' });
   } else if (a === 'revoke') {
@@ -248,7 +273,7 @@ if (!me.role) {
 } else {
   $('#admin-who').textContent = `${me.nick} · ${ROLE[me.role]}`;
   if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend',
-    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="team">Yetkililer</button>');
+    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="suggestions">Öneriler</button><button data-view="team">Yetkililer</button>');
   else if (me.role === 'owner') $('#view').insertAdjacentHTML('beforebegin',
     '<p class="meta" style="padding:0 16px">Admin araçları (itirazlar, yetkililer, kalıcı ban, sezon) sadece kendi bilgisayarından açılır.</p>');
   render();

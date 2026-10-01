@@ -2,11 +2,12 @@
 import assert from 'node:assert/strict';
 import { setup, ok, done } from './helpers.mjs';
 
-const { db, as, player, set, get } = await setup();
+const { db, as, player, set, get, befriend } = await setup();
 const ADMIN = await player('Yonetici');
 await db.query(`insert into admins (user_id, role) values ($1, 'owner')`, [ADMIN]);
 const A = await player('Ayhan', { xp: 3000, cash: 50000 });
 const B = await player('Bulut', { xp: 800 });
+await befriend(A, B);
 
 // ─── Admin yetkisi: admin olmayan hiçbir şey göremez
 await assert.rejects(as(A, `select admin_overview()`), /NOT_ADMIN/);

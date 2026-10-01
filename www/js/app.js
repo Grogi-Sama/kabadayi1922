@@ -30,6 +30,7 @@ async function loadTabData() {
   const rpc = api.rpc;
   if (tab === 'city') [extra.spots, extra.events] = await Promise.all([rpc('get_spots'), rpc('get_events')]);
   else if (tab === 'log') [extra.players, extra.inbox, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
+  if (tab === 'log') extra.friends = await rpc('get_friends');
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
@@ -968,7 +969,7 @@ function messagesSection() {
     (extra.inbox.length ? extra.inbox.map(c => `<div class="card clickable" data-act="openconv" data-id="${esc(c.nick)}">
       <span class="icon emoji">${c.unread > 0 ? '📩' : '✉'}</span><div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
       <div class="muted small ellipsis">${esc(c.last)}</div></div></div>`).join('')
-      : `<p class="muted small">Mesaj yok. Birine yazmak için profiline dokun.</p>`);
+      : `<p class="muted small">Mesaj yok. Arkadaşlarına yazabilirsin: Arkadaşlar listesinde ✉'ye dokun.</p>`);
 }
 
 const tile = (icon, label, v) => `<div class="tile"><span class="t-ic">${icon}</span><b>${v}</b><span>${label}</span></div>`;
@@ -1008,7 +1009,10 @@ function logTab() {
   h += seasonSection();
   if (p.proposals.length) h += `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
     `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`, '<span class="icon emoji">💍</span>')).join('');
-  h += messagesSection();
+  h += friendsSection() + messagesSection();
+  h += `<div class="card clickable" data-act="suggest"><span class="icon emoji">💡</span><div class="grow">
+      <div class="title">Öneri kutusu</div><div class="muted small">Yeni özellik, etkinlik, mod ya da değişiklik fikrini yönetime gönder</div></div>
+      <span class="muted">›</span></div>`;
 
   if (pl) {
     h += `<h2>En Büyükler</h2><div class="board">` + pl.top.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
@@ -1061,6 +1065,37 @@ function eventsView() {
     <h2>Yaklaşan</h2>${later.slice(0, 20).map(row).join('') || '<p class="muted small">Yakında etkinlik yok.</p>'}`;
 }
 
+// ═════════════════ ARKADAŞLAR VE ÖNERİLER ═════════════════
+function friendsSection() {
+  const F = extra.friends || { friends: [], incoming: [], outgoing: [] };
+  let h = `<h2>Arkadaşlar (${F.friends.length})</h2>
+    <form class="form-row" id="friend-form"><input id="f-friend" placeholder="Oyuncu adı" autocomplete="off" autocapitalize="off">
+      <button class="btn primary">İstek gönder</button></form>`;
+  if (F.incoming.length) h += F.incoming.map(f => card(`${nickLink(f.nick)} <span class="muted small">arkadaş olmak istiyor</span>`,
+      esc(rankName(f.rank)), `<div class="market-actions"><button class="btn sm primary" data-act="fraccept" data-id="${esc(f.nick)}">Kabul</button>
+       <button class="btn sm" data-act="frreject" data-id="${esc(f.nick)}">Reddet</button></div>`, portrait(f.avatar || 1, 'avatar sm'))).join('');
+  h += F.friends.length ? `<div class="friend-list">${F.friends.map(f => `<div class="friend">${portrait(f.avatar || 1, 'avatar sm')}
+      ${f.online ? '<i class="on"></i>' : ''}<div class="grow">${nickLink(f.nick)}<div class="muted small">${esc(rankName(f.rank))}</div></div>
+      <button class="btn sm" data-act="dmto" data-id="${esc(f.nick)}">✉</button></div>`).join('')}</div>`
+    : `<p class="muted small">Henüz arkadaşın yok. Adını yazarak istek gönder; kabul ederse özelden yazışabilirsiniz.</p>`;
+  if (F.outgoing.length) h += `<p class="muted small">Cevap bekleyen isteklerin: ${F.outgoing.map(esc).join(', ')}</p>`;
+  return h;
+}
+
+const SUG_CAT = { ozellik: 'Yeni özellik', etkinlik: 'Etkinlik fikri', mod: 'Oyun modu', denge: 'Denge / değişiklik', hata: 'Hata bildirimi', diger: 'Diğer' };
+const SUG_ST = { yeni: 'Gönderildi', okundu: 'Okundu', planlandi: 'Plana alındı', yapildi: 'Oyuna eklendi', reddedildi: 'Şimdilik değil' };
+async function openSuggest() {
+  const mine = await api.rpc('my_suggestions');
+  $('#modal-body').innerHTML = `<div class="logo-sm">Öneri kutusu</div>
+    <p class="small">Oyunda görmek istediğin özellik, etkinlik, mod ya da değişikliği yaz. Önerileri doğrudan yönetim okur.</p>
+    <select id="f-sug-cat">${Object.entries(SUG_CAT).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+    <textarea id="f-sug" maxlength="1000" rows="5" placeholder="Fikrini anlat… (en az 10 karakter)"></textarea>
+    <button class="btn primary" data-act="sendsug" style="width:100%;margin-top:8px">Gönder</button>
+    ${mine.length ? `<h2>Önerilerin</h2>${mine.map(x => `<div class="sug"><b>${SUG_CAT[x.category]}</b> · <span class="sug-st ${x.status}">${SUG_ST[x.status]}</span>
+      <div class="small">${esc(x.text)}</div>${x.note ? `<div class="muted small">Yönetim: ${esc(x.note)}</div>` : ''}</div>`).join('')}` : ''}`;
+  $('#modal').classList.remove('hidden');
+}
+
 // ═════════════════ CEZALAR VE İTİRAZ ═════════════════
 const PEN = { warn: '⚠ Uyarı', mute: '🔇 Susturma', ban: '⛔ Ban' };
 const APPEAL = { open: 'İtirazın inceleniyor', accepted: 'İtirazın kabul edildi, ceza kaldırıldı', rejected: 'İtirazın reddedildi' };
@@ -1069,6 +1104,7 @@ function penaltiesHtml(list, onBanScreen = false) {
   return (onBanScreen ? `<h2>Cezaların</h2>` : '') + list.map(x => `<div class="card col penalty">
       <div class="title">${PEN[x.action]} <span class="muted small">· ${new Date(x.at).toLocaleString('tr-TR')}</span></div>
       <div class="small">Gerekçe: ${esc(x.reason || '—')}</div>
+      ${x.evidence ? `<div class="evidence">Cezaya konu mesajın: “${esc(x.evidence)}”</div>` : ''}
       ${x.until ? `<div class="muted small">Bitiş: ${new Date(x.until).getFullYear() > 2100 ? 'süresiz' : new Date(x.until).toLocaleString('tr-TR')}</div>` : ''}
       ${x.appeal ? `<div class="appeal-status ${x.appeal.status}">${APPEAL[x.appeal.status]}${x.appeal.response ? `<br><span class="muted small">Not: ${esc(x.appeal.response)}</span>` : ''}</div>`
         : `<button class="btn sm" data-act="appeal" data-id="${x.id}">⚖ Haksız mı? İtiraz et</button>`}</div>`).join('') +
@@ -1243,7 +1279,11 @@ async function showProfile(nick) {
     ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${Array.from({ length: 8 }, (_, i) =>
         `<button data-avatar="${i + 1}" class="${pr.avatar === i + 1 ? 'on' : ''}">${img(`portraits/p${i + 1}`, '', PORTRAIT_EMOJI[i])}</button>`).join('')}</div>`
     : `<div class="profile-actions">
-      <button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">✉ Mesaj</button>
+      ${pr.friend === 'friends' || S.player.is_admin ? `<button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">✉ Mesaj</button>` : ''}
+      ${pr.friend === 'friends' ? `<button class="btn sm" data-act="frremove" data-id="${esc(pr.nick)}">Arkadaşlıktan çıkar</button>`
+        : pr.friend === 'sent' ? `<button class="btn sm" disabled>İstek gönderildi</button>`
+        : pr.friend === 'received' ? `<button class="btn sm primary" data-act="fraccept" data-id="${esc(pr.nick)}">Arkadaşlığı kabul et</button>`
+        : `<button class="btn sm primary" data-act="fradd" data-id="${esc(pr.nick)}">➕ Arkadaş ekle</button>`}
       <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>🤝 Saygı</button>
       ${!S.player.spouse && !pr.spouse ? (pr.proposed_to_me
         ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">💍 Kabul et</button>`
@@ -1412,6 +1452,17 @@ document.addEventListener('click', async (e) => {
     case 'unblock':    closeModal(); return act('unblock_player', { p_nick: id });
     case 'reportplayer': return openReport('player', null, id);
     case 'appeal':     return openAppeal(id);
+    case 'suggest':    return openSuggest();
+    case 'sendsug': {
+      const r = await api.rpc('submit_suggestion', { p_category: val('f-sug-cat'), p_text: $('#f-sug').value });
+      toast(r.msg, r.ok ? 'good' : 'bad');
+      if (r.ok) closeModal();
+      return;
+    }
+    case 'fraccept':   return act('friend_respond', { p_nick: id, p_accept: true });
+    case 'frreject':   return act('friend_respond', { p_nick: id, p_accept: false });
+    case 'fradd':      closeModal(); return act('friend_request', { p_nick: id });
+    case 'frremove':   closeModal(); return confirm(`${id} arkadaş listenden çıkarılsın mı?`) && act('friend_remove', { p_nick: id });
     case 'sendappeal': {
       const r = await api.rpc('submit_appeal', { p_action: +id, p_text: $('#f-appeal').value });
       toast(r.msg, r.ok ? 'good' : 'bad');
@@ -1484,6 +1535,12 @@ document.addEventListener('submit', async (e) => {
     $('#f-dm').value = '';
     extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
     renderTab(); scrollChat();
+  } else if (e.target.id === 'friend-form') {
+    e.preventDefault();
+    const nick = val('f-friend');
+    if (!nick) return;
+    $('#f-friend').value = '';
+    return act('friend_request', { p_nick: nick });
   } else if (e.target.id === 'gchat-form') {
     e.preventDefault();
     const text = val('f-gchat');

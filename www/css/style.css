@@ -544,6 +544,15 @@ nav button[data-badge]:not([data-badge=""])::after {
 
 /* Mesaja dokununca açılan menü + şikâyet gerekçeleri */
 .chat .msg.tap { cursor: pointer; }
+.evidence { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: #1a140f; border-left: 3px solid var(--red); font-style: italic; }
+.friend-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.friend { position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid #4a3a26;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
+.friend .on { position: absolute; left: 36px; top: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--green); border: 2px solid var(--panel); }
+#modal select { width: 100%; margin-bottom: 8px; }
+.sug { padding: 8px 0; border-bottom: 1px solid #3a2e22; text-align: left; }
+.sug-st { font-size: 12px; padding: 1px 7px; border-radius: 8px; background: #3a2e22; }
+.sug-st.planlandi, .sug-st.yapildi { background: #3c5a2e; } .sug-st.reddedildi { background: var(--burgundy); }
 /* Cezalar ve itiraz */
 .penalty .title { font-size: 15px; }
 .appeal-status { font-size: 13px; padding: 6px 8px; border-radius: 6px; background: #1a140f; border-left: 3px solid var(--gold); }

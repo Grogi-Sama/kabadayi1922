@@ -96,7 +96,8 @@ begin
       -- mesaj hâlâ duruyor mu (silinmiş olabilir)
       'still_exists', case r.kind when 'message' then exists (select 1 from messages where id = r.ref_id)
                                   when 'family_message' then exists (select 1 from family_messages where id = r.ref_id)
-                                  when 'chat_message' then exists (select 1 from chat_messages where id = r.ref_id) end)
+                                  when 'chat_message' then exists (select 1 from chat_messages where id = r.ref_id) end,
+      'context', report_context(r.id))   -- 019: konuşmanın öncesi/sonrası
     order by r.id desc), '[]')
     from (select * from reports where status = p_status order by id desc limit 100) r
     left join players rp on rp.id = r.reporter_id left join players t on t.id = r.target_id);

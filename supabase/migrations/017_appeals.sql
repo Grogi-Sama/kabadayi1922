@@ -29,7 +29,7 @@ create table appeals (
 create or replace function my_penalties() returns jsonb
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'action', m.action, 'reason', m.reason, 'until', m.until,
-           'at', m.created_at, 'appeal', (select jsonb_build_object('status', a.status, 'response', a.response, 'at', a.created_at)
+           'at', m.created_at, 'evidence', (select r.snapshot from reports r where r.id = m.report_id), 'appeal', (select jsonb_build_object('status', a.status, 'response', a.response, 'at', a.created_at)
                                           from appeals a where a.action_id = m.id)) order by m.id desc), '[]')
   from moderation_actions m
   where m.target_id = auth.uid() and m.action in ('warn', 'mute', 'ban')
@@ -68,7 +68,8 @@ begin
         'reports_against', (select count(*) from reports r where r.target_id = p.id),
         'penalties_total', (select count(*) from moderation_actions x where x.target_id = p.id and x.action in ('warn', 'mute', 'ban'))),
       'penalty', jsonb_build_object('action', m.action, 'reason', m.reason, 'until', m.until, 'at', m.created_at,
-        'evidence', (select r.snapshot from reports r where r.id = m.report_id)),
+        'evidence', (select r.snapshot from reports r where r.id = m.report_id),
+        'context', report_context(m.report_id)),   -- 019: konuşmanın öncesi/sonrası
       'staff', jsonb_build_object('nick', s.nick, 'role', (select role from admins where user_id = m.admin_id),
         'overturned', (select count(*) from appeals a2 join moderation_actions m2 on m2.id = a2.action_id
                         where m2.admin_id = m.admin_id and a2.status = 'accepted')))
