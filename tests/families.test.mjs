@@ -6,7 +6,7 @@ const { db, as, player, set, get, ready } = await setup();
 const RANK3 = 700, RANK5 = 3000;
 
 // ─── Kurma
-const D = await player('Don_Vito', { xp: RANK5, cash: 1000000 });
+const D = await player('DonVito', { xp: RANK5, cash: 1000000 });
 const L = await player('Lale', { xp: RANK3, cash: 1000 });
 assert.equal((await as(L, `select create_family('Lale Ailesi')`)).ok, false, 'rütbe yetmez');
 assert.equal((await as(D, `select create_family('X')`)).ok, false, 'isim kısa');
@@ -39,7 +39,7 @@ const M = await player('Mario', { xp: RANK3 });
 await as(M, `select apply_family('Corleone')`);
 await as(L, `select answer_application('Mario', true)`);
 assert.equal((await as(D, `select set_role('Mario', 'sottocapo')`)).ok, false, 'tek sottocapo');
-assert.equal((await as(L, `select kick_member('Don_Vito')`)).ok, false, 'don atılamaz');
+assert.equal((await as(L, `select kick_member('DonVito')`)).ok, false, 'don atılamaz');
 assert.equal((await as(L, `select kick_member('Mario')`)).ok, true);
 assert.equal((await get(M)).family_id, null);
 ok('roller: tek sottocapo, atma yetkileri');
@@ -108,6 +108,15 @@ assert.equal(Number((await get(D2)).bank), d2Bank + 10000, 'ödül bankaya iade 
 assert.equal((await as(D2, `select get_profile('Katil')`)).bounty, 0);
 assert.equal((await db.query(`select count(*)::int n from bounties where refunded_at is not null and claimed_by is null`)).rows[0].n, 1);
 ok('kelle ödülünün süresi dolunca iade');
+
+// ─── Aile arması: sadece Don seçer; listede ve aile ekranında görünür
+assert.equal((await as(D, `select get_family()`)).family.crest, 0);
+assert.equal((await as(D, `select set_family_crest(5)`)).ok, true);
+assert.equal((await as(D, `select get_family()`)).family.crest, 5);
+assert.equal((await as(D, `select get_families()`)).find(f => f.name === 'Corleone').crest, 5);
+await assert.rejects(as(D, `select set_family_crest(9)`), /BAD_CREST/);
+assert.equal((await as(L, `select set_family_crest(2)`)).ok, false, 'Don olmayan seçemez');
+ok('aile arması');
 
 // ─── Profil aile + ayrılma/dağılma
 const pr = await as(K, `select get_profile('lale')`);

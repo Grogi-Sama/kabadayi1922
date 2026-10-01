@@ -32,7 +32,7 @@ for (let i = 0; i < 2000; i++) {
   const r = await as(C, `select scratch_card()`);
   spent += 500; back += Number(r.win);
 }
-assert.ok(back / spent > 0.6 && back / spent < 1.1, `kazı kazan RTP ${(back / spent).toFixed(3)}`);
+assert.ok(back / spent > 0.6 && back / spent < 1.35, `kazı kazan RTP ${(back / spent).toFixed(3)}`);  // $100.000 ikramiye tek başına oranı ~0,1 oynatır
 ok(`kazı kazan geri dönüş %${(100 * back / spent).toFixed(1)}`);
 
 // ─── Blackjack

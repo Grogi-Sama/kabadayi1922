@@ -4,7 +4,7 @@ import { setup, ok, done } from './helpers.mjs';
 
 const { db, as, player, set, get } = await setup();
 const ADMIN = await player('Yonetici');
-await db.query(`insert into admins values ($1)`, [ADMIN]);
+await db.query(`insert into admins (user_id, role) values ($1, 'owner')`, [ADMIN]);
 const A = await player('Ayhan', { xp: 3000, cash: 50000 });
 const B = await player('Bulut', { xp: 800 });
 
@@ -98,7 +98,7 @@ ok('rozetler profilde');
 assert.equal((await as(ADMIN, `select admin_set_season_end(now() + interval '3 days')`)).ok, true);
 assert.equal((await as(ADMIN, `select admin_end_season()`)).ok, true);
 assert.equal((await as(A, `select get_season()`)).name, '3. Sezon');
-await assert.rejects(as(A, `select admin_end_season()`), /NOT_ADMIN/);
+await assert.rejects(as(A, `select admin_end_season()`), /NOT_(ADMIN|OWNER)/);
 ok('admin sezonu bitirebilir / uzatabilir');
 
 done('admin_seasons');

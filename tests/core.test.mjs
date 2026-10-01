@@ -12,8 +12,8 @@ await db.exec(`insert into auth.users values ('${A}'), ('${B}')`);
 // --- oyuncu oluşturma
 assert.equal((await as(A, `select get_state()`)).player, null);
 assert.equal((await as(A, `select create_player('ab')`)).ok, false);
-assert.equal((await as(A, `select create_player('Kabadayi_Ali')`)).ok, true);
-assert.equal((await as(B, `select create_player('kabadayi_ali')`)).ok, false, 'büyük/küçük harf farkı aynı isim sayılmalı');
+assert.equal((await as(A, `select create_player('KabadayiAli')`)).ok, true);
+assert.equal((await as(B, `select create_player('kabadayiali')`)).ok, false, 'büyük/küçük harf farkı aynı isim sayılmalı');
 assert.equal((await as(B, `select create_player('Şükrü')`)).ok, true);
 let s = await as(A, `select get_state()`);
 assert.equal(s.player.cash, 500);

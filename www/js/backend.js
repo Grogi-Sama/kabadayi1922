@@ -29,7 +29,7 @@ async function supabaseBackend() {
 // Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
 const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
 const MIGRATIONS = ['001_core.sql', '002_combat.sql', '003_families.sql', '004_crews.sql', '005_casino_transport.sql',
-  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql'];
+  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql', '013_roles.sql', '014_filter.sql', '015_crests.sql'];
 
 const IDB_NAME = '/pglite/kabadayi-dev';
 const deleteLocalDb = () => new Promise(r => {
@@ -63,7 +63,12 @@ async function localBackend() {
       report(0.3 + 0.65 * i / sql.length, `Şehir kuruluyor… (${i + 1}/${sql.length})`);
       await db.exec(s);
     }
-    await db.exec(`insert into auth.users values ('${LOCAL_UID}'); insert into admins values ('${LOCAL_UID}');`);
+    await db.exec(`insert into auth.users values ('${LOCAL_UID}');`);
+    // Yönetim paneli yerelde sadece geliştiricinin kendi bilgisayarında (localhost) açılır;
+    // yayındaki deneme sürümünde (GitHub Pages) kimse yetkili değildir.
+    if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+      await db.exec(`insert into admins (user_id, role) values ('${LOCAL_UID}', 'owner');`);
+    }
     localStorage.setItem('kabadayi-sql-version', version);
   }
   report(0.97, 'Sokaklara çıkılıyor…');

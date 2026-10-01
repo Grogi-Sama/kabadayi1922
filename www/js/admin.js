@@ -7,9 +7,13 @@ const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
 const when = (t) => t ? new Date(t).toLocaleString('tr-TR') : '—';
 const KIND = { message: 'Özel mesaj', family_message: 'Aile sohbeti', chat_message: 'Genel/şehir sohbeti', player: 'Oyuncu' };
 const ACTION = { warn: 'Uyarı', mute: 'Susturma', unmute: 'Susturma kaldırıldı', ban: 'Ban', unban: 'Ban kaldırıldı',
-  delete_message: 'Mesaj silindi', dismiss: 'Şikâyet kapatıldı', resolve: 'Şikâyet çözüldü' };
+  delete_message: 'Mesaj silindi', dismiss: 'Şikâyet kapatıldı', resolve: 'Şikâyet çözüldü',
+  grant: 'Moderatör yapıldı', revoke: 'Moderatörlük alındı', season: 'Sezon' };
+const ROLE = { owner: 'Sahip', moderator: 'Moderatör' };
 
-let api, view = 'overview', reportStatus = 'open', playerNick = '';
+// me.role: 'owner' | 'moderator' — sadece görünüm için; asıl kontrol sunucuda her çağrıda yapılır
+let api, me = {}, view = 'overview', reportStatus = 'open', playerNick = '';
+const isOwner = () => me.role === 'owner';
 
 let toastTimer;
 function toast(msg, bad) {
@@ -43,10 +47,11 @@ async function overview() {
     <h2>Sezon</h2>
     <div class="report"><b>${esc(o.season.name)}</b>
       <div class="meta">Başlangıç ${when(o.season.starts_at)} · Bitiş ${when(o.season.ends_at)}</div>
-      <div class="actions"><input id="season-end" type="datetime-local">
+      ${isOwner() ? `<div class="actions"><input id="season-end" type="datetime-local">
         <button class="btn" data-a="season-set">Bitişi değiştir</button>
         <button class="btn danger" data-a="season-end">Sezonu şimdi bitir</button></div>
-      <p class="meta">Sezon bitince şeref listesi kaydedilir ve herkesin ilerlemesi sıfırlanır. Geri alınamaz.</p></div>`;
+      <p class="meta">Sezon bitince şeref listesi kaydedilir ve herkesin ilerlemesi sıfırlanır. Geri alınamaz.</p>`
+      : `<p class="meta">Sezonu sadece oyunun sahibi değiştirebilir.</p>`}</div>`;
 }
 
 async function reports() {
@@ -66,7 +71,7 @@ async function reports() {
         <button class="btn sm" data-a="warn" data-nick="${esc(r.target)}" data-report="${r.id}">Uyar</button>
         <button class="btn sm" data-a="mute" data-hours="24" data-nick="${esc(r.target)}" data-report="${r.id}">24 sa sustur</button>
         <button class="btn sm danger" data-a="ban" data-hours="168" data-nick="${esc(r.target)}" data-report="${r.id}">7 gün ban</button>
-        <button class="btn sm danger" data-a="ban" data-nick="${esc(r.target)}" data-report="${r.id}">Kalıcı ban</button>
+        ${isOwner() ? `<button class="btn sm danger" data-a="ban" data-nick="${esc(r.target)}" data-report="${r.id}">Kalıcı ban</button>` : ''}
         <button class="btn sm primary" data-a="dismiss" data-report="${r.id}">Sorun yok, kapat</button>
       </div>` : ''}
     </div>`).join('') : `<p class="muted">Bu listede şikâyet yok.</p>`);
@@ -96,7 +101,7 @@ async function player() {
               : `<button class="btn sm" data-a="mute" data-hours="24" data-nick="${esc(p.nick)}">24 sa sustur</button>`}
       ${banned ? `<button class="btn sm primary" data-a="unban" data-nick="${esc(p.nick)}">Banı kaldır</button>`
                : `<button class="btn sm danger" data-a="ban" data-hours="168" data-nick="${esc(p.nick)}">7 gün ban</button>
-                  <button class="btn sm danger" data-a="ban" data-nick="${esc(p.nick)}">Kalıcı ban</button>`}
+                  ${isOwner() ? `<button class="btn sm danger" data-a="ban" data-nick="${esc(p.nick)}">Kalıcı ban</button>` : ''}`}
     </div></div>
     <h2>Moderasyon geçmişi</h2>${p.history.length ? p.history.map(a => `<p class="small">${when(a.at)} · <b>${ACTION[a.action]}</b> ${esc(a.reason || '')}</p>`).join('') : '<p class="muted small">Yok.</p>'}
     <h2>Son özel mesajları</h2>${p.messages.length ? p.messages.map(m => `<p class="small">${when(m.at)} → ${esc(m.to)}: ${esc(m.text)}
@@ -109,14 +114,27 @@ async function player() {
 
 async function log() {
   const list = await api.rpc('admin_log');
-  return `<h2>İşlem geçmişi</h2>` + (list.length ? list.map(a => `<p class="small">${when(a.at)} · <b>${ACTION[a.action]}</b>
+  return `<h2>İşlem geçmişi</h2>` + (list.length ? list.map(a => `<p class="small">${when(a.at)} · <span class="muted">${esc(a.admin || '?')}</span> · <b>${ACTION[a.action] || a.action}</b>
     ${a.target ? `→ <a class="nick-link" data-nick="${esc(a.target)}">${esc(a.target)}</a>` : ''} ${esc(a.reason || '')}
     ${a.until ? `<span class="muted">(bitiş ${when(a.until)})</span>` : ''}</p>`).join('') : '<p class="muted">Henüz işlem yok.</p>');
 }
 
+async function team() {
+  const list = await api.rpc('admin_team');
+  return `<h2>Yetkililer</h2>
+    <p class="meta">Moderatörler şikâyetlere bakar; en fazla 7 gün ban, 72 saat susturma verebilir, saatte en fazla 10 ban atabilir.
+      Kalıcı ban, sezon ve yetki dağıtmak sadece sende. Sana ve diğer yetkililere işlem yapamazlar.</p>` +
+    list.map(a => `<div class="report"><b>${esc(a.nick || '(silinmiş)')}</b> · ${ROLE[a.role]}
+      <div class="meta">Yetki: ${when(a.granted_at)} · son 24 saatte ${a.actions_24h} işlem</div>
+      ${a.role === 'moderator' ? `<div class="actions"><button class="btn sm danger" data-a="revoke" data-nick="${esc(a.nick)}">Yetkiyi al</button></div>` : ''}</div>`).join('') +
+    `<h2>Moderatör ekle</h2><form id="grant-form" class="actions"><input id="grant-nick" placeholder="Oyuncu adı" autocomplete="off">
+      <button class="btn primary">Moderatör yap</button></form>
+    <p class="meta">Sadece güvendiğin, tanıdığın kişilere ver. Yetkiyi istediğin an buradan geri alabilirsin.</p>`;
+}
+
 async function render() {
   try {
-    $('#view').innerHTML = await ({ overview, reports, player, log })[view]();
+    $('#view').innerHTML = await ({ overview, reports, player, log, team })[view]();
     if (view !== 'overview') showCount((await api.rpc('admin_overview')).open_reports);
   } catch (e) {
     console.error(e);
@@ -151,6 +169,9 @@ document.addEventListener('click', async (e) => {
     await call('admin_delete_message', { p_kind: b.dataset.kind, p_id: +b.dataset.ref, p_report: report });
   } else if (a === 'dismiss') {
     await call('admin_act', { p_nick: null, p_action: 'dismiss', p_hours: null, p_reason: reason, p_report: report });
+  } else if (a === 'revoke') {
+    if (!confirm(`${b.dataset.nick} moderatörlükten alınsın mı?`)) return;
+    await call('admin_revoke', { p_nick: b.dataset.nick });
   } else if (a === 'season-end') {
     if (!confirm('Sezon ŞİMDİ bitsin mi? Herkesin ilerlemesi sıfırlanır, geri alınamaz.')) return;
     await call('admin_end_season');
@@ -165,7 +186,14 @@ document.addEventListener('click', async (e) => {
   render();
 });
 
-document.addEventListener('submit', (e) => {
+document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'grant-form') {
+    e.preventDefault();
+    const nick = $('#grant-nick').value.trim();
+    if (!nick || !confirm(`${nick} moderatör yapılsın mı? Şikâyetleri görüp oyunculara ceza verebilecek.`)) return;
+    await call('admin_grant', { p_nick: nick });
+    return render();
+  }
   if (e.target.id !== 'search') return;
   e.preventDefault();
   playerNick = $('#q').value.trim();
@@ -173,5 +201,14 @@ document.addEventListener('submit', (e) => {
 });
 
 api = await createBackend();
-render();
-setInterval(() => { if (view === 'overview' && !document.hidden) render(); }, 30000);
+// Yetkisi olmayan hiçbir şey görmez; sahip olmayan "Yetkililer" sekmesini görmez
+try { me = await api.rpc('admin_me'); } catch { me = {}; }
+if (!me.role) {
+  $('.admin-nav').remove();
+  $('#view').innerHTML = `<p class="err">Bu sayfayı görme yetkin yok.</p>`;
+} else {
+  $('#admin-who').textContent = `${me.nick} · ${ROLE[me.role]}`;
+  if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend', '<button data-view="team">Yetkililer</button>');
+  render();
+}
+setInterval(() => { if (me.role && view === 'overview' && !document.hidden) render(); }, 30000);

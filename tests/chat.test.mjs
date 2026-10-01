@@ -4,7 +4,7 @@ import { setup, ok, done } from './helpers.mjs';
 
 const { db, as, player, set } = await setup();
 const ADMIN = await player('Yonetici');
-await db.query(`insert into admins values ($1)`, [ADMIN]);
+await db.query(`insert into admins (user_id, role) values ($1, 'owner')`, [ADMIN]);
 const A = await player('Ayla');
 const B = await player('Baran');
 const C = await player('Cemil');

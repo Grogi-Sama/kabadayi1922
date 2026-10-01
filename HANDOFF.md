@@ -8,15 +8,15 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - **Teknoloji:** HTML/JS (`www/`) → ileride Capacitor. Sunucu: Supabase (henüz hesap yok). Bütün kurallar sunucu tarafı SQL RPC'lerinde.
 
 ## Durum
-- `supabase/migrations/001–012`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012).
+- `supabase/migrations/001–015`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012), yetki kademeleri sahip/moderatör (013), ayrıntılı küfür filtresi + takma ad kuralları (014), aile armaları (015).
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
 - Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Sohbet · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
-- Testler: `npm test` → 12 dosya, 78 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
+- Testler: `npm test` → 14 dosya, 88 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
 - Git: `origin` = https://github.com/Grogi-Sama/kabadayi1922 (private), dal `main`. **Kullanıcı açıkça "al"/"push edelim" demeden push yok.**
 
 ## Nasıl çalıştırılır
 - Geliştirme sunucusu: `.claude/launch.json` → `mafia-dev` (port 5180), adres `http://localhost:5180/www/`.
-- Yerel mod: `www/js/config.js` boşken aynı SQL tarayıcıda (PGlite) çalışır; `supabase/local-seed.sql` sahte oyuncular + örnek şikâyet ekler; yerel oyuncu admindir. Konsolda `devApi.sql(...)` + `devRefresh()` ile test.
+- Yerel mod: `www/js/config.js` boşken aynı SQL tarayıcıda (PGlite) çalışır; `supabase/local-seed.sql` sahte oyuncular + örnek şikâyet ekler; yerel oyuncu sadece localhost'ta sahiptir (GitHub Pages'te kimse yetkili değil). Konsolda `devApi.sql(...)` + `devRefresh()` ile test.
 - SQL değişince yerel veritabanı kendini sıfırlar.
 
 ## Kurallar / alışkanlıklar

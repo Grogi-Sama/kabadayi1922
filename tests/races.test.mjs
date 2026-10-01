@@ -8,32 +8,32 @@ const car = async (uid, kind, city = 'istanbul') => (await db.query(
   `insert into player_cars (player_id, car_id, city_id) values ($1, $2, $3) returning id`, [uid, kind, city])).rows[0].id;
 
 // ─── Büyük vurgun: 8 rol, çoklu şoför/silahçı şartları
-const nicks = ['Lider8', 'Sof1', 'Sof2', 'Sof3', 'Sil1', 'Sil2', 'Sil3', 'Pat1'];
+const nicks = ['LiderSekiz', 'SofBir', 'SofIki', 'SofUc', 'SilBir', 'SilIki', 'SilUc', 'PatBir'];
 const ids = {};
 for (const n of nicks) ids[n] = await player(n, { xp: RANK6, cash: 500000, weapon_id: 'tabanca', bullets: 1000 });
-const invites = { sofor: 'Sof1', sofor2: 'Sof2', sofor3: 'Sof3', silahci: 'Sil1', silahci2: 'Sil2', silahci3: 'Sil3', patlayici: 'Pat1' };
-assert.equal((await as(ids.Lider8, `select create_crew('buyuk', $1)`, [invites])).ok, true);
-const crewId = (await as(ids.Sof2, `select get_crews()`)).crews[0].id;
-const members = (await as(ids.Sof2, `select get_crews()`)).crews[0].members;
+const invites = { sofor: 'SofBir', sofor2: 'SofIki', sofor3: 'SofUc', silahci: 'SilBir', silahci2: 'SilIki', silahci3: 'SilUc', patlayici: 'PatBir' };
+assert.equal((await as(ids.LiderSekiz, `select create_crew('buyuk', $1)`, [invites])).ok, true);
+const crewId = (await as(ids.SofIki, `select get_crews()`)).crews[0].id;
+const members = (await as(ids.SofIki, `select get_crews()`)).crews[0].members;
 assert.equal(members.length, 8);
 for (const n of nicks.slice(1)) await as(ids[n], `select respond_crew($1, true)`, [crewId]);
-assert.match((await as(ids.Lider8, `select start_crew()`)).msg, /Sof1 .*araba/, 'her şoför araba ister');
-for (const n of ['Sof1', 'Sof2']) await car(ids[n], 'sedan');
-assert.match((await as(ids.Lider8, `select start_crew()`)).msg, /Sof3/);
-await car(ids.Sof3, 'sedan');
-await set(ids.Sil3, { bullets: 10 });
-assert.match((await as(ids.Lider8, `select start_crew()`)).msg, /Sil3/, 'her silahçı kurşun ister');
-await set(ids.Sil3, { bullets: 1000 });
-const r = await as(ids.Lider8, `select start_crew()`);
+assert.match((await as(ids.LiderSekiz, `select start_crew()`)).msg, /SofBir .*araba/, 'her şoför araba ister');
+for (const n of ['SofBir', 'SofIki']) await car(ids[n], 'sedan');
+assert.match((await as(ids.LiderSekiz, `select start_crew()`)).msg, /SofUc/);
+await car(ids.SofUc, 'sedan');
+await set(ids.SilUc, { bullets: 10 });
+assert.match((await as(ids.LiderSekiz, `select start_crew()`)).msg, /SilUc/, 'her silahçı kurşun ister');
+await set(ids.SilUc, { bullets: 1000 });
+const r = await as(ids.LiderSekiz, `select start_crew()`);
 assert.equal(r.ok, true, r.msg);
-for (const n of ['Sil1', 'Sil2', 'Sil3']) assert.equal((await get(ids[n])).bullets, 900, 'üç silahçı da kurşun harcar');
-assert.equal((await get(ids.Pat1)).cash >= 500000 - 15000, true);
+for (const n of ['SilBir', 'SilIki', 'SilUc']) assert.equal((await get(ids[n])).bullets, 900, 'üç silahçı da kurşun harcar');
+assert.equal((await get(ids.PatBir)).cash >= 500000 - 15000, true);
 ok(`büyük vurgun: 8 rol, çoklu şart — ${r.msg}`);
 
 // ─── Yarış
-const A = await player('Yarisci_A', { cash: 100000 });
-const B = await player('Yarisci_B', { cash: 100000 });
-const C = await player('Yarisci_C', { cash: 500 });
+const A = await player('YarisciA', { cash: 100000 });
+const B = await player('YarisciB', { cash: 100000 });
+const C = await player('YarisciC', { cash: 500 });
 const ca = await car(A, 'limuzin'), cb = await car(B, 'kamyonet'), cc = await car(C, 'taksi');
 const cOther = await car(B, 'spor', 'izmir');
 assert.equal((await as(A, `select create_race(500, $1)`, [ca])).ok, false, 'min ücret');

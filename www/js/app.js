@@ -126,6 +126,7 @@ function render() {
   }
   if (!S.player) { renderOnboard(); show('onboard'); return; }
   show('game');
+  if ($('#tutorial').classList.contains('hidden')) showTutorial();
   const p = S.player, rank = S.ranks[p.rank], next = S.ranks[p.rank + 1];
   $('#h-avatar').innerHTML = portrait(p.avatar, 'avatar');
   $('#h-nick').textContent = p.nick;
@@ -303,7 +304,7 @@ function panelHelp(id) {
       mahkûmları kurtarıp itibar kazanırsın ama gardiyana yakalanırsan sen de içeri girersin.`,
     hastane: `Vurulunca canın düşer; canın ne kadar azsa seni öldürmek o kadar az kurşun ister. Burada parayla canını doldurursun.
       Öldürülürsen bir süre burada yatarsın.`,
-    banka: `Öldürülürsen cebindeki paranın ${pct(st.kill_cash_loss)}'ini kaybedersin; bankadaki paraya kimse dokunamaz.
+    banka: `Öldürülürsen cebindeki paradan ${pct(st.kill_cash_loss)} kaybedersin; bankadaki paraya kimse dokunamaz.
       Kazancını bankaya yatır (yatırırken ${pct(st.bank_fee)} komisyon). Buradan başka oyunculara para da gönderebilirsin.`,
     fabrika: `Kurşun; adam vurmak, mekân baskını ve ekip işleri için gerekir. Şehrin fabrikasından saatlik bir sınırla alırsın.
       Fabrikayı bir aile satın alırsa fiyatı o aile belirler ve satışların parası onun kasasına gider.`,
@@ -695,9 +696,19 @@ function crewSection() {
 const ROLES = { don: 'Don', sottocapo: 'Sottocapo', consigliere: 'Consigliere', capo: 'Capo', asker: 'Asker' };
 
 // Aile arması: adın baş harfi, renk addan türetilir (her ailenin kendi rengi)
-function crest(name, cls = '') {
+// n > 0: ailenin seçtiği arma görseli (assets/crests/cN.png); 0 ya da görsel yoksa baş harfli otomatik arma
+function crest(name, cls = '', n = 0) {
+  if (n > 0 && hasAsset(`crests/c${n}`)) return `<span class="crest img ${cls}">${img(`crests/c${n}`, '', '')}</span>`;
   const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   return `<span class="crest ${cls}" style="--hue:${hue}"><span>${esc(name.trim()[0]?.toLocaleUpperCase('tr-TR') || '?')}</span></span>`;
+}
+
+// Don için arma seçici (0 = harfli otomatik arma)
+function crestPicker(F) {
+  return `<details class="crest-pick" id="crest-pick"><summary class="muted small">Armayı değiştir</summary><div class="crest-grid">
+    ${Array.from({ length: 9 }, (_, n) => `<button data-act="crest" data-id="${n}" class="${(F.family.crest || 0) === n ? 'on' : ''}">
+      ${crest(F.family.name, '', n)}</button>`).join('')}</div>
+    <p class="muted small">Arma ailenin her yerde görünen işaretidir: aile listesi, aile sayfası, mekânlar.</p></details>`;
 }
 const stat = (icon, v, title) => `<span class="stat" title="${title}">${icon} ${v}</span>`;
 
@@ -721,7 +732,7 @@ function familyTab() {
     if (F.application) h += card(`Başvurun: ${esc(F.application.family)}`, 'Yönetimin cevabı bekleniyor.',
       `<button class="btn sm" data-act="cancelapp">Geri çek</button>`);
     h += `<h2>Aileler</h2>` + (extra.families.length ? extra.families.map(f => `<div class="card fam-card">
-      ${crest(f.name)}<div class="grow"><div class="title">${esc(f.name)}</div>
+      ${crest(f.name, '', f.crest)}<div class="grow"><div class="title">${esc(f.name)}</div>
         <div class="don">${f.don ? `${portrait(f.don_avatar || 1, 'avatar xs')} Don ${esc(f.don)}` : 'Don yok'}</div>
         <div class="stats">${stat(ico('uye', '👤'), f.members, 'üye')}${stat(ico('fabrika', '🏭'), f.factories, 'fabrika')}${stat(ico('mekan', '🏠'), f.spots ?? 0, 'mekân')}</div></div>
       <button class="btn sm primary" data-act="apply" data-id="${esc(f.name)}">Başvur</button></div>`).join('')
@@ -744,7 +755,8 @@ function familyTab() {
 
   const role = F.my_role, isDon = role === 'don', leader = ['don', 'sottocapo', 'consigliere'].includes(role);
   const treasurer = ['don', 'sottocapo'].includes(role);
-  let h = banner('ui/aile_bant', esc(F.family.name), `${ROLES[role]} olarak`, crest(F.family.name, 'on-banner'));
+  let h = banner('ui/aile_bant', esc(F.family.name), `${ROLES[role]} olarak`, crest(F.family.name, 'on-banner', F.family.crest));
+  if (isDon) h += crestPicker(F);
   const mySpots = (extra.spots?.spots || []).filter(x => x.mine).length;
   h += `<div class="card vault"><div class="vault-head"><span class="muted small">Aile kasası</span>
       <b class="vault-sum">${money(F.family.bank)}</b></div>
@@ -821,9 +833,32 @@ function spotsSection(role) {
 function chatMsg(m, avatar, kind) {
   if (!m.nick) return `<div class="sys">— ${esc(m.text)} —</div>`;
   const mine = m.mine ?? m.nick === S.player.nick;
-  return `<div class="msg ${mine ? 'me' : ''}">${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
-    <b>${mine ? esc(m.nick) : nickLink(m.nick)}</b> ${esc(m.text)}${mine ? ''
-      : ` <a class="flag" data-report="${kind}" data-id="${m.id}" title="Şikâyet et">⚑</a>`}</div></div>`;
+  const tap = mine ? '' : ` data-mnick="${esc(m.nick)}" data-mkind="${kind}" data-mid="${m.id}"`;
+  return `<div class="msg ${mine ? 'me' : 'tap'}"${tap}>${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
+    <b>${esc(m.nick)}</b> ${esc(m.text)}</div></div>`;
+}
+
+// Mesaj/oyuncu menüsü: profil, şikâyet, engelle
+function openMsgMenu(nick, kind, id) {
+  $('#modal-body').innerHTML = `<div class="logo-sm">${esc(nick)}</div>
+    <div class="menu-list">
+      <button class="btn" data-profile="${esc(nick)}">👤 Profili gör</button>
+      <button class="btn danger" data-act="reportmsg" data-kind="${kind}" data-ref="${id ?? ''}" data-id="${esc(nick)}">⚑ Şikâyet et</button>
+      <button class="btn" data-act="block" data-id="${esc(nick)}">🚫 Engelle</button>
+    </div>`;
+  $('#modal').classList.remove('hidden');
+}
+
+// Şikâyet: gerekçe seçilir (yazmak gerekmez); kanıt olarak içerik sunucuda saklanır
+const REPORT_REASONS = ['Küfür / hakaret', 'Taciz / tehdit', 'Irkçılık / nefret söylemi', 'Dolandırıcılık', 'Spam / reklam', 'Uygunsuz ad', 'Hile şüphesi'];
+function openReport(kind, ref, nick) {
+  $('#modal-body').innerHTML = `<div class="logo-sm">Şikâyet</div>
+    <p class="small">${kind === 'player' ? `<b>${esc(nick)}</b> adlı oyuncuyu` : `<b>${esc(nick)}</b> kullanıcısının mesajını`}
+      moderasyon ekibine bildiriyorsun. Neden?</p>
+    <div class="menu-list">${REPORT_REASONS.map(r => `<button class="btn" data-act="sendreport" data-kind="${kind}"
+      data-ref="${ref ?? ''}" data-nick="${esc(nick)}" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+    <p class="muted small">Yanlış şikâyetler de kayda geçer. Engellemek istersen şikâyetten sonra profilinden engelleyebilirsin.</p>`;
+  $('#modal').classList.remove('hidden');
 }
 
 function chatTab() {
@@ -906,8 +941,12 @@ function eventsSection() {
 }
 
 function logTab() {
+  if (logView === 'guide') return guideView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
+  h += `<div class="card clickable guide-link" data-act="guide"><span class="icon emoji">📖</span><div class="grow">
+      <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
+      <span class="muted">›</span></div>`;
   if (p.is_admin) h += `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>`;
 
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
@@ -936,6 +975,142 @@ function logTab() {
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
   return h;
 }
+
+// ═════════════════ REHBER ═════════════════
+// Bütün sayılar oyunun kendi ayarlarından gelir; bir değer değişince rehber de kendiliğinden güncellenir.
+let logView = 'main';
+const mins = (sec) => sec >= 3600 ? `${+(sec / 3600).toFixed(1)} saat` : `${Math.round(sec / 60)} dakika`;
+
+function guideSections() {
+  const st = S.settings, R = S.ranks, protect = R[st.protect_rank].name;
+  const li = (a) => `<ul>${a.map(x => `<li>${x}</li>`).join('')}</ul>`;
+  return [
+    ['basla', '🎩 İlk adımlar', li([
+      `Amaç: suç işleyip para ve <b>itibar</b> toplamak, rütbe atlamak, bir aileyle şehre hükmetmek.`,
+      `Üstteki çubuk itibarını gösterir; dolunca rütben yükselir. Yeni rütbe yeni işler, silahlar ve ulaşım açar.`,
+      `"İş hazır / Araba hazır / Vapur hazır" yazıları bekleme sürelerini gösterir; süre dolunca tekrar yapabilirsin.`,
+      `Her şey bekleme süresiyle ilerler: sık sık kısa uğramak, uzun oturmaktan iyidir.`])],
+    ['rutbe', '⭐ Rütbeler', `<table class="g-table"><tr><th>Rütbe</th><th>İtibar</th><th>Taşıma</th></tr>${R.map(r =>
+      `<tr><td>${esc(r.name)}</td><td>${r.min_xp.toLocaleString('tr-TR')}</td><td>${r.carry} kasa</td></tr>`).join('')}</table>
+      <p class="small">"Taşıma": limanda aynı anda elinde tutabileceğin kaçak mal kasası.</p>`],
+    ['suc', '🕶 Suçlar ve hapis', li([
+      `İşler sekmesindeki suçlar para ve itibar getirir. Şans yüzdesi kartta yazar; başarısız olursan kısa süre hapse girersin.`,
+      `Suçlar arasında ${mins(st.crime_cooldown_s)} beklersin. Büyük suçlar rütbeyle açılır.`,
+      `Hapisteyken firar etmeyi deneyebilirsin (hakkın sınırlı) ya da biri seni Karakol'dan kurtarabilir.`,
+      `Başkalarını kurtarmak itibar kazandırır, ama gardiyana yakalanırsan ${mins(st.bust_fail_jail_s)} içeride kalırsın.`])],
+    ['araba', '🚗 Arabalar ve yarış', li([
+      `Garajda sokaktan araba çalarsın (${mins(st.car_cooldown_s)} arayla). Yakalanırsan kısa hapis.`,
+      `Arabayı satabilir ya da hurdada ezip kurşuna çevirebilirsin (değerinin 1/${st.crusher_divisor} oranında kurşun).`,
+      `Yarışlara girip para kazanabilirsin; kazanan havuzdan %${Math.round((1 - st.race_house_cut) * 100)} pay alır.`])],
+    ['liman', '⚓ Kaçak mal ve yolculuk', li([
+      `Rakı, şarap, tütün, kahve gibi mallar her şehirde ve her saat farklı fiyattadır: ucuza al, pahalı limanda sat.`,
+      `Yolculuk bileti ${money(S.travel_cost ?? st.travel_cost)}. Kaçak malla yolculukta %${Math.round(st.customs_chance * 100)} gümrüğe takılma riski var.`,
+      `Daha hızlı ulaşım (${S.transports.map(t => esc(t.name)).join(', ')}) seferler arası beklemeyi kısaltır.`])],
+    ['silah', '🔫 Silah, koruma, nişancılık', li([
+      `Silahın yoksa kimseyi vuramazsın. ${S.weapons.map(w => `${esc(w.name)}: ${money(w.price)}, kurşun ihtiyacı ×${w.bullet_mult}`).join(' · ')}.`,
+      `Her koruma (en fazla 5) seni öldürmek için gereken kurşunu %20 artırır.`,
+      `Şişe atışı nişancılığını artırır; 100 puanda %40 daha az kurşun gerekir.`,
+      `Kurşunu Fabrika'dan saatlik sınırla, ya da Çarşı'dan oyunculardan alırsın.`])],
+    ['olum', '☠ Ölüm ve infaz', li([
+      `<b>${esc(protect)}</b> rütbesine kadar kimse sana dokunamaz, sen de kimseyi vuramazsın.`,
+      `Birini vurmak için önce Dedektif Bürosu'ndan dedektif tutup nerede olduğunu bulmalısın (1 dedektif %10, 10 dedektif %100 şans). Bulgu 1 saat geçerli.`,
+      `Hedefle aynı şehirde olmalısın. Gereken kurşun hedefin rütbesine, korumalarına, canına ve senin silahınla nişancılığına göre değişir.`,
+      `Az kurşun sıkarsan sadece yaralarsın. Her atıştan sonra ${mins(st.kill_cooldown_s)} beklersin.`,
+      `Öldürülürsen: cebindeki paradan %${Math.round(st.kill_cash_loss * 100)}, kurşunlarından %${Math.round(st.kill_bullet_loss * 100)} gider; ${mins(st.hospital_s)} hastanede yatarsın. Kalıcı ölüm yok.`,
+      `Korunmak için: parayı bankaya koy, koruma tut, canını doldur, gerekirse Sığınak'a in ya da şehir değiştir.`])],
+    ['kelle', '🎯 Kelle listesi', li([
+      `Birinin başına en az ${money(st.bounty_min)} ödül koyabilirsin (+%${Math.round(st.bounty_fee * 100)} aracı payı).`,
+      `Hedefi kim öldürürse ödülü o alır. ${st.bounty_days} gün içinde kimse öldürmezse ödül bankana geri döner.`])],
+    ['banka', '🏦 Banka ve para', li([
+      `Bankadaki paraya kimse dokunamaz; cebindeki para öldürülünce kısmen kaybolur. Yatırırken %${Math.round(st.bank_fee * 100)} komisyon.`,
+      `Başka oyunculara para gönderebilirsin (%${Math.round(st.transfer_fee * 100)} komisyon).`])],
+    ['aile', '🤝 Aile ve roller', li([
+      `Bir aileye başvur ya da ${esc(R[S.settings.family_create_rank].name)} olunca kendi aileni kur.`,
+      `Don ailenin başıdır; Sottocapo sağ kolu (kasa, üye atma, baskın); Consigliere başvuruları kabul eder; Capo baskın yönetir; Asker üyedir.`,
+      `Aile kasası ortak paradır: mekân haraçları, fabrika satışları ve gazino payı buraya gelir.`,
+      `Aileden birine silah çekilmez. Don ailenin armasını seçer.`])],
+    ['mekan', '🏠 Mekânlar ve baskın', li([
+      `Gazino, meyhane, kahvehane ve antrepolar sahibine saatlik haraç getirir (en fazla ${st.spot_income_cap_h} saat birikir).`,
+      `Ailenin Don, Sottocapo ya da Capo'su kurşunla baskın yapıp mekânı ele geçirebilir. Şehirde çevrimiçi her aile üyesi gücü %${Math.round(st.raid_ally_bonus * 100)} artırır.`,
+      `Ele geçirilen mekâna ${mins(st.spot_protect_s)} baskın yapılamaz; sahibi kurşun bırakıp tahkim eder.`,
+      `Gazinoda kaybedilen bahislerden %${Math.round(st.casino_owner_cut * 100)} pay sahibi aileye gider.`])],
+    ['ekip', '🚂 Ekip işleri', li([
+      `Tren Soygunu, Banka Soygunu ve Büyük Liman Vurgunu birkaç kişiyle yapılır: lider, şoför, silahçı, patlayıcı uzmanı.`,
+      `Lider ekibi kurar ve davet eder; herkes aynı şehirde olmalı. Şoförün belli değerde arabası, silahçının ${st.crew_gunner_bullets} kurşunu gerekir.`,
+      `Ödül büyük, ama başarısız olursanız ekip hapse girebilir.`])],
+    ['kumar', '🎰 Kumarhane ve şans', li([
+      `Gazinoda zar, rulet, slot ve blackjack oynanır; rütbene göre en yüksek bahis sınırı var. Kasa her zaman biraz önde.`,
+      `Kazı kazan ${money(st.scratch_price)}; günlük piyango bileti ${money(st.lottery_ticket)}.`])],
+    ['sohbet', '💬 Sohbet ve kurallar', li([
+      `Genel, şehir ve aile sohbeti var. Küfür otomatik sansürlenir.`,
+      `Rahatsız eden birinin mesajına ya da portresine dokun: şikâyet et veya engelle.`,
+      `Hakaret, taciz, hile ve dolandırıcılık susturma ya da banla sonuçlanır; gerekçe sana gösterilir.`])],
+    ['sezon', '🏆 Sezonlar ve diğerleri', li([
+      `Sezon ${st.season_days} gün sürer. Sonunda İtibar, İnfaz, Servet ve Aile listelerinde ilk 3'e girenler kalıcı rozet alır, sonra herkes sıfırdan başlar.`,
+      `Sığınak: saatlik ücretle (en fazla ${st.hideout_max_h} saat) yer altına inersin; kimse bulamaz ama iş de yapamazsın.`,
+      `Evlilik ${money(st.marriage_cost)}: profilden teklif edilir.`])],
+  ];
+}
+
+function guideView() {
+  return banner('ui/defter_bant', 'Rehber', 'Merak ettiğin kurala dokun') +
+    `<p><button class="btn sm" data-act="logmain">← Defter</button>
+      <button class="btn sm" data-act="tutorial">▶ Hızlı eğitimi tekrar izle</button></p>` +
+    guideSections().map(([id, title, body]) => `<details class="guide" id="g-${id}"><summary>${title}</summary><div class="g-body">${body}</div></details>`).join('');
+}
+
+// ═════════════════ HIZLI EĞİTİM ═════════════════
+// İlk girişte bir kez: kısa, görselli kartlar. Ayrıntı için en sonda Rehber'e yönlendirir.
+let tutStep = 0;
+function tutCards() {
+  const b = (n) => img('buildings/' + n, 'tut-bld', '');
+  return [
+    { art: img('ui/splash', 'tut-splash', ''), title: 'İstanbul, 1922',
+      text: 'İçki yasak, sokaklar aç. Sıfırdan başla, şehrin en büyük kabadayısı ol.' },
+    { art: `<div class="tut-stats">${ico('can', '❤')}<b>Can</b>${ico('kursun', '🔫')}<b>Kurşun</b>${ico('banka', '🏦')}<b>Banka</b></div>
+        <div class="tut-bar"><div></div></div>`, title: 'Üstteki çubuk',
+      text: 'Rütben, paran ve canın hep üstte. Çubuk dolunca rütbe atlarsın; yeşil "hazır" yazıları ne yapabileceğini gösterir.' },
+    { art: img('jobs/cep', 'tut-job', ''), title: 'İşler: para ve itibar',
+      text: 'Suç işle, para ve itibar kazan. Yakalanırsan kısa süre hapse girersin.' },
+    { art: `<div class="tut-blds">${b('banka')}${b('silahci')}${b('dedektif')}</div>`, title: 'Şehirdeki binalar',
+      text: 'Haritada bir binaya dokun: banka, silahçı, dedektif, liman… Her birinin başında ne işe yaradığı yazar.' },
+    { art: `<div class="tut-shield">🛡</div>`, title: 'Sokakların kuralı',
+      text: `${S.ranks[S.settings.protect_rank].name} olana kadar kimse sana dokunamaz. Sonra dikkat: parayı bankaya koy, öldürülürsen cebindekini kaybedersin.` },
+    { art: img('ui/aile_bant', 'tut-job', ''), title: 'Aile ve sohbet',
+      text: 'Bir aileye katıl, mekânları ele geçirin. Sohbet sekmesinde şehrin ahalisiyle tanış.' },
+    { art: img('ui/logo', 'tut-logo', '<div class="logo-sm">KABADAYI</div>'), title: 'Hazırsın', text: 'Merak ettiğin her kural Defter sekmesindeki Rehber\'de.', last: true },
+  ];
+}
+const tutKey = () => 'kabadayi-tut-' + (S?.player?.nick || '');
+function showTutorial(force = false) {
+  try { if (!force && localStorage.getItem(tutKey())) return; } catch { if (!force) return; }
+  tutStep = 0; renderTut(); $('#tutorial').classList.remove('hidden');
+}
+function renderTut() {
+  const cards = tutCards(), c = cards[tutStep];
+  $('#tutorial').innerHTML = `<div class="tut-card" key="${tutStep}">
+    ${c.last ? '' : '<button class="tut-skip" data-act="tutdone">Atla</button>'}
+    <div class="tut-art">${c.art}</div><h3>${c.title}</h3><p>${c.text}</p>
+    <div class="tut-dots">${cards.map((_, i) => `<i class="${i === tutStep ? 'on' : ''}"></i>`).join('')}</div>
+    ${c.last ? `<button class="btn primary tut-next" data-act="tutdone">Eğitimi aldım. Daha fazla bilgi için “Defter” sekmesindeki “Rehber”e girebileceğimi anladım.</button>
+      <button class="btn tut-guide" data-act="tutguide">Rehberi şimdi aç</button>`
+      : `<div class="tut-nav">${tutStep ? '<button class="btn" data-act="tutback">Geri</button>' : '<span></span>'}
+         <button class="btn primary" data-act="tutnext">İleri</button></div>`}</div>`;
+}
+function endTutorial() {
+  try { localStorage.setItem(tutKey(), '1'); } catch {}
+  $('#tutorial').classList.add('hidden');
+}
+// Kaydırarak ilerleme
+let tutX = null;
+document.addEventListener('touchstart', (e) => { if (e.target.closest('#tutorial')) tutX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', (e) => {
+  if (tutX === null) return;
+  const dx = e.changedTouches[0].clientX - tutX; tutX = null;
+  if (Math.abs(dx) < 50) return;
+  const n = tutCards().length;
+  tutStep = Math.max(0, Math.min(n - 1, tutStep + (dx < 0 ? 1 : -1))); renderTut();
+});
 
 // ═════════════════ PROFİL ═════════════════
 async function showProfile(nick) {
@@ -1019,11 +1194,9 @@ document.addEventListener('click', async (e) => {
   const open = e.target.closest('[data-open]');
   if (open) return openPanel(open.dataset.open);
   const rep = e.target.closest('[data-report]');
-  if (rep) {
-    const reason = prompt('Neden şikâyet ediyorsun? (hakaret, taciz, dolandırıcılık…)');
-    if (reason !== null) act('report_content', { p_kind: rep.dataset.report, p_ref: +rep.dataset.id, p_nick: null, p_reason: reason });
-    return;
-  }
+  if (rep) return openReport(rep.dataset.report, +rep.dataset.id, rep.closest('[data-mnick]')?.dataset.mnick || extra.conv || '');
+  const tapMsg = e.target.closest('[data-mnick]');
+  if (tapMsg) return openMsgMenu(tapMsg.dataset.mnick, tapMsg.dataset.mkind, tapMsg.dataset.mid);
 
   const nav = e.target.closest('[data-go]');
   if (nav) {
@@ -1124,11 +1297,18 @@ document.addEventListener('click', async (e) => {
     }
     case 'block':      closeModal(); return confirm(`${id} engellensin mi? Mesajlarını görmezsin.`) && act('block_player', { p_nick: id });
     case 'unblock':    closeModal(); return act('unblock_player', { p_nick: id });
-    case 'reportplayer': {
-      const reason = prompt('Neden şikâyet ediyorsun?');
-      if (reason !== null) { closeModal(); return act('report_content', { p_kind: 'player', p_ref: null, p_nick: id, p_reason: reason }); }
-      return;
-    }
+    case 'reportplayer': return openReport('player', null, id);
+    case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
+    case 'logmain':    logView = 'main'; renderTab(); $('main').scrollTop = 0; return;
+    case 'tutorial':   return showTutorial(true);
+    case 'tutnext':    tutStep++; return renderTut();
+    case 'tutback':    tutStep--; return renderTut();
+    case 'tutdone':    return endTutorial();
+    case 'tutguide':   endTutorial(); logView = 'guide'; return $('[data-go="log"]').click();
+    case 'crest':      return act('set_family_crest', { p_crest: +id });
+    case 'reportmsg':  return openReport(b.dataset.kind, b.dataset.ref ? +b.dataset.ref : null, id);
+    case 'sendreport': closeModal(); return act('report_content', { p_kind: b.dataset.kind, p_ref: b.dataset.ref ? +b.dataset.ref : null,
+      p_nick: b.dataset.kind === 'player' ? b.dataset.nick : null, p_reason: b.dataset.reason });
     case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı ($${S.settings.marriage_cost}) senden çıkar.`) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');

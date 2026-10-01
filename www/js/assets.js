@@ -13,10 +13,10 @@ const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [
-  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...ICONS.map(i => `ico/${i}`), ...BUILDINGS.map(b => `buildings/${b}`),
+  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...ICONS.map(i => `ico/${i}`), ...Array.from({ length: 8 }, (_, i) => `crests/c${i + 1}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
-  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant',
+  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant', 'ui/logo',
 ];
 
 const have = new Set();
