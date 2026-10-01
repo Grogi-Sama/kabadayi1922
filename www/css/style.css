@@ -213,6 +213,9 @@ nav button[data-badge]:not([data-badge=""])::after {
     linear-gradient(180deg, rgba(0,0,0,.25), transparent 40%, rgba(0,0,0,.35)),
     var(--tex-kaldirim, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='20'%3E%3Crect width='32' height='20' fill='%232a2018'/%3E%3Cg fill='%237d6a50'%3E%3Crect x='1' y='1' width='14' height='8' rx='3.5'/%3E%3Crect x='17' y='1' width='14' height='8' rx='3.5' fill='%23705e46'/%3E%3Crect x='-7' y='11' width='14' height='8' rx='3.5' fill='%23705e46'/%3E%3Crect x='9' y='11' width='14' height='8' rx='3.5' fill='%23887458'/%3E%3Crect x='25' y='11' width='14' height='8' rx='3.5' fill='%23705e46'/%3E%3C/g%3E%3C/svg%3E")) 0 5px / var(--kaldirim-size, 32px 20px);
 }
+.decor { position: absolute; transform: translateX(-50%); width: auto; pointer-events: none; user-select: none; }
+.decor.wall { z-index: 0; filter: brightness(.85) drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+.decor.ground { z-index: 2; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
 .bld {
   position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; min-width: 0;
   transition: transform .12s;

@@ -7,10 +7,12 @@ const BUILDINGS = ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hast
 const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 'c_aile', 'c_spor', 'c_sedan', 'c_limuzin',
   'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];
+const DECOR = ['pencere', 'fener', 'sarmasik', 'afis', 'camasir', 'balkon', 'cesme', 'tabela', 'lamba', 'kasa', 'fici',
+  'boyaci', 'incir', 'kedi', 'guvercin'];
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [
-  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...BUILDINGS.map(b => `buildings/${b}`),
+  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
   'ui/splash', 'ui/emblem',

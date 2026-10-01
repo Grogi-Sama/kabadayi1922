@@ -181,6 +181,23 @@ const STREETS = [
   ['garaj', 'carsi', 'siginak'],
 ];
 
+// Süsler: her sokağa bir set. x = sokak genişliğinin %'si (parçanın ortası; 33/67 bina araları),
+// top = duvardaki yükseklik (px), yoksa kaldırıma basar; h = boy (px). Duvardakiler binaların arkasında kalır.
+const DECOR = [
+  [{ d: 'sarmasik', x: 3, top: 0, h: 46 }, { d: 'fener', x: 33.4, top: 18, h: 30 }, { d: 'afis', x: 66.6, top: 26, h: 34 }, { d: 'kedi', x: 33.4, h: 22 }],
+  [{ d: 'tabela', x: 33.4, top: 16, h: 30 }, { d: 'balkon', x: 66.6, top: 4, h: 30 }, { d: 'kasa', x: 33.4, h: 28 }, { d: 'lamba', x: 98, h: 84 }],
+  [{ d: 'pencere', x: 33.4, top: 8, h: 42 }, { d: 'camasir', x: 66.6, top: 2, h: 24 }, { d: 'fici', x: 66.6, h: 26 }, { d: 'boyaci', x: 3, h: 20 }],
+  [{ d: 'cesme', x: 66.6, top: 34, h: 58 }, { d: 'fener', x: 97, top: 20, h: 28 }, { d: 'incir', x: 33.4, h: 42 }, { d: 'lamba', x: 2, h: 84 }, { d: 'guvercin', x: 80, h: 16 }],
+];
+const CITY_ORDER = ['istanbul', 'izmir', 'selanik', 'pire', 'iskenderiye', 'beyrut'];
+
+function decorHtml(set) {
+  return set.filter(o => hasAsset('decor/' + o.d)).map(o => {
+    const pos = o.top != null ? `top:${o.top}px` : 'bottom:27px';
+    return `<img class="decor ${o.top != null ? 'wall' : 'ground'}" src="${assetUrl('decor/' + o.d)}" alt="" draggable="false" style="left:${o.x}%;${pos};height:${o.h}px">`;
+  }).join('');
+}
+
 function buildingHtml(id, asset, emoji, name, tagHtml = '') {
   return `<div class="bld" data-open="${id}">${tagHtml}
     <div class="bld-art">${img(asset, '', `<div class="ph">${emoji}</div>`)}</div><div class="plate">${esc(name)}</div></div>`;
@@ -191,8 +208,9 @@ function cityTab() {
   const spots = (extra.spots?.spots || []).filter(s => s.city === p.city)
     .sort((x, y) => SPOT_ORDER.indexOf(x.kind) - SPOT_ORDER.indexOf(y.kind));
   let si = 0, town = '';
-  for (const street of STREETS) {
-    town += '<div class="street">';
+  const shift = Math.max(0, CITY_ORDER.indexOf(p.city));   // şehirden şehre süs düzeni değişsin
+  for (const [i, street] of STREETS.entries()) {
+    town += '<div class="street">' + decorHtml(DECOR[(i + shift) % DECOR.length]);
     for (const slot of street) {
       if (slot === 'spot') {
         const sp = spots[si++];
