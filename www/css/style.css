@@ -506,3 +506,7 @@ nav button[data-badge]:not([data-badge=""])::after {
 .chat-link .ellipsis { max-width: 100%; }
 .roles-help { margin: -4px 0 10px; }
 .roles-help p { margin: 4px 0; }
+
+/* Oyun logosu (açılış, yükleme, ban ekranı) */
+.logo-img { width: min(300px, 78vw); height: auto; display: block; margin: 4px auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
+#loading .logo-img { width: min(340px, 84vw); }
