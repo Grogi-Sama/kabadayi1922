@@ -201,7 +201,9 @@ function cityTab() {
         town += buildingHtml('spot:' + sp.id, `buildings/${sp.kind}`, SPOT_EMOJI[sp.kind], sp.name, tag);
       } else if (HOTSPOTS[slot]) {
         const hs = HOTSPOTS[slot];
-        town += `<div class="bld hs" data-open="${slot}"><div class="bld-art"><div class="dot">${hs.emoji}</div></div><div class="plate">${hs.name}</div></div>`;
+        // Sığınağın görseli varsa bina gibi, yoksa yuvarlak düğme
+        town += hasAsset(`buildings/${slot}`) ? buildingHtml(slot, `buildings/${slot}`, hs.emoji, hs.name)
+          : `<div class="bld hs" data-open="${slot}"><div class="bld-art"><div class="dot">${hs.emoji}</div></div><div class="plate">${hs.name}</div></div>`;
       } else {
         const b = BUILDINGS[slot];
         let tag = '';
@@ -234,7 +236,7 @@ function panelInfo(id) {
   const render = { karakol: jailSection, hastane: hospitalSection, banka: bankSection, fabrika: factorySection,
     silahci: gunsmithSection, dedektif: detectiveSection, garaj: garageSection, carsi: marketSection,
     liman: harborSection, siginak: hideoutSection }[id];
-  return { name: b.name, asset: BUILDINGS[id] ? `buildings/${id}` : null, emoji: b.emoji, render };
+  return { name: b.name, asset: BUILDINGS[id] || hasAsset(`buildings/${id}`) ? `buildings/${id}` : null, emoji: b.emoji, render };
 }
 
 function renderSheet() {
