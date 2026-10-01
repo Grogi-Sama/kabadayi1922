@@ -8,10 +8,12 @@ const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 
   'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];
 const DECOR = ['sarmasik', 'afis', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
+const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile', 'defter', 'can', 'kursun', 'banka',
+  'kilit', 'kum', 'uye', 'fabrika', 'mekan'];
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [
-  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...BUILDINGS.map(b => `buildings/${b}`),
+  ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...ICONS.map(i => `ico/${i}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 8 }, (_, i) => `portraits/p${i + 1}`),
   ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
   'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant',
@@ -35,3 +37,7 @@ export const assetUrl = (name) => `assets/${name}.png`;
 export function img(name, cls = '', fallback = '') {
   return have.has(name) ? `<img class="${cls}" src="assets/${name}.png" alt="" draggable="false">` : fallback;
 }
+
+// Küçük simge: görsel varsa <img class="ico">, yoksa emoji
+export const ico = (name, emoji) => have.has('ico/' + name)
+  ? `<img class="ico" src="assets/ico/${name}.png" alt="${emoji}" draggable="false">` : emoji;

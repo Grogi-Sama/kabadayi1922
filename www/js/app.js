@@ -1,5 +1,5 @@
 import { createBackend } from './backend.js';
-import { probeAssets, img, hasAsset, assetUrl } from './assets.js';
+import { probeAssets, img, hasAsset, assetUrl, ico } from './assets.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -125,7 +125,7 @@ function render() {
     + (p.family ? ` · ${p.family}` : '') + (p.bounty > 0 ? ` · 🎯 ${money(p.bounty)}` : '');
   $('#h-cash').textContent = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
-  $('#h-stats').textContent = `❤ ${p.health} · 🔫 ${p.bullets} kurşun · 🏦 ${money(p.bank)}`;
+  $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`;
   $('[data-go="log"]').dataset.badge = p.unread > 0 ? p.unread : '';
   $('#xpbar div').style.width = next ? `${100 * (p.xp - rank.min_xp) / (next.min_xp - rank.min_xp)}%` : '100%';
   renderTab();
@@ -332,7 +332,7 @@ function gunsmithSection() {
   return S.weapons.map(w => {
       const locked = p.rank < w.min_rank, owned = p.weapon === w.id;
       return `<div class="card ${locked ? 'locked' : ''}">${icon('w_' + w.id, WEAPON_EMOJI[w.id])}<div class="grow"><div class="title">${esc(w.name)}${owned ? ' ✓' : ''}</div>
-        <div class="muted small">${locked ? '🔒 ' + esc(rankName(w.min_rank)) : money(w.price)} · gereken kurşun ×${w.bullet_mult}</div></div>
+        <div class="muted small">${locked ? ico('kilit', '🔒') + ' ' + esc(rankName(w.min_rank)) : money(w.price)} · gereken kurşun ×${w.bullet_mult}</div></div>
         <button class="btn sm primary" data-act="weapon" data-id="${w.id}" ${dis(locked || owned)}>Al</button></div>`;
     }).join('') +
     `<h2>Korumalar (${p.bodyguards}/5)</h2>` +
@@ -350,7 +350,7 @@ function detectiveSection() {
   const foundHere = S.searches.filter(s => s.resolved && s.success && s.city === p.city);
   const killWait = left(p.kill_ready_at);
   if (p.rank < protectRank) {
-    return `<p class="muted">🔒 ${esc(rankName(protectRank))} rütbesine kadar kimseyi aratamaz, vuramazsın; kimse de seni vuramaz.</p>` + hitlistSection();
+    return `<p class="muted">${ico('kilit', '🔒')} ${esc(rankName(protectRank))} rütbesine kadar kimseyi aratamaz, vuramazsın; kimse de seni vuramaz.</p>` + hitlistSection();
   }
   return `<p class="muted small">Dedektif başı ${money(S.settings.detective_cost)}. Ne kadar çok dedektif, o kadar hızlı ve kesin sonuç.</p>
     <div class="form-row"><input id="f-target" placeholder="Hedefin takma adı" autocomplete="off" autocapitalize="off">
@@ -449,7 +449,7 @@ function harborSection() {
     S.transports.filter(t => t.cooldown_s < cur.cooldown_s).map(t => {
       const locked = S.player.rank < t.min_rank;
       return `<div class="card ${locked ? 'locked' : ''}">${icon('t_' + t.id, TRANSPORT_EMOJI[t.id])}<div class="grow"><div class="title">${esc(t.name)}</div>
-        <div class="muted small">${locked ? '🔒 ' + esc(rankName(t.min_rank)) : money(t.price)} · ${t.cooldown_s / 60} dk bekleme</div></div>
+        <div class="muted small">${locked ? ico('kilit', '🔒') + ' ' + esc(rankName(t.min_rank)) : money(t.price)} · ${t.cooldown_s / 60} dk bekleme</div></div>
         <button class="btn sm primary" data-act="transport" data-id="${t.id}" ${dis(locked)}>Al</button></div>`;
     }).join('');
 }
@@ -496,7 +496,7 @@ function spotPanel(sp) {
   } else if (canRaid && !prot) {
     h += `<div class="form-row"><input id="f-raid-${sp.id}" type="number" min="1" placeholder="Baskın kurşunu" inputmode="numeric">
       <button class="btn danger" data-act="raid" data-id="${sp.id}" ${dis(raidWait || blocked())}>Baskın</button></div>
-      ${raidWait ? `<p class="muted small">⏳ Ailenin sıradaki baskını: ${fmt(raidWait)}</p>` : ''}`;
+      ${raidWait ? `<p class="muted small">${ico('kum', '⏳')} Ailenin sıradaki baskını: ${fmt(raidWait)}</p>` : ''}`;
   } else if (!sp.mine) {
     h += `<p class="muted small">Baskını ailenin Don, Sottocapo ya da bir Capo'su yönetebilir. Şehirde çevrimiçi her aile üyesi gücü %15 artırır.</p>`;
   }
@@ -562,12 +562,12 @@ function crimeTab() {
     const locked = S.player.rank < c.min_rank, pct = Math.round(c.chance * 100);
     return `<div class="card job ${locked ? 'locked' : ''}">
       <div class="job-art">${img('jobs/' + c.id, 'art', `<div class="art ph">${JOB_EMOJI[c.id]}</div>`)}
-        ${locked ? `<div class="lock"><span>🔒</span><em>${esc(rankName(c.min_rank))}</em></div>`
+        ${locked ? `<div class="lock"><span>${ico('kilit', '🔒')}</span><em>${esc(rankName(c.min_rank))}</em></div>`
           : `<span class="coin">${money(c.reward_min)}–${money(c.reward_max)}</span>`}</div>
       <div class="body"><div class="title">${esc(c.name)}</div>
         ${locked ? '' : pctBar(pct, `%${pct} şans`)}
         ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(wait)}>${
-          wait && !blocked() ? '⏳ ' + fmt(left(S.player.crime_ready_at)) : 'Yap'}</button>`}</div>
+          wait && !blocked() ? ico('kum', '⏳') + ' ' + fmt(left(S.player.crime_ready_at)) : 'Yap'}</button>`}</div>
     </div>`;
   }).join('') + `</div>` + crewSection();
 }
@@ -577,7 +577,7 @@ const roleLabel = (r) => { const [, k, n] = r.match(/^(\D+)(\d*)$/); return CREW
 const countRole = (t, k) => t.roles.filter(r => r.replace(/\d+$/, '') === k).length;
 
 const ROLE_ICON = { lider: '🎩', sofor: '🚗', silahci: '🔫', patlayici: '🧨' };
-const roleIcon = (r) => ROLE_ICON[r.replace(/\d+$/, '')];
+const roleIcon = (r) => { const k = r.replace(/\d+$/, ''); return ico(k, ROLE_ICON[k]); };
 // Ekip yuvası: rol simgesi, rol adı, kim (boşsa kesikli çember)
 const slot = (role, nick, state = 'empty') => `<div class="slot ${state}"><div class="slot-av">${roleIcon(role)}</div>
   <b>${roleLabel(role)}</b><span>${nick ? nickLink(nick) : 'boş'}</span></div>`;
@@ -613,7 +613,7 @@ function crewSection() {
     for (const t of X.types) {
       const locked = S.player.rank < t.min_rank, wait = t.ready_at && left(t.ready_at);
       const art = `<div class="job-art wide">${img('jobs/' + t.id, 'art', `<div class="art ph">${JOB_EMOJI[t.id]}</div>`)}
-        ${locked ? `<div class="lock"><span>🔒</span><em>${esc(rankName(t.min_rank))}</em></div>`
+        ${locked ? `<div class="lock"><span>${ico('kilit', '🔒')}</span><em>${esc(rankName(t.min_rank))}</em></div>`
           : `<span class="coin">${money(t.payout_min)}–${money(t.payout_max)}</span>`}</div>`;
       if (locked) {
         h += `<div class="card job crew locked">${art}<div class="body"><div class="title">${esc(t.name)}</div>
@@ -628,7 +628,7 @@ function crewSection() {
         <div class="title">${esc(t.name)}</div>
         <div class="slots">${t.roles.map((r, i) => slot(r, i === 0 ? S.player.nick : '', i === 0 ? 'ok' : 'empty')).join('')}</div>
         <div class="muted small">${req}. Herkes aynı şehirde olmalı.</div>
-        ${wait ? `<div class="muted small">⏳ ${fmt(wait)} sonra tekrar</div>` : `
+        ${wait ? `<div class="muted small">${ico('kum', '⏳')} ${fmt(wait)} sonra tekrar</div>` : `
         <details class="crew-form" id="crew-${t.id}"><summary class="btn primary">Ekibi kur</summary>
           ${t.roles.slice(1).map(r => `<input id="f-crew-${t.id}-${r}" placeholder="${roleLabel(r)} (takma ad)" autocomplete="off" autocapitalize="off">`).join('')}
           <button class="btn primary" data-act="crewcreate" data-id="${t.id}">Davet et</button></details>`}</div></div>`;
@@ -657,7 +657,7 @@ function familyTab() {
     h += `<h2>Aileler</h2>` + (extra.families.length ? extra.families.map(f => `<div class="card fam-card">
       ${crest(f.name)}<div class="grow"><div class="title">${esc(f.name)}</div>
         <div class="don">${f.don ? `${portrait(f.don_avatar || 1, 'avatar xs')} Don ${esc(f.don)}` : 'Don yok'}</div>
-        <div class="stats">${stat('👤', f.members, 'üye')}${stat('🏭', f.factories, 'fabrika')}${stat('🏠', f.spots ?? 0, 'mekân')}</div></div>
+        <div class="stats">${stat(ico('uye', '👤'), f.members, 'üye')}${stat(ico('fabrika', '🏭'), f.factories, 'fabrika')}${stat(ico('mekan', '🏠'), f.spots ?? 0, 'mekân')}</div></div>
       <button class="btn sm primary" data-act="apply" data-id="${esc(f.name)}">Başvur</button></div>`).join('')
       : `<p class="muted small">Henüz aile yok. İlk aileyi sen kur.</p>`);
     h += `<h2>Aile Kur</h2>`;
@@ -667,7 +667,7 @@ function familyTab() {
         <button class="btn primary" data-act="createfam">Kur · ${money(F.create_cost)}</button></div></div>`;
     } else {
       const need = S.settings.family_create_rank, p = S.player;
-      h += `<div class="card col locked-card"><div class="title">🔒 Aile kurmak için</div>
+      h += `<div class="card col locked-card"><div class="title">${ico('kilit', '🔒')} Aile kurmak için</div>
         <div class="req"><span>${esc(rankName(need))} rütbesi</span>${pctBar(100 * Math.min(p.rank, need) / need,
           `${esc(rankName(p.rank))} → ${esc(rankName(need))}`)}</div>
         <div class="req"><span>${money(F.create_cost)} nakit</span>${pctBar(100 * p.cash / F.create_cost,
@@ -1081,6 +1081,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && ap
 
 try {
   [api] = await Promise.all([createBackend(), probeAssets()]);
+  for (const [tab, name] of [['city', 'sehir'], ['crime', 'isler'], ['family', 'aile'], ['log', 'defter']]) {
+    const b = $(`nav [data-go="${tab}"] b`);
+    if (b) b.innerHTML = ico(name, b.textContent);
+  }
   if (api.mode === 'local') Object.assign(window, { devApi: api, devRefresh: refresh });
   await refresh();
 } catch (e) {

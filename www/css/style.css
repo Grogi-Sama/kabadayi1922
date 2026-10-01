@@ -270,6 +270,8 @@ nav button {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer;
 }
 nav button b { font-size: 21px; font-weight: normal; }
+nav button b .ico { width: 26px; height: 26px; }
+nav button:not(.on) b .ico { filter: grayscale(.5) brightness(.8); }
 nav button.on { color: var(--gold); }
 nav button.on::before { content: ''; position: absolute; top: -2px; left: 25%; right: 25%; height: 3px; background: var(--gold-hi); }
 nav button[data-badge]:not([data-badge=""])::after {
@@ -435,3 +437,9 @@ nav button[data-badge]:not([data-badge=""])::after {
 .season-count { font: 24px var(--display); color: var(--gold-hi); }
 .badge { display: inline-block; background: #2c231a; border: 1px solid var(--gold); border-radius: 12px; padding: 2px 8px; margin: 2px 0; font-size: 12px; }
 .admin-link { display: block; text-align: center; padding: 10px; margin: 12px 0 8px; border: 1px dashed var(--gold); border-radius: 10px; color: var(--gold); text-decoration: none; }
+
+/* Küçük simgeler (emoji yerine) */
+.ico { width: 1.15em; height: 1.15em; object-fit: contain; vertical-align: -0.2em; display: inline-block; }
+.slot-av .ico { width: 26px; height: 26px; vertical-align: middle; }
+.job .lock span .ico { width: 30px; height: 30px; }
+#h-stats .ico { width: 16px; height: 16px; vertical-align: -3px; }
