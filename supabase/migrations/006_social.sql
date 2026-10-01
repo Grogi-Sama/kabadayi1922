@@ -85,7 +85,7 @@ create table reports (
   id          bigserial primary key,
   reporter_id uuid references players(id) on delete set null,
   target_id   uuid references players(id) on delete set null,
-  kind        text not null check (kind in ('message', 'family_message', 'player')),
+  kind        text not null check (kind in ('message', 'family_message', 'chat_message', 'player')),
   ref_id      bigint,
   snapshot    text,           -- şikâyet anındaki içerik (silinse de kanıt kalsın)
   reason      text not null check (length(reason) between 1 and 300),
@@ -103,6 +103,8 @@ begin
   elsif p_kind = 'family_message' then
     select fm.text, fm.player_id into snap, tid from family_messages fm
      where fm.id = p_ref and fm.family_id = (select family_id from players where id = auth.uid());
+  elsif p_kind = 'chat_message' then   -- genel/şehir sohbeti (tablo 012'de)
+    select cm.text, cm.player_id into snap, tid from chat_messages cm where cm.id = p_ref;
   elsif p_kind = 'player' then
     tid := (player_by_nick(p_nick)).id;
   else

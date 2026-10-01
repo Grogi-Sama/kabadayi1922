@@ -8,10 +8,10 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - **Teknoloji:** HTML/JS (`www/`) → ileride Capacitor. Sunucu: Supabase (henüz hesap yok). Bütün kurallar sunucu tarafı SQL RPC'lerinde.
 
 ## Durum
-- `supabase/migrations/001–011`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre.
+- `supabase/migrations/001–012`: çekirdek, savaş, aile, ekip işleri, kumarhane/ulaşım, sosyal (mesaj/engel/şikâyet/küfür filtresi/saygı), mekânlar/baskın, 8 kişilik vurgun + yarış, piyango/blackjack/pazar/evlilik/sığınak, admin + sezonlar, portre, sohbet (genel + şehir; 012).
 - Omerta'daki bütün özellikler var (tablo PLAN.md'de).
-- Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
-- Testler: `npm test` → 11 dosya, 73 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
+- Arayüz: art-deco tema, şehir haritası (binaya dokun → alt panel), sekmeler Şehir · İşler · Aile · Sohbet · Defter. Admin paneli `www/admin.html` (sadece `admins` tablosundakiler).
+- Testler: `npm test` → 12 dosya, 77 test grubu, hepsi geçiyor (PGlite, Supabase gerekmez).
 - Git: yerel `main`, remote yok. **Kullanıcı açıkça "al" demeden push yok.**
 
 ## Nasıl çalıştırılır

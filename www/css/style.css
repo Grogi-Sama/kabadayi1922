@@ -494,3 +494,15 @@ nav button[data-badge]:not([data-badge=""])::after {
 .help { font-size: 13px; line-height: 1.4; color: var(--paper); margin: 2px 0 12px; padding: 8px 10px 8px 12px;
   border-left: 3px solid var(--gold); background: rgba(201,161,74,.08); border-radius: 0 8px 8px 0; }
 .vault-help { margin: 2px 0 8px; }
+
+/* ─── Sohbet sekmesi ─── */
+.chat-tabs { display: flex; gap: 6px; margin: 6px 0 8px; }
+.chat-tabs button { flex: 1; padding: 9px 6px; border-radius: 8px; border: 1px solid #4a3a26; background: var(--panel-2);
+  color: var(--muted); font: 600 14px var(--body); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-tabs button.on { color: #1b140c; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: #8a6a26; }
+.chat-note { margin: 0 0 8px; }
+.chat.paper.tall { height: calc(100dvh - 380px); min-height: 260px; max-height: none; }
+.chat.paper .bubble .nick-link { color: #7a2331; }
+.chat-link .ellipsis { max-width: 100%; }
+.roles-help { margin: -4px 0 10px; }
+.roles-help p { margin: 4px 0; }

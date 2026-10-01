@@ -9,7 +9,7 @@ const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];
 const DECOR = ['sarmasik', 'afis', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
 const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile', 'defter', 'can', 'kursun', 'banka',
-  'kilit', 'kum', 'uye', 'fabrika', 'mekan'];
+  'kilit', 'kum', 'uye', 'fabrika', 'mekan', 'sohbet'];
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
 
 export const ALL = [

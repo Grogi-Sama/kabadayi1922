@@ -95,7 +95,8 @@ begin
       'target_banned', t.banned_until > now(), 'target_muted', t.muted_until > now(),
       -- mesaj hâlâ duruyor mu (silinmiş olabilir)
       'still_exists', case r.kind when 'message' then exists (select 1 from messages where id = r.ref_id)
-                                  when 'family_message' then exists (select 1 from family_messages where id = r.ref_id) end)
+                                  when 'family_message' then exists (select 1 from family_messages where id = r.ref_id)
+                                  when 'chat_message' then exists (select 1 from chat_messages where id = r.ref_id) end)
     order by r.id desc), '[]')
     from (select * from reports where status = p_status order by id desc limit 100) r
     left join players rp on rp.id = r.reporter_id left join players t on t.id = r.target_id);
@@ -177,6 +178,7 @@ begin
   perform require_admin();
   if p_kind = 'message' then delete from messages where id = p_id returning from_id into author;
   elsif p_kind = 'family_message' then delete from family_messages where id = p_id returning player_id into author;
+  elsif p_kind = 'chat_message' then delete from chat_messages where id = p_id returning player_id into author;
   else raise exception 'BAD_KIND'; end if;
   if author is null then return fail('Mesaj zaten silinmiş.'); end if;
   insert into moderation_actions (admin_id, target_id, action, report_id) values (auth.uid(), author, 'delete_message', p_report);

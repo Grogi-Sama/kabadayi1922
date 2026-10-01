@@ -32,6 +32,14 @@ async function loadTabData() {
   else if (tab === 'log') [extra.players, extra.inbox, extra.season] = await Promise.all([rpc('get_players'), rpc('get_inbox'), rpc('get_season')]);
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
+  else if (tab === 'chat') await loadChat();
+}
+
+// Sohbet sekmesi: genel, şehir ya da aile kanalı
+let chatCh = 'global';
+async function loadChat() {
+  if (chatCh === 'family') { await loadFamily(); if (!extra.family?.family) chatCh = 'global'; else return; }
+  extra.chat = await api.rpc('get_chat', { p_channel: chatCh });
 }
 
 async function loadPanelData() {
@@ -153,7 +161,7 @@ function keepInputs(el, fn) {
 }
 
 function renderTab() {
-  keepInputs($(`section[data-tab="${tab}"]`), ({ city: cityTab, crime: crimeTab, family: familyTab, log: logTab })[tab]);
+  keepInputs($(`section[data-tab="${tab}"]`), ({ city: cityTab, crime: crimeTab, family: familyTab, chat: chatTab, log: logTab })[tab]);
   renderSheet();
 }
 
@@ -680,6 +688,18 @@ function crest(name, cls = '') {
 }
 const stat = (icon, v, title) => `<span class="stat" title="${title}">${icon} ${v}</span>`;
 
+// Rollerin Türkçe açıklaması (adlar İtalyanca kalıyor)
+const ROLE_HELP = {
+  don: 'Ailenin başı. Rolleri o dağıtır; kasa, üyeler ve baskınlar üzerinde tam yetkilidir.',
+  sottocapo: "Don'un sağ kolu (ailede bir tane). Kasadan üyelere ödeme yapar, fabrika alır, üye atar, baskın yönetir.",
+  consigliere: 'Danışman (ailede bir tane). Aileye katılma başvurularını kabul eder ya da reddeder.',
+  capo: 'Bölükbaşı. Mekânlara baskın yönetebilir.',
+  asker: 'Ailenin eri. Kasaya para koyar, baskınlara ve ekip işlerine katılır.',
+};
+const rolesHelp = () => `<details class="roles-help" id="roles-help"><summary class="muted small">Roller ne demek?</summary>
+  ${Object.entries(ROLES).map(([k, v]) => `<p class="small"><b>${v}</b> — ${ROLE_HELP[k]}</p>`).join('')}
+  <p class="muted small">Sıralama yukarıdan aşağıya Don, Sottocapo, Consigliere, Capo, Asker. Rolleri sadece Don değiştirir.</p></details>`;
+
 function familyTab() {
   const F = extra.family;
   if (!F) return banner('ui/aile_bant', 'Aile') + `<p class="muted">Yükleniyor…</p>`;
@@ -724,7 +744,7 @@ function familyTab() {
       <input id="f-pay-amt" type="number" min="1" placeholder="$" inputmode="numeric">
       <button class="btn" data-act="fampay">Öde</button></div>` : ''}</div>`;
 
-  h += `<h2>Üyeler (${F.members.length})</h2><div class="member-grid">` + F.members.map(m => {
+  h += `<h2>Üyeler (${F.members.length})</h2>` + rolesHelp() + `<div class="member-grid">` + F.members.map(m => {
     const self = m.nick === S.player.nick;
     const controls = isDon && !self
       ? `<select data-role="${esc(m.nick)}">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${v}</option>`).join('')}</select>` : '';
@@ -734,14 +754,10 @@ function familyTab() {
       <div class="muted small">${esc(rankName(m.rank))}</div>${controls || kick ? `<div class="m-ctl">${controls}${kick}</div>` : ''}</div>`;
   }).join('') + `</div>`;
 
-  const av = Object.fromEntries(F.members.map(m => [m.nick, m.avatar || 1]));
-  h += `<h2>Sohbet</h2><div class="chat paper" id="chat">${F.messages.map(m => m.nick
-      ? `<div class="msg ${m.nick === S.player.nick ? 'me' : ''}">${portrait(av[m.nick] || 1, 'avatar xs')}<div class="bubble">
-          <b>${esc(m.nick)}</b> ${esc(m.text)}${m.nick !== S.player.nick
-          ? ` <a class="flag" data-report="family_message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div></div>`
-      : `<div class="sys">— ${esc(m.text)} —</div>`).join('')}</div>
-    <form class="form-row" id="chat-form"><input id="f-chat" maxlength="300" placeholder="Mesaj yaz…" autocomplete="off">
-      <button class="btn primary">Gönder</button></form>`;
+  const last = F.messages.filter(m => m.nick).at(-1);
+  h += `<div class="card clickable chat-link" data-act="gochat"><span class="icon emoji">💬</span><div class="grow">
+      <div class="title">Aile sohbeti</div><div class="muted small ellipsis">${last ? `${esc(last.nick)}: ${esc(last.text)}` : 'Henüz mesaj yok.'}</div></div>
+      <span class="muted">›</span></div>`;
 
   if (leader && F.applications?.length) {
     h += `<h2>Başvurular</h2>` + F.applications.map(a => card(nickLink(a.nick), `${esc(rankName(a.rank))} · ☠ ${a.kills}`,
@@ -784,6 +800,41 @@ function spotsSection(role) {
   const byCity = CITY_ORDER.map(c => list.filter(s => s.city === c && !(role && s.mine))).filter(l => l.length);
   h += `<details id="all-spots"><summary class="muted small">Bütün mekânlar (${list.length})</summary>
     ${byCity.map(l => `<div class="spot-city">${esc(cityName(l[0].city))}</div><div class="spot-grid">${l.map(spotTile).join('')}</div>`).join('')}</details>`;
+  return h;
+}
+
+// ═════════════════ SOHBET ═════════════════
+// Mesaj balonu: portre, ad, metin; başkasının mesajında şikâyet bayrağı
+function chatMsg(m, avatar, kind) {
+  if (!m.nick) return `<div class="sys">— ${esc(m.text)} —</div>`;
+  const mine = m.mine ?? m.nick === S.player.nick;
+  return `<div class="msg ${mine ? 'me' : ''}">${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
+    <b>${mine ? esc(m.nick) : nickLink(m.nick)}</b> ${esc(m.text)}${mine ? ''
+      : ` <a class="flag" data-report="${kind}" data-id="${m.id}" title="Şikâyet et">⚑</a>`}</div></div>`;
+}
+
+function chatTab() {
+  const p = S.player, F = extra.family, inFam = !!p.family;
+  const tabs = [['global', 'Genel'], ['city', cityName(p.city)], ...(inFam ? [['family', 'Aile']] : [])];
+  let h = `<div class="chat-tabs">${tabs.map(([k, label]) => `<button class="${chatCh === k ? 'on' : ''}" data-act="chatch" data-id="${k}">${esc(label)}</button>`).join('')}</div>`;
+  const note = { global: 'Bütün oyuncular burada. Saygılı ol; küfür otomatik sansürlenir, hakaret ve taciz şikâyet edilir.',
+    city: `Sadece şu an ${cityName(p.city)} şehrinde olanlar görür. Başka şehre gidince o şehrin sohbetine geçersin.`,
+    family: 'Sadece ailen görür.' }[chatCh];
+  h += `<p class="muted small chat-note">${note}</p>`;
+  if (chatCh === 'family') {
+    if (!F?.family) return h + `<p class="muted">Yükleniyor…</p>`;
+    const av = Object.fromEntries(F.members.map(m => [m.nick, m.avatar || 1]));
+    h += `<div class="chat paper tall" id="chat">${F.messages.map(m => chatMsg(m, av[m.nick], 'family_message')).join('')}</div>
+      <form class="form-row" id="chat-form"><input id="f-chat" maxlength="300" placeholder="Aileye yaz…" autocomplete="off">
+        <button class="btn primary">Gönder</button></form>`;
+  } else {
+    const list = extra.chat || [];
+    h += `<div class="chat paper tall" id="chat">${list.length ? list.map(m => chatMsg(m, m.avatar, 'chat_message')).join('')
+        : '<div class="sys">Henüz kimse yazmadı. İlk sözü sen söyle.</div>'}</div>
+      <form class="form-row" id="gchat-form"><input id="f-gchat" maxlength="300" placeholder="Mesaj yaz…" autocomplete="off">
+        <button class="btn primary">Gönder</button></form>`;
+  }
+  if (p.muted_until) h += `<p class="muted small">🔇 Susturuldun: ${new Date(p.muted_until).toLocaleString('tr-TR')} tarihine kadar yazamazsın.</p>`;
   return h;
 }
 
@@ -1068,6 +1119,8 @@ document.addEventListener('click', async (e) => {
     case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı ($${S.settings.marriage_cost}) senden çıkar.`) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
+    case 'chatch':     chatCh = id; extra.chat = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
+    case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
     // kumarhane
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
     case 'scratch':    return act('scratch_card');
@@ -1114,6 +1167,14 @@ document.addEventListener('submit', async (e) => {
     $('#f-dm').value = '';
     extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
     renderTab(); scrollChat();
+  } else if (e.target.id === 'gchat-form') {
+    e.preventDefault();
+    const text = val('f-gchat');
+    if (!text) return;
+    const r = await api.rpc('send_chat', { p_channel: chatCh, p_text: text });
+    if (!r.ok) return toast(r.msg, 'bad');
+    $('#f-gchat').value = '';
+    await loadChat(); renderTab(); scrollChat();
   } else if (e.target.id === 'chat-form') {
     e.preventDefault();
     const text = val('f-chat');
@@ -1135,22 +1196,22 @@ const scrollChat = () => { for (const c of [$('#chat'), $('#dm')]) if (c) c.scro
 // Aile sohbeti ya da özel mesaj açıkken 10 sn'de bir tazele (yazarken bölme)
 setInterval(async () => {
   if (document.hidden || !S?.player) return;
-  if (tab === 'family' && extra.family?.family) {
-    if ($('#f-chat') === document.activeElement && val('f-chat')) return;
-    await loadFamily();
+  if (tab === 'chat') {
+    if ([$('#f-chat'), $('#f-gchat')].some(i => i && i === document.activeElement && i.value)) return;
+    await loadChat();
   } else if (tab === 'log' && extra.conv) {
     if ($('#f-dm') === document.activeElement && val('f-dm')) return;
     extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
   } else return;
   renderTab(); scrollChat();
-}, 10000);
+}, 6000);
 
 // Uygulama arka plandan dönünce durumu tazele
 document.addEventListener('visibilitychange', () => { if (!document.hidden && api) refresh(); });
 
 try {
   [api] = await Promise.all([createBackend(), probeAssets()]);
-  for (const [tab, name] of [['city', 'sehir'], ['crime', 'isler'], ['family', 'aile'], ['log', 'defter']]) {
+  for (const [tab, name] of [['city', 'sehir'], ['crime', 'isler'], ['family', 'aile'], ['chat', 'sohbet'], ['log', 'defter']]) {
     const b = $(`nav [data-go="${tab}"] b`);
     if (b) b.innerHTML = ico(name, b.textContent);
   }

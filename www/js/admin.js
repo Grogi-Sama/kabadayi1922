@@ -5,7 +5,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const money = (n) => '$' + Number(n).toLocaleString('tr-TR');
 const when = (t) => t ? new Date(t).toLocaleString('tr-TR') : '—';
-const KIND = { message: 'Özel mesaj', family_message: 'Aile sohbeti', player: 'Oyuncu' };
+const KIND = { message: 'Özel mesaj', family_message: 'Aile sohbeti', chat_message: 'Genel/şehir sohbeti', player: 'Oyuncu' };
 const ACTION = { warn: 'Uyarı', mute: 'Susturma', unmute: 'Susturma kaldırıldı', ban: 'Ban', unban: 'Ban kaldırıldı',
   delete_message: 'Mesaj silindi', dismiss: 'Şikâyet kapatıldı', resolve: 'Şikâyet çözüldü' };
 
