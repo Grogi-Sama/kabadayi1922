@@ -217,7 +217,7 @@ function cityTab() {
     town += '</div>';
   }
   // Doku görselleri gelince CSS çizimi yerine onlar kullanılır
-  const tex = ['kaldirim', 'duvar'].filter(t => hasAsset('tex/' + t)).map(t => `--tex-${t}:url(${assetUrl('tex/' + t)});--${t}-size:${t === 'duvar' ? '160px' : '96px'} auto`).join(';');
+  const tex = ['kaldirim', 'duvar'].filter(t => hasAsset('tex/' + t)).map(t => `--tex-${t}:url(${new URL(assetUrl('tex/' + t), location.href).href});--${t}-size:${t === 'duvar' ? 'auto 100%' : '200px auto'}`).join(';');
   return `<div class="map" style="${tex}">${img(`bg/${p.city}`, 'bgimg', '')}
     <div class="sky">${img(`harbor/${p.city}`, 'harbor', '<div class="ship">⛴</div>')}
       <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>
