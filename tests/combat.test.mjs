@@ -145,6 +145,16 @@ while (!out) {
 assert.ok(tries <= 3, 'en fazla 3 firar denemesi');
 ok(`kurtarma çalışıyor, firar ${tries} denemede ${out ? 'başardı' : 'hakkı bitti'}`);
 
+// ─── 028: başarılı firar +5 itibar
+let fr = null;
+for (let i = 0; i < 300 && !fr?.success; i++) {
+  await set(J, { jail_until: new Date(Date.now() + 3600e3).toISOString(), self_bust_left: 3, self_bust_for: null });
+  fr = await as(J, `select self_bust()`);
+}
+const xpBefore = (await get(J)).xp;
+assert.ok(fr.success && fr.xp === 5 && /\+5 itibar/.test(fr.msg), fr.msg);
+ok(`başarılı firar itibar verir (+${fr.xp}, şu an ${xpBefore})`);
+
 // ─── Banka & transfer
 await ready(C);
 await set(C, { cash: 1000, bank: 0 });

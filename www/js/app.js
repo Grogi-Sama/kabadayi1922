@@ -421,7 +421,7 @@ function jailSection() {
   const p = S.player, jailLeft = left(p.jail_until);
   let h = '';
   if (jailLeft) {
-    h += card('Firar et', `%15 şans · kalan hakkın: ${p.self_bust_left}`,
+    h += card('Firar et', `%15 şans · kalan hakkın: ${p.self_bust_left} · başarırsan +${S.settings.self_bust_xp ?? 5} itibar`,
       `<button class="btn sm primary" data-act="selfbust" ${dis(!p.self_bust_left)}>Dene</button>`);
     h += card('Süreyi kısalt', 'Reklam izle, kalan hapis süren yarıya insin.', boostBtn('jail'));
   }
