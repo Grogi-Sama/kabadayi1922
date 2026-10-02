@@ -31,3 +31,9 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 1. **Görseller** (`ASSET_PROMPTS.md`, 60 görsel / 26 üretim): küçükler (bina, eşya, portre) 4 toplu ızgara sayfası olarak `art/sheets/` altına gelir → `python tools/slice_all.py` keser, `www/assets/` altına koyar (bina sayfası kullanıcıdan saydam gelir; betik saydamlık üretmez). Stil çapası: `bg/istanbul` + binalar sayfası + portreler sayfası → tutarlılığı kontrol et, sonra kalanı. Görsel klasöre konunca kod otomatik kullanır (`www/js/assets.js`). Harita artık ızgara: sokak sıraları `STREETS` (app.js), binalar üst üste binmez; arka plan görseli istenirse `bg/<şehir>.png` (opsiyonel). Yatay kaydırmalı panorama denendi, kullanıcı beğenmedi (panorama `art/panorama/`).
 2. **Supabase:** kurulum dosyası `python tools/build_deploy_sql.py` → `supabase/deploy.sql` (SQL Editor'e bir kez yapıştırılır). kullanıcı hesap açıp Project URL + anon key verecek → `config.js`, migration'ları çalıştır, Anonymous sign-in aç, admin UID'sini `admins`'e ekle (PLAN.md'de adımlar). `local-shim.sql` ve `local-seed.sql` canlıda ÇALIŞTIRILMAZ.
 3. Sonra: Capacitor paketleme, push bildirimleri, AdMob ödüllü reklam + sunucu doğrulaması, denge ayarları.
+
+## Canlı sunucu (2026-10-01'den beri)
+- Supabase: https://egabjhoezsnrwoemgrhn.supabase.co — 001–019 yüklü. **Eski migration dosyaları artık değiştirilmez**; her değişiklik yeni dosya (020, 021, …).
+- Güncelleme: `python tools/build_deploy_sql.py 020` → `supabase/deploy_020.sql` (020 ve sonrası) → SQL Editor'de yeni sorguya yapıştır → Run. Sonra istemci push edilir (istemci yeni SQL'e bağlı).
+- Yerelde sunucuya dokunmadan deneme: http://localhost:5180/www/?yerel
+- 020: işe özel bekleme, tecrübeyle artan şans, liman alış/satış farkı, pahalı mallar, gümrük yarısı. 021: adamlar (Kahvehane; zorba/fedai/gözcü/nişancı, eğitim, haftalık maaş, nöbet, baskın gücü/kayıpları, güç sıralaması).

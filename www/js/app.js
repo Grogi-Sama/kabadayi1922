@@ -54,7 +54,8 @@ async function loadPanelData() {
   else if (kind === 'dedektif') extra.hitlist = await rpc('get_hitlist');
   else if (kind === 'garaj') extra.races = await rpc('get_races');
   else if (kind === 'carsi') extra.market = await rpc('get_market');
-  else if (kind === 'spot') [extra.spots, extra.lottery, extra.bj] = await Promise.all([rpc('get_spots'), rpc('get_lottery'), rpc('bj_current')]);
+  else if (kind === 'kahvehane') extra.men = await rpc('get_men');
+  else if (kind === 'spot') [extra.spots, extra.lottery, extra.bj, extra.men] = await Promise.all([rpc('get_spots'), rpc('get_lottery'), rpc('bj_current'), rpc('get_men')]);
 }
 
 async function loadFamily() {
@@ -160,7 +161,8 @@ function render() {
     + (p.family ? ` · ${p.family}` : '') + (p.bounty > 0 ? ` · 🎯 ${money(p.bounty)}` : '');
   $('#h-cash').innerHTML = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
-  $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`;
+  $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`
+    + (p.men || p.men_training ? ` · ${ico('uye', '👥')} ${p.men} adam` : '');
   $('[data-go="chat"]').dataset.badge = p.unread > 0 ? p.unread : '';
   $('#xpbar div').style.width = next ? `${100 * (p.xp - rank.min_xp) / (next.min_xp - rank.min_xp)}%` : '100%';
   $('#xp-next').textContent = next ? `${next.name} · ${(next.min_xp - p.xp).toLocaleString('tr-TR')} itibar kaldı` : 'En yüksek rütbe';
@@ -219,6 +221,7 @@ const BUILDINGS = {
   silahci:  { name: 'Silahçı',          emoji: '🔫' },
   dedektif: { name: 'Dedektif Bürosu',  emoji: '🕵' },
   garaj:    { name: 'Garaj',            emoji: '🚗' },
+  kahvehane:{ name: 'Kahvehane',        emoji: '☕' },
   carsi:    { name: 'Çarşı',            emoji: '🛍' },
 };
 const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
@@ -233,6 +236,7 @@ const STREETS = [
   ['spot', 'fabrika', 'spot'],
   ['silahci', 'dedektif', 'spot'],
   ['garaj', 'carsi', 'siginak'],
+  ['bos', 'kahvehane', 'bos'],
 ];
 
 // Süsler: her sokağa bir set. x = sokak genişliğinin %'si (parçanın ortası; 33/67 bina araları),
@@ -266,6 +270,7 @@ function cityTab() {
   for (const [i, street] of STREETS.entries()) {
     town += '<div class="street">' + decorHtml(DECOR[(i + shift) % DECOR.length]);
     for (const slot of street) {
+      if (slot === 'bos') { town += '<div class="bld empty"></div>'; continue; }
       if (slot === 'spot') {
         const sp = spots[si++];
         if (!sp) { town += '<div class="bld empty"></div>'; continue; }
@@ -283,6 +288,7 @@ function cityTab() {
         if (slot === 'karakol' && jailed) tag = '<span class="tag">İçeridesin</span>';
         if (slot === 'hastane' && p.health < 100) tag = `<span class="tag">❤ ${p.health}</span>`;
         if (slot === 'fabrika') tag = `<span class="tag mine">${money(S.factory.price)}</span>`;
+        if (slot === 'kahvehane' && p.men_training) tag = `<span class="tag">${p.men_training} eğitimde</span>`;
         town += buildingHtml(slot, `buildings/${slot}`, b.emoji, b.name, tag);
       }
     }
@@ -308,7 +314,7 @@ function panelInfo(id) {
   const b = BUILDINGS[id] || HOTSPOTS[id];
   const render = { karakol: jailSection, hastane: hospitalSection, banka: bankSection, fabrika: factorySection,
     silahci: gunsmithSection, dedektif: detectiveSection, garaj: garageSection, carsi: marketSection,
-    liman: harborSection, siginak: hideoutSection }[id];
+    liman: harborSection, siginak: hideoutSection, kahvehane: menSection }[id];
   return { name: b.name, asset: BUILDINGS[id] || hasAsset(`buildings/${id}`) ? `buildings/${id}` : null, emoji: b.emoji, render };
 }
 
@@ -333,6 +339,9 @@ function panelHelp(id) {
       (sp?.kind === 'gazino' ? ' Gazinoda kumar da oynanır; kaybedilen bahislerin bir payı gazinonun sahibi aileye gider.' : '');
   }
   return {
+    kahvehane: `Kahvehanede iş arayan delikanlılar oturur. Para verip adam tutarsın; eğitimden sonra yanına katılırlar.
+      Adamların baskında savaşır, aile mekânında nöbet tutar, seni korur; gözcüler işlerde şansını artırır.
+      Her adam haftalık maaş ister, her gün kasandan kesilir. Ödeyemezsen her gün bir kısmı seni bırakır.`,
     karakol: `Yakalananlar burada yatar. İçerideysen firar etmeyi deneyebilirsin (hakkın sınırlı). Dışarıdaysan
       mahkûmları kurtarıp itibar kazanırsın ama gardiyana yakalanırsan sen de içeri girersin.`,
     hastane: `Vurulunca canın düşer; canın ne kadar azsa seni öldürmek o kadar az kurşun ister. Burada parayla canını doldurursun.
@@ -567,6 +576,40 @@ function marketSection() {
   return h;
 }
 
+// ═════════════════ KAHVEHANE: ADAMLAR ═════════════════
+const MAN_EMOJI = { zorba: '👊', fedai: '🛡', gozcu: '👁', nisanci: '🎯' };
+function menSection() {
+  const M = extra.men;
+  if (!M) return `<p class="muted">Yükleniyor…</p>`;
+  const hireWait = left(M.hire_ready_at), full = M.owned >= M.cap;
+  let h = `<div class="men-sum">
+      <div><b>${M.owned}<small>/${M.cap}</small></b><span>adam</span></div>
+      <div><b>${M.attack}</b><span>saldırı</span></div>
+      <div><b>${M.defense}</b><span>savunma</span></div>
+      <div><b>${Math.round(M.power)}</b><span>güç</span></div></div>
+    <p class="muted small">Haftalık maaş: <b>${money(M.wage_week)}</b> (her gün yedide biri kesilir, önce cepten sonra bankadan).
+      Boştaki adamların seni vurmayı <b>%${Math.round(M.guard * 100)}</b> zorlaştırıyor.${M.job ? ` Gözcülerin işlerde <b>+%${Math.round(M.job * 100)}</b> şans veriyor.` : ''}
+      ${M.family_power != null ? `Ailenin toplam gücü: <b>${Math.round(M.family_power)}</b>.` : ''}</p>`;
+  if (hireWait) h += `<p class="small">${ico('kum', '⏳')} Sıradaki adam için: <b>${until(M.hire_ready_at)}</b></p>`;
+  h += `<h2>Adam tut</h2>` + M.types.map(t => {
+    const locked = S.player.rank < t.min_rank;
+    const sub = `Saldırı ${t.attack} · Savunma ${t.defense} · Maaş ${money(t.wage)}/hafta · Eğitim ${t.train_min}-${t.train_max} dk
+      <br>${esc(t.descr)}${t.active + t.posted + t.training ? `<br>Sende: ${t.active} boşta${t.posted ? `, ${t.posted} nöbette` : ''}${t.training ? `, ${t.training} eğitimde` : ''}` : ''}
+      ${locked ? `<br>${ico('kilit', '🔒')} ${esc(rankName(t.min_rank))} rütbesi gerekir` : ''}`;
+    return `<div class="card ${locked ? 'locked' : ''}">${img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`)}
+      <div class="grow"><div class="title">${esc(t.name)} · ${money(t.price)}</div><div class="muted small">${sub}</div></div>
+      <div class="market-actions"><button class="btn sm primary" data-act="hireman" data-id="${t.id}" ${dis(locked || full || hireWait || blocked() || S.player.cash < t.price)}>Tut</button>
+      ${t.active + t.posted + t.training ? `<button class="btn sm" data-act="fireman" data-id="${t.id}">Yolla</button>` : ''}</div></div>`;
+  }).join('');
+  if (M.training.length) h += `<h2>Eğitimde</h2>` + M.training.map(t => card(esc(M.types.find(x => x.id === t.type).name),
+    `Katılmasına ${until(t.ready_at)}`, '', img('men/' + t.type, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.type]}</span>`))).join('');
+  if (M.posts.length) h += `<h2>Nöbette</h2>` + M.posts.map(x => card(esc(x.name), `${esc(cityName(x.city))} · ${x.count} adam`,
+    `<button class="btn sm" data-act="recall" data-id="${x.spot}">Geri çağır</button>`)).join('');
+  if (M.top.length) h += `<h2>En güçlü çeteler</h2>` + M.top.map((x, i) => `<div class="card">${portrait(x.avatar || 1, 'avatar xs')}
+    <div class="grow"><div class="title">${i + 1}. ${nickLink(x.nick)}</div></div><b>${Math.round(x.power)}</b></div>`).join('');
+  return h;
+}
+
 function hideoutSection() {
   const p = S.player;
   return left(p.hideout_until)
@@ -584,11 +627,23 @@ function spotPanel(sp) {
   const prot = sp.protected_until && left(sp.protected_until);
   let h = card(`${money(sp.income)}/saat haraç`,
     `${sp.owner ? `Sahibi: <b>${esc(sp.owner)}</b>` : 'Sahipsiz'} · ${sp.mine ? `savunma ${sp.defense} kurşun` : `koruma: ${esc(sp.strength)}`}${prot ? ` · 🛡 ${fmt(prot)}` : ''}`);
+  const M = extra.men;
   if (sp.mine) {
     h += `<div class="form-row"><input id="f-fort-${sp.id}" type="number" min="1" placeholder="Bırakılacak kurşun" inputmode="numeric">
       <button class="btn" data-act="fortify" data-id="${sp.id}">Tahkim et</button></div>`;
+    if (M) {
+      const here = M.posts.find(x => x.spot === sp.id)?.count || 0, free = M.types.filter(t => t.active > 0);
+      h += `<h2>Nöbet</h2><p class="muted small">Buraya bıraktığın adamlar baskında savunmaya katılır (her savunma puanı ${S.settings.men_power_unit} kurşun değerinde).
+        Baskın başarılı olursa nöbetçilerin bir kısmı düşer. Bu mekânda nöbet tutan adamın: <b>${here}</b>.</p>` +
+        (free.length ? `<div class="form-row"><select id="f-post-type-${sp.id}">${free.map(t => `<option value="${t.id}">${esc(t.name)} (${t.active} boşta)</option>`).join('')}</select>
+          <input id="f-post-n-${sp.id}" type="number" min="1" placeholder="Kaç" inputmode="numeric">
+          <button class="btn" data-act="post" data-id="${sp.id}">Bırak</button></div>` : `<p class="muted small">Boşta eğitimli adamın yok; Kahvehane'den tutabilirsin.</p>`) +
+        (here ? `<button class="btn sm" data-act="recall" data-id="${sp.id}">Nöbetçileri geri çağır</button>` : '');
+    }
   } else if (canRaid && !prot) {
-    h += `<div class="form-row"><input id="f-raid-${sp.id}" type="number" min="1" placeholder="Baskın kurşunu" inputmode="numeric">
+    if (M?.attack) h += `<p class="muted small">Boştaki adamların baskına katılır: <b>${M.attack}</b> saldırı gücü (≈${Math.round(M.attack * S.settings.men_power_unit)} kurşun).
+      Kurşunsuz da girebilirsin. Kaybedersen adamlarının %20-40'ı, kazanırsan %5-15'i düşer.</p>`;
+    h += `<div class="form-row"><input id="f-raid-${sp.id}" type="number" min="0" placeholder="Baskın kurşunu" inputmode="numeric">
       <button class="btn danger" data-act="raid" data-id="${sp.id}" ${dis(raidWait || blocked())}>Baskın</button></div>
       ${raidWait ? `<p class="muted small">${ico('kum', '⏳')} Ailenin sıradaki baskını: ${fmt(raidWait)}</p>` : ''}`;
   } else if (!sp.mine) {
@@ -828,7 +883,7 @@ function familyTab() {
     h += `<h2>Aileler</h2>` + (extra.families.length ? extra.families.map(f => `<div class="card fam-card">
       ${crest(f.name, '', f.crest)}<div class="grow"><div class="title">${esc(f.name)}</div>
         <div class="don">${f.don ? `${portrait(f.don_avatar || 1, 'avatar xs')} Don ${esc(f.don)}` : 'Don yok'}</div>
-        <div class="stats">${stat(ico('uye', '👤'), f.members, 'üye')}${stat(ico('fabrika', '🏭'), f.factories, 'fabrika')}${stat(ico('mekan', '🏠'), f.spots ?? 0, 'mekân')}</div></div>
+        <div class="stats">${stat(ico('uye', '👤'), f.members, 'üye')}${stat(ico('fabrika', '🏭'), f.factories, 'fabrika')}${stat(ico('mekan', '🏠'), f.spots ?? 0, 'mekân')}${stat(ico('uye', '⚔'), Math.round(f.power || 0), 'güç')}</div></div>
       <button class="btn sm primary" data-act="apply" data-id="${esc(f.name)}">Başvur</button></div>`).join('')
       : `<p class="muted small">Henüz aile yok. İlk aileyi sen kur.</p>`);
     h += `<h2>Aile Kur</h2>`;
@@ -1359,11 +1414,14 @@ function tick() {
   if (!S?.player) return;
   const p = S.player;
   const timed = [...S.crimes.map(c => c.ready_at), p.car_ready_at, p.travel_ready_at, p.jail_until, p.hospital_until, p.hideout_until,
-    p.kill_ready_at, p.bust_ready_at, p.practice_ready_at, ...S.searches.map(s => s.ready_at)];
+    p.kill_ready_at, p.bust_ready_at, p.practice_ready_at, ...S.searches.map(s => s.ready_at),
+    ...(extra.men ? [extra.men.hire_ready_at, ...extra.men.training.map(t => t.ready_at)] : [])];
   const ready = timed.map(t => left(t) > 0).join();
   if (ready !== lastReady) {
     // bir dedektif araması tam şimdi bittiyse sonucu sunucudan al
     if (lastReady && S.searches.some(s => !s.resolved && !left(s.ready_at))) refresh();
+    // eğitimi biten adam: kahvehane verisini tazele
+    if (lastReady && extra.men?.training.some(t => !left(t.ready_at))) api.rpc('get_men').then(m => { extra.men = m; refresh(); });
     lastReady = ready; renderTab();
   }
   document.querySelectorAll('[data-until]').forEach(el => el.textContent = fmt(left(el.dataset.until)));
@@ -1459,8 +1517,12 @@ document.addEventListener('click', async (e) => {
                          act('send_money', { p_nick: val('f-send-nick'), p_amount: num('f-send-amt') });
     case 'hide':       return confirm('Sığınağa girilsin mi?') && act('enter_hideout', { p_hours: num('f-hide-h') });
     case 'leavehide':  return act('leave_hideout');
-    case 'raid':       return num('f-raid-' + id) > 0 && confirm('Baskın başlasın mı? Kurşunlar geri gelmez.') &&
+    case 'raid':       return (num('f-raid-' + id) > 0 || extra.men?.attack > 0) && confirm('Baskın başlasın mı? Kurşunlar geri gelmez.') &&
                          act('raid_spot', { p_spot: +id, p_bullets: num('f-raid-' + id) }, { art: true });
+    case 'post':       return act('station_men', { p_spot: +id, p_type: val('f-post-type-' + id), p_qty: num('f-post-n-' + id) });
+    case 'recall':     return act('recall_men', { p_spot: +id });
+    case 'hireman':    return act('hire_man', { p_type: id });
+    case 'fireman':    return confirm('Bu adamı yollayalım mı? Parası geri gelmez.') && act('dismiss_man', { p_type: id });
     case 'fortify':    return num('f-fort-' + id) > 0 && act('fortify_spot', { p_spot: +id, p_bullets: num('f-fort-' + id) });
     // pazar
     case 'listbullets': return num('f-sell-bullets') > 0 && num('f-sell-bprice') > 0 &&

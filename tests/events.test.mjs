@@ -31,13 +31,14 @@ assert.equal((await as(A, `select trade('kahve', 30)`)).ok, true);
 await now(null, 'kitlik', 'kahve');
 assert.equal((await as(A, `select trade('kahve', 1)`)).ok, false, 'kıtlıkta alış yok');
 const price = (await db.query(`select price_of('istanbul', 'kahve') p`)).rows[0].p;
+const sell = (await db.query(`select sell_price_of('istanbul', 'kahve') p`)).rows[0].p;   // 020: satış alışın %15 altı
 let c0 = Number((await get(A)).cash);
 const s1 = await as(A, `select trade('kahve', -25)`);
 assert.match(s1.msg, /Kıtlık primi/);
-assert.equal(Number((await get(A)).cash) - c0, price * 25 + Math.floor(price * 20 * 0.08), 'prim sadece 20 kasaya');
+assert.equal(Number((await get(A)).cash) - c0, sell * 25 + Math.floor(price * 20 * 0.08), 'prim sadece 20 kasaya');
 c0 = Number((await get(A)).cash);
 await as(A, `select trade('kahve', -5)`);
-assert.equal(Number((await get(A)).cash) - c0, price * 5, 'sınır dolunca prim yok');
+assert.equal(Number((await get(A)).cash) - c0, sell * 5, 'sınır dolunca prim yok');
 assert.equal((await as(A, `select trade('tutun', 1)`)).ok, true, 'başka mal etkilenmez');
 await clear();
 ok('kıtlık: alış yok, sınırlı satış primi');
