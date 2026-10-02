@@ -64,7 +64,11 @@ begin
     || case when unlocked is not null then ' Yeni mal açıldı: ' || unlocked || '!' else '' end);
 end $$;
 
-alter function get_state() rename to state_shop;
+-- Tekrar çalıştırılabilir: yeniden adlandırmalar sadece ilk seferde
+do $$ begin
+  if not exists (select 1 from pg_proc where proname = 'state_shop') then alter function get_state() rename to state_shop; end if;
+  if not exists (select 1 from pg_proc where proname = 'reset_world_trade') then alter function reset_world() rename to reset_world_trade; end if;
+end $$;
 create or replace function get_state() returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare base jsonb := state_shop();
@@ -77,7 +81,6 @@ begin
     'trade_xp', (select trade_xp from players where id = auth.uid())));
 end $$;
 
-alter function reset_world() rename to reset_world_trade;
 create or replace function reset_world() returns void
 language plpgsql as $$
 begin
