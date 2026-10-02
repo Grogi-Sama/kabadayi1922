@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { setup, ok, done } from './helpers.mjs';
 
-const { db, as, player, set, get } = await setup();
+const { db, as, player, set, get, befriend } = await setup();
 const A = await player('Alev', { xp: 3000, cash: 1e7, bullets: 5000 });
 const B = await player('Baran', { xp: 3000, cash: 1e6 });
 const C = await player('Canan', { xp: 3000, cash: 1e6 });
@@ -76,7 +76,8 @@ await as(A, `select cancel_listing($1)`, [id3]);
 assert.equal((await get(A)).bullets, 4000);
 ok('pazar: emanet, komisyon, araba devri, iptal');
 
-// ─── Evlilik
+// ─── Evlilik (022: karşı cins + arkadaş şartı)
+await set(A, { gender: 'k' }); await set(B, { gender: 'e' }); await befriend(A, B);
 assert.equal((await as(A, `select accept_proposal('Baran')`)).ok, false, 'teklif yok');
 await as(B, `select propose('Alev')`);
 assert.deepEqual((await as(A, `select get_state()`)).player.proposals, ['Baran']);

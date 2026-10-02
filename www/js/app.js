@@ -5,7 +5,9 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 import { money, moneyText, richText } from './locale.js';
 
-let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1;
+let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1, pickedGender = null;
+// Portreler: 1–4 erkek, 5–8 kadın
+const genderAvatars = (g) => g === 'k' ? [5, 6, 7, 8] : g === 'e' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6, 7, 8];
 // sekmeye / panele girince çekilen listeler
 const extra = { jail: [], players: null, family: null, families: [], hitlist: [], crews: null, casino: null,
   inbox: [], conv: null, convMsgs: [], spots: null, races: null, lottery: null, market: [], bj: null, season: null };
@@ -187,8 +189,11 @@ function watchScrollHint() {
 function renderOnboard() {
   watchScrollHint();
   $('#onboard-art').innerHTML = img('ui/splash', 'splash-art', '');
-  $('#onboard-portraits').innerHTML = Array.from({ length: 8 }, (_, i) =>
-    `<button type="button" data-pick="${i + 1}" class="${pickedAvatar === i + 1 ? 'on' : ''}">${img(`portraits/p${i + 1}`, '', PORTRAIT_EMOJI[i])}</button>`).join('');
+  $('#onboard-gender').innerHTML = [['e', 'Erkek'], ['k', 'Kadın']].map(([g, label]) =>
+    `<button type="button" data-gender="${g}" class="btn ${pickedGender === g ? 'primary' : ''}">${label}</button>`).join('');
+  $('#onboard-portraits').innerHTML = pickedGender ? genderAvatars(pickedGender).map(n =>
+    `<button type="button" data-pick="${n}" class="${pickedAvatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', PORTRAIT_EMOJI[n - 1])}</button>`).join('')
+    : '<p class="muted small">Önce cinsiyetini seç; portreler ona göre açılır.</p>';
 }
 
 // Yeniden çizimde yazılan input değerleri kaybolmasın
@@ -222,6 +227,7 @@ const BUILDINGS = {
   dedektif: { name: 'Dedektif Bürosu',  emoji: '🕵' },
   garaj:    { name: 'Garaj',            emoji: '🚗' },
   kahvehane:{ name: 'Kahvehane',        emoji: '☕' },
+  bos:      { name: 'Boş Dükkân',       emoji: '🏚' },
   carsi:    { name: 'Çarşı',            emoji: '🛍' },
 };
 const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
@@ -270,7 +276,6 @@ function cityTab() {
   for (const [i, street] of STREETS.entries()) {
     town += '<div class="street">' + decorHtml(DECOR[(i + shift) % DECOR.length]);
     for (const slot of street) {
-      if (slot === 'bos') { town += '<div class="bld empty"></div>'; continue; }
       if (slot === 'spot') {
         const sp = spots[si++];
         if (!sp) { town += '<div class="bld empty"></div>'; continue; }
@@ -314,7 +319,8 @@ function panelInfo(id) {
   const b = BUILDINGS[id] || HOTSPOTS[id];
   const render = { karakol: jailSection, hastane: hospitalSection, banka: bankSection, fabrika: factorySection,
     silahci: gunsmithSection, dedektif: detectiveSection, garaj: garageSection, carsi: marketSection,
-    liman: harborSection, siginak: hideoutSection, kahvehane: menSection }[id];
+    liman: harborSection, siginak: hideoutSection, kahvehane: menSection,
+    bos: () => `<p class="muted">Kepenk inik, camlar tozlu. Şimdilik buraya taşınan bir kiracı yok.</p>` }[id];
   return { name: b.name, asset: BUILDINGS[id] || hasAsset(`buildings/${id}`) ? `buildings/${id}` : null, emoji: b.emoji, render };
 }
 
@@ -339,6 +345,7 @@ function panelHelp(id) {
       (sp?.kind === 'gazino' ? ' Gazinoda kumar da oynanır; kaybedilen bahislerin bir payı gazinonun sahibi aileye gider.' : '');
   }
   return {
+    bos: `Bu dükkân boş. Belki yakında biri kiralar…`,
     kahvehane: `Kahvehanede iş arayan delikanlılar oturur. Para verip adam tutarsın; eğitimden sonra yanına katılırlar.
       Adamların baskında savaşır, aile mekânında nöbet tutar, seni korur; gözcüler işlerde şansını artırır.
       Her adam haftalık maaş ister, her gün kasandan kesilir. Ödeyemezsen her gün bir kısmı seni bırakır.`,
@@ -1107,15 +1114,17 @@ function logTab() {
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
       <div class="d-nick">${esc(p.nick)}</div>
       <div class="muted small">${esc(rankName(p.rank))}${p.family ? ` · ${esc(p.family)}` : ''}</div>
-      <div class="small d-line">💍 ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'}</div>
-      <div class="small d-line">🤝 saygı <b>${p.respect}</b> <span class="muted">· bu hafta verebileceğin: ${p.respect_left}</span></div>
+      <div class="small d-line">${aic('ico/yuzuk', '💍')} ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'}</div>
+      <div class="small d-line">${aic('ico/saygi', '🎩')} saygı <b>${p.respect}</b> <span class="muted">· bu hafta verebileceğin: ${p.respect_left}</span></div>
     </div></div>
-    <div class="tiles">${tile('☠', 'öldürme', p.kills)}${tile('⚰', 'ölüm', p.deaths)}${tile('🔓', 'kurtarma', p.busts)}${tile('🎯', 'nişancılık', p.kill_skill)}</div>`;
+    <div class="tiles">${tile(aic('rehber/olum', '☠'), 'öldürme', p.kills)}${tile(aic('ico/tabut', '⚰'), 'ölüm', p.deaths)}${tile(aic('ico/kilit', '🔓'), 'kurtarma', p.busts)}${tile(aic('rehber/kelle', '🎯'), 'nişancılık', p.kill_skill)}</div>`;
 
   if (extra.penalties?.length) h += `<h2>Cezalarım</h2>` + penaltiesHtml(extra.penalties);
   h += seasonSection();
   if (p.proposals.length) h += `<h2>Evlenme Teklifleri</h2>` + p.proposals.map(n => card(nickLink(n), 'sana evlenme teklif etti',
-    `<button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>`, '<span class="icon emoji">💍</span>')).join('');
+    `<div class="market-actions"><button class="btn sm primary" data-act="acceptprop" data-id="${esc(n)}">Kabul et</button>
+     <button class="btn sm" data-act="rejectprop" data-id="${esc(n)}">Reddet</button></div>`, aic('ico/yuzuk', '💍'))).join('');
+  if (p.proposal_to) h += card(`Teklifin: ${nickLink(p.proposal_to)}`, 'Cevap bekleniyor.', `<button class="btn sm" data-act="cancelprop">Geri çek</button>`, aic('ico/yuzuk', '💍'));
   h += friendsSection();
   h += `<div class="card clickable" data-act="suggest"><span class="icon emoji">💡</span><div class="grow">
       <div class="title">Öneri kutusu</div><div class="muted small">Yeni özellik, etkinlik, mod ya da değişiklik fikrini yönetime gönder</div></div>
@@ -1388,18 +1397,20 @@ async function showProfile(nick) {
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
     ${pr.spouse ? `<p class="small">${aic('ico/yuzuk', '💍')} ${esc(pr.spouse)} ile evli</p>` : ''}
     ${pr.badges?.length ? `<p class="small">${badgeList(pr.badges)}</p>` : ''}
-    <p class="small muted">${aic('rehber/aile', '🤝')} saygı ${pr.respect} · ${aic('rehber/araba', '🏁')} yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
-    ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${Array.from({ length: 8 }, (_, i) =>
-        `<button data-avatar="${i + 1}" class="${pr.avatar === i + 1 ? 'on' : ''}">${img(`portraits/p${i + 1}`, '', PORTRAIT_EMOJI[i])}</button>`).join('')}</div>`
+    <p class="small muted">${aic('ico/saygi', '🎩')} saygı ${pr.respect} · ${aic('rehber/araba', '🏁')} yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
+    ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${genderAvatars(S.player.gender).map(n =>
+        `<button data-avatar="${n}" class="${pr.avatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', PORTRAIT_EMOJI[n - 1])}</button>`).join('')}</div>`
     : `<div class="profile-actions">
       ${pr.friend === 'friends' || S.player.is_admin ? `<button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">${aic('ico/sohbet', '✉')} Mesaj</button>` : ''}
       ${pr.friend === 'friends' ? `<button class="btn sm" data-act="frremove" data-id="${esc(pr.nick)}">Arkadaşlıktan çıkar</button>`
         : pr.friend === 'sent' ? `<button class="btn sm" disabled>İstek gönderildi</button>`
         : pr.friend === 'received' ? `<button class="btn sm primary" data-act="fraccept" data-id="${esc(pr.nick)}">Arkadaşlığı kabul et</button>`
         : `<button class="btn sm primary" data-act="fradd" data-id="${esc(pr.nick)}">➕ Arkadaş ekle</button>`}
-      <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>${aic('rehber/aile', '🤝')} Saygı</button>
-      ${!S.player.spouse && !pr.spouse ? (pr.proposed_to_me
-        ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">${aic('ico/yuzuk', '💍')} Kabul et</button>`
+      <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>${aic('ico/saygi', '🎩')} Saygı</button>
+      ${!S.player.spouse && !pr.spouse && pr.friend === 'friends' && pr.gender && S.player.gender && pr.gender !== S.player.gender ? (pr.proposed_to_me
+        ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">${aic('ico/yuzuk', '💍')} Kabul et</button>
+           <button class="btn sm" data-act="rejectprop" data-id="${esc(pr.nick)}">Reddet</button>`
+        : pr.i_proposed ? `<button class="btn sm" data-act="cancelprop">${aic('ico/yuzuk', '💍')} Teklifi geri çek</button>`
         : `<button class="btn sm" data-act="propose" data-id="${esc(pr.nick)}">${aic('ico/yuzuk', '💍')} Teklif</button>`) : ''}
       <button class="btn sm" data-act="${pr.blocked ? 'unblock' : 'block'}" data-id="${esc(pr.nick)}">${pr.blocked ? 'Engeli kaldır' : aic('ico/engel', '🚫') + ' Engelle'}</button>
       <button class="btn sm" data-act="reportplayer" data-id="${esc(pr.nick)}">${aic('ico/bayrak', '⚑')} Şikâyet</button>
@@ -1456,6 +1467,8 @@ document.addEventListener('click', async (e) => {
 
   const pick = e.target.closest('[data-pick]');
   if (pick) { pickedAvatar = +pick.dataset.pick; return renderOnboard(); }
+  const gpick = e.target.closest('[data-gender]');
+  if (gpick) { pickedGender = gpick.dataset.gender; pickedAvatar = genderAvatars(pickedGender)[0]; return renderOnboard(); }
   const av = e.target.closest('[data-avatar]');
   if (av) { await api.rpc('set_avatar', { p_avatar: +av.dataset.avatar }); closeModal(); return refresh(); }
   if (e.target.closest('[data-me]')) return showProfile(S.player.nick);
@@ -1606,6 +1619,8 @@ document.addEventListener('click', async (e) => {
       p_nick: b.dataset.kind === 'player' ? b.dataset.nick : null, p_reason: b.dataset.reason });
     case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı (${moneyText(S.settings.marriage_cost)}) senden çıkar.`) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
+    case 'rejectprop': closeModal(); return act('reject_proposal', { p_nick: id });
+    case 'cancelprop': closeModal(); return act('cancel_proposal', {});
     case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
     case 'chatch':     chatCh = id; extra.chat = null; extra.conv = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
     case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
@@ -1693,9 +1708,9 @@ document.addEventListener('submit', async (e) => {
     await loadFamily(); renderTab(); scrollChat();
   } else if (e.target.id === 'nick-form') {
     e.preventDefault();
-    const r = await api.rpc('create_player', { p_nick: $('#nick').value.trim() });
+    if (!pickedGender) { $('#nick-err').textContent = 'Önce cinsiyetini seç.'; return; }
+    const r = await api.rpc('create_character', { p_nick: $('#nick').value.trim(), p_gender: pickedGender, p_avatar: pickedAvatar });
     if (!r.ok) { $('#nick-err').textContent = r.msg; return; }
-    await api.rpc('set_avatar', { p_avatar: pickedAvatar });
     await refresh();
   }
 });
