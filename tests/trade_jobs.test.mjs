@@ -59,8 +59,8 @@ await as(A, `select trade('raki', 10)`);
 await as(A, `select trade('raki', -5)`);
 assert.equal((await as(A, `select get_state()`)).player.trade_xp, 0, 'aynı limanda puan yok');
 // başka şehirde satış: rakı kasa başı 1 puan
+await db.exec(`update game_settings set value = 0 where key = 'customs_chance'`);   // gümrük testi bozmasın
 await ready(A); await as(A, `select travel('izmir')`);
-await db.exec(`update game_settings set value = 0 where key = 'customs_chance'`);
 let sold = await as(A, `select trade('raki', -5)`);
 s = await as(A, `select get_state()`);
 assert.equal(s.player.trade_xp, 5); assert.match(sold.msg, /\+5 ticaret puanı/);
