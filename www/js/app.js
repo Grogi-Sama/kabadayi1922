@@ -33,7 +33,7 @@ async function loadTabData() {
   const rpc = api.rpc;
   if (tab === 'city') [extra.spots, extra.events] = await Promise.all([rpc('get_spots'), rpc('get_events')]);
   else if (tab === 'log') [extra.players, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
-  if (tab === 'log') extra.friends = await rpc('get_friends');
+  if (tab === 'log') [extra.friends, extra.men] = await Promise.all([rpc('get_friends'), rpc('get_men')]);
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
@@ -616,7 +616,7 @@ function marketSection() {
       `${nickLink(l.seller)} · ${money(l.price)}${l.unit ? ` · kurşunu ${money(l.unit)}` : ` · piyasa ${money(l.car_value)}`}`,
       l.mine ? `<button class="btn sm" data-act="unlist" data-id="${l.id}">Kaldır</button>`
              : `<button class="btn sm primary" data-act="buylisting" data-id="${l.id}">Al</button>`,
-      l.kind === 'bullets' ? `<span class="icon emoji">🔫</span>` : `<span class="icon emoji">🚗</span>`)).join('')
+      l.kind === 'bullets' ? `<span class="icon emoji">${ico('kursun', '🔫')}</span>` : icon('c_' + l.car_type, CAR_EMOJI[l.car_type] || '🚗'))).join('')
     : `<p class="muted small">Pazarda ilan yok.</p>`;
   h += `<h2>Sat</h2><div class="form-row"><input id="f-sell-bullets" type="number" min="1" placeholder="Kurşun adedi" inputmode="numeric">
       <input id="f-sell-bprice" type="number" min="1" placeholder="Toplam $" inputmode="numeric">
@@ -764,12 +764,12 @@ function menSection() {
       <div class="grow"><div class="title">${esc(t.name)} · ${money(t.price)}</div><div class="muted small">${sub}</div></div>
       <div class="market-actions"><button class="btn sm primary" data-act="hireman" data-id="${t.id}" ${dis(locked || full || hireWait || blocked() || S.player.cash < t.price)}>Tut</button></div></div>`;
   }).join('');
-  if (M.training.length) h += `<h2>Eğitimde ${boostBtn('men')}</h2>` + M.training.map(t => card(esc(M.types.find(x => x.id === t.type).name),
-    `Katılmasına ${until(t.ready_at)}`, '', img('men/' + t.type, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.type]}</span>`))).join('');
+  if (M.training.length) h += `<h2>Eğitimde ${boostBtn('men')}</h2>` + M.types.filter(t => t.training).map(t =>
+      card(esc(t.name), `${t.active} boşta${t.posted ? ` · ${t.posted} nöbette` : ''} · ${t.training} eğitimde · Can ${t.defense} · Hasar ${t.attack}`, '',
+        img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`))).join('')
+    + `<p class="muted small">Eğitimi bitecekler: ${M.training.map(x => `${esc(M.types.find(t => t.id === x.type).name)} ${until(x.ready_at)}`).join(' · ')}</p>`;
   if (M.posts.length) h += `<h2>Nöbette</h2>` + M.posts.map(x => card(esc(x.name), `${esc(cityName(x.city))} · ${x.count} adam`,
     `<button class="btn sm" data-act="recall" data-id="${x.spot}">Geri çağır</button>`)).join('');
-  if (M.top.length) h += `<h2>En güçlü çeteler</h2>` + M.top.map((x, i) => `<div class="card">${portrait(x.avatar || 1, 'avatar xs')}
-    <div class="grow"><div class="title">${i + 1}. ${nickLink(x.nick)}</div></div><b>${Math.round(x.power)}</b></div>`).join('');
   return h;
 }
 
@@ -1299,6 +1299,11 @@ function logTab() {
         <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
         <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))}</div></div>
         <span class="b-kills">☠ ${t.kills}</span></div>`).join('') + `</div>`;
+    const top = extra.men?.top || [];
+    if (top.length) h += `<h2>En Güçlü Çeteler</h2><div class="board">` + top.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
+        <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
+        <div class="grow">${nickLink(t.nick)}<div class="muted small">çete gücü</div></div>
+        <span class="b-kills">⚔ ${Math.round(t.power)}</span></div>`).join('') + `</div>`;
     h += `<h2>Çevrimiçi (${pl.online.length})</h2><div class="online">` + (pl.online.map(o =>
         `<div class="on-chip">${portrait(o.avatar || 1, 'avatar sm')}${nickLink(o.nick)}</div>`).join('') || '<span class="muted small">Kimse yok.</span>') + `</div>`;
   }

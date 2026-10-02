@@ -103,5 +103,16 @@ begin
   return done('Bir ' || nm || ' dağıtıldı. Maaşı artık ödenmeyecek.');
 end $$;
 
+-- Çarşı ilanlarında arabanın türü (görsel için)
+create or replace function get_market() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', l.id, 'seller', s.nick, 'mine', l.seller_id = auth.uid(),
+      'kind', l.kind, 'qty', l.qty, 'car', k.name, 'car_type', k.id, 'car_value', k.value, 'city', c.name, 'price', l.price,
+      'unit', case when l.kind = 'bullets' then round(l.price::numeric / l.qty, 1) end)
+    order by l.seller_id = auth.uid() desc, l.id desc), '[]')
+  from (select * from market_listings order by id desc limit 100) l
+  join players s on s.id = l.seller_id left join cars k on k.id = l.car_type left join cities c on c.id = l.car_city
+$$;
+
 insert into api_rpcs values ('set_chat_style(text, text)') on conflict do nothing;
 select apply_grants();
