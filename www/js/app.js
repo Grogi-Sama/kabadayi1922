@@ -704,6 +704,20 @@ function shopView() {
       ${img(`crests/c${x.ref}`, 'shop-art', '')}<b>${esc(x.name)}</b>
       ${x.owned ? '<span class="muted small">Sende</span>'
         : gift ? `<button class="btn sm primary" data-act="clubgift" data-id="${x.id}" data-name="${esc(x.name)}">Hediye al</button>` : buyBtn(x)}</div>`).join('') + `</div>`;
+  // Sohbet görünümü
+  const nick = esc(p.nick), fontOn = p.chat_font, frameOn = p.chat_frame;
+  const styleBtn = (x, kind) => {
+    const on = kind === 'font' ? fontOn === x.id : frameOn === x.id;
+    if (x.owned) return on ? '<span class="muted small">Kullanılıyor</span>'
+      : `<button class="btn sm" data-act="chatstyle" data-kind="${kind}" data-id="${x.id}">Kullan</button>`;
+    return gift ? `<button class="btn sm primary" data-act="clubgift" data-id="${x.id}" data-name="${esc(x.name)}">Hediye al</button>` : buyBtn(x);
+  };
+  h += `<h2>Sohbet görünümü</h2><p class="muted small">Genel ve şehir sohbetinde mesajların özel yazı tipiyle, adın çerçeveyle görünür.</p>
+    <div class="shop-grid">` + prod('chatfont').map(x => `<div class="shop-item ${x.owned ? 'owned' : ''}">
+      <div class="style-prev cf-${x.id}"><b>${nick}</b> Selam, ahali!</div><b>${esc(x.name)}</b>${styleBtn(x, 'font')}</div>`).join('') + `</div>
+    <div class="shop-grid">` + prod('chatframe').map(x => `<div class="shop-item ${x.owned ? 'owned' : ''}">
+      <div class="style-prev"><b class="nf nf-${x.id}">${nick}</b></div><b>${esc(x.name)}</b>${styleBtn(x, 'frame')}</div>`).join('') + `</div>` +
+    (fontOn || frameOn ? `<button class="btn sm" data-act="chatstyle" data-kind="reset">Varsayılan görünüme dön</button>` : '');
   h += `<p class="muted small">Satın alınanlar sezon sonunda silinmez. Ödeme, oyun telefon mağazalarına çıkınca açılacak.</p>`;
   return h;
 }
@@ -1139,7 +1153,8 @@ function chatMsg(m, avatar, kind) {
   const mine = m.mine ?? m.nick === S.player.nick;
   const tap = mine ? '' : ` data-mnick="${esc(m.nick)}" data-mkind="${kind}" data-mid="${m.id}"`;
   return `<div class="msg ${mine ? 'me' : 'tap'}"${tap}>${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
-    <b class="${m.club ? 'club-nick' : ''}">${m.club ? '★ ' : ''}${esc(m.nick)}${m.at ? ` <time>${stamp(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
+    <b class="${m.club ? 'club-nick' : ''}"><span class="${m.frame ? 'nf nf-' + m.frame : ''}">${m.club ? '★ ' : ''}${esc(m.nick)}</span>${m.at ? ` <time>${stamp(m.at)}</time>` : ''}</b>
+    <span class="${m.font ? 'cf-' + m.font : ''}">${esc(m.text)}</span></div></div>`;
 }
 
 // Mesaj/oyuncu menüsü: profil, şikâyet, engelle
@@ -1770,6 +1785,11 @@ document.addEventListener('click', async (e) => {
     case 'clubgift':   return (await ask('Kulüp hediyesi', `<b>${esc(b.dataset.name)}</b> bu ayın hediyesi olarak senin olsun mu? Ayda bir hediye seçebilirsin.`, 'Al'))
                          && act('club_claim', { p_product: id }).then(loadShop);
     case 'wear':       return act('set_avatar', { p_avatar: +id }).then(loadShop);
+    case 'chatstyle': {
+      const k = b.dataset.kind, P = S.player;
+      return act('set_chat_style', { p_font: k === 'reset' ? '' : k === 'font' ? id : (P.chat_font || ''),
+                                     p_frame: k === 'reset' ? '' : k === 'frame' ? id : (P.chat_frame || '') }).then(loadShop);
+    }
     case 'shopbuy':    return toast('Ödeme, oyun telefon mağazalarına çıkınca açılacak. Çok yakında!', 'good');
     case 'evcal':      logView = 'events'; if (tab !== 'log') return $('[data-go="log"]').click(); renderTab(); $('main').scrollTop = 0; return;
     case 'logmain':    logView = 'main'; renderTab(); $('main').scrollTop = 0; return;

@@ -797,3 +797,34 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .trade-bar { padding: 8px 10px; margin: 6px 0 10px; border-radius: 10px; background: var(--panel-2); border: 1px solid #4a3a26; }
 .tb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
 .trade-bar p { margin: 6px 0 0; }
+
+/* 029: sohbet görünümü — mağazadan alınan yazı tipleri (yalnızca kullanılınca indirilir) ve isim çerçeveleri */
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-style: italic; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/files/playfair-display-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+2000-206F; }
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-style: italic; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/files/playfair-display-latin-ext-400-italic.woff2) format('woff2'); unicode-range: U+0100-0130, U+0132-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Cinzel'; font-weight: 600; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/files/cinzel-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+2000-206F; }
+@font-face { font-family: 'Cinzel'; font-weight: 600; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/cinzel@5/files/cinzel-latin-ext-600-normal.woff2) format('woff2'); unicode-range: U+0100-0130, U+0132-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Courier Prime'; font-weight: 400; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/files/courier-prime-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+2000-206F; }
+@font-face { font-family: 'Courier Prime'; font-weight: 400; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/courier-prime@5/files/courier-prime-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-0130, U+0132-024F, U+1E00-1EFF; }
+@font-face { font-family: 'Dancing Script'; font-weight: 600; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/dancing-script@5/files/dancing-script-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+2000-206F; }
+@font-face { font-family: 'Dancing Script'; font-weight: 600; font-style: normal; font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/dancing-script@5/files/dancing-script-latin-ext-600-normal.woff2) format('woff2'); unicode-range: U+0100-0130, U+0132-024F, U+1E00-1EFF; }
+.cf-font_zarif   { font-family: 'Playfair Display', Georgia, serif; font-style: italic; }
+.cf-font_saray   { font-family: 'Cinzel', Georgia, serif; font-weight: 600; letter-spacing: .3px; }
+.cf-font_daktilo { font-family: 'Courier Prime', 'Courier New', monospace; }
+.cf-font_mektup  { font-family: 'Dancing Script', cursive; font-weight: 600; font-size: 1.12em; }
+.chat.paper .bubble .nf, .style-prev .nf { display: inline-block; padding: 1px 8px; border-radius: 6px; margin-bottom: 2px; font-size: 12px; }
+.nf-frame_altin { color: #3a2a08 !important; background: linear-gradient(180deg, #f6dc8c, #c99a3a); border: 1px solid #8a6a26; box-shadow: 0 0 0 2px #f3e3b0 inset; }
+.nf-frame_bordo { color: #fff3e6 !important; background: linear-gradient(180deg, #8f2335, #5e1220); border: 1px solid #3d0a14;
+  clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%); padding: 1px 14px !important; }
+.nf-frame_deco  { color: #f3e3b0 !important; background: #1f4e55; border: 2px double #e6c476; border-radius: 2px !important; letter-spacing: .5px; }
+.nf-frame_gece  { color: #e9edf2 !important; background: linear-gradient(180deg, #2b2f3a, #12141a); border: 1px solid #b9c2cf; box-shadow: 0 0 6px rgba(185,194,207,.5); }
+.style-prev { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; padding: 6px;
+  width: 100%; border-radius: 8px; background: linear-gradient(180deg, #e8d9bb, #d9c59c); color: #2a1f14; font-size: 14px; }
+.style-prev > b:not(.nf) { color: #7a2331; }

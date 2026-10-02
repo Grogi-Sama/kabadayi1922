@@ -76,4 +76,18 @@ const jl = await db.query(`select extract(epoch from jail_until - now()) s from 
 assert.ok(jl.rows[0].s < 52 && jl.rows[0].s > 45, `100 sn → ~50 sn (${jl.rows[0].s})`);
 await db.exec(`update game_settings set value = 0 where key = 'ads_enabled'`);
 ok('hapis: sadece reklamla yarıya iner');
+// ─── 029: sohbet görünümü — yazı tipi ve çerçeve
+assert.match((await as(K, `select set_chat_style('font_saray', null)`)).msg, /yazı tipi sende yok/);
+await as(OWNER, `select admin_grant('Kerime', 'font_saray')`);
+await as(OWNER, `select admin_grant('Kerime', 'frame_altin')`);
+assert.match((await as(K, `select set_chat_style('frame_altin', null)`)).msg, /yazı tipi sende yok/, 'çerçeve yazı tipi yerine geçmez');
+assert.equal((await as(K, `select set_chat_style('font_saray', 'frame_altin')`)).ok, true);
+await as(K, `select send_chat('global', 'Selamlar')`);
+let last = (await as(A, `select get_chat('global')`)).at(-1);
+assert.equal(last.font, 'font_saray'); assert.equal(last.frame, 'frame_altin');
+assert.equal((await as(K, `select get_state()`)).player.chat_frame, 'frame_altin');
+assert.equal((await as(K, `select set_chat_style('', '')`)).ok, true, 'varsayılana dönülür');
+last = (await as(A, `select get_chat('global')`)).at(-1);
+assert.equal(last.font, null);
+ok('sohbet görünümü: yazı tipi ve çerçeve');
 done('shop');
