@@ -792,3 +792,8 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .job .body .btn.boost-btn { width: auto; align-self: center; padding: 3px 18px; font-size: 13px; margin-top: 6px; min-height: 0; }
 .jail[data-act] { cursor: pointer; }
 .toast.out { opacity: 0; transform: translateY(6px); }
+
+/* 027: ticaret puanı */
+.trade-bar { padding: 8px 10px; margin: 6px 0 10px; border-radius: 10px; background: var(--panel-2); border: 1px solid #4a3a26; }
+.tb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.trade-bar p { margin: 6px 0 0; }

@@ -560,8 +560,18 @@ function raceSection() {
 function maxFor(g, buying) {
   if (!buying) return g.qty;
   const held = S.market.reduce((a, x) => a + x.qty, 0);
-  if (S.player.rank < (g.min_rank || 0)) return 0;
+  if ((S.player.trade_xp ?? 0) < (g.min_trade || 0)) return 0;
   return Math.max(0, Math.min(S.ranks[S.player.rank].carry - held, Math.floor(S.player.cash / g.price)));
+}
+
+// Ticaret puanı: malı aldığın şehirden başka yerde satınca kazanılır, pahalı malları açar
+function tradeBar() {
+  const xp = S.player.trade_xp ?? 0, next = S.market.filter(g => (g.min_trade || 0) > xp).sort((a, b) => a.min_trade - b.min_trade)[0];
+  const prev = Math.max(0, ...S.market.filter(g => (g.min_trade || 0) <= xp).map(g => g.min_trade || 0));
+  return `<div class="trade-bar"><div class="tb-head"><b>Ticaret puanı: ${xp.toLocaleString('tr-TR')}</b>
+      <span class="muted small">${next ? `Sıradaki: ${esc(next.name)} (${next.min_trade})` : 'Bütün mallar açık'}</span></div>
+    ${next ? pctBar(100 * (xp - prev) / (next.min_trade - prev), '') : ''}
+    <p class="muted small">Malı aldığın limandan <b>başka</b> bir limanda satınca kasa başına puan kazanırsın; pahalı mal daha çok puan verir.</p></div>`;
 }
 
 function harborSection() {
@@ -571,12 +581,13 @@ function harborSection() {
   return `<h2>Kaçak Mal</h2>
     <p class="muted small">Fiyatlar her saat ve her şehirde değişir. Ucuza al, başka limanda pahalıya sat; aynı limanda satarsan alışın %${Math.round((1 - S.settings.trade_sell_rate) * 100)} altına gider.
       Taşıyabileceğin: <b>${held}/${S.ranks[S.player.rank].carry}</b> kasa.</p>
+    ${tradeBar()}
     <div class="qtybar">${[1, 5, 10, 'max'].map(q => `<button class="btn sm ${qty === q ? 'on' : ''}" data-qty="${q}">${q === 'max' ? 'Hepsi' : q}</button>`).join('')}</div>` +
     S.market.map(g => {
-      const nb = qty === 'max' ? maxFor(g, true) : qty, ns = qty === 'max' ? maxFor(g, false) : qty;
-      const locked = S.player.rank < (g.min_rank || 0);
+      const locked = (S.player.trade_xp ?? 0) < (g.min_trade || 0);
+      const nb = locked ? 0 : qty === 'max' ? maxFor(g, true) : qty, ns = qty === 'max' ? maxFor(g, false) : qty;
       const sub = `Al <b>${money(g.price)}</b> · Sat <b>${money(g.sell ?? g.price)}</b>` +
-        (locked ? `<br>${ico('kilit', '🔒')} ${esc(rankName(g.min_rank))} rütbesi gerekir`
+        (locked ? `<br>${ico('kilit', '🔒')} ${g.min_trade} ticaret puanıyla açılır`
           : g.qty ? `<br>Elinde ${g.qty} · alışın ${money(g.avg_cost ?? 0)}${g.bought_city ? ` (${esc(cityName(g.bought_city))})` : ''}` : '');
       return card(esc(g.name), sub,
         `<div class="market-actions">
@@ -1404,7 +1415,7 @@ function guideSections() {
       `Yarışlara girip para kazanabilirsin; kazanan havuzdan %${Math.round((1 - st.race_house_cut) * 100)} pay alır.`])],
     ['liman', '⚓ Kaçak mal ve yolculuk', li([
       `Rakı, şarap, tütün, kahve gibi mallar her şehirde ve her saat farklı fiyattadır: ucuza al, pahalı limanda sat. Aynı limanda satış alışın %${Math.round((1 - st.trade_sell_rate) * 100)} altındadır.`,
-      `Halı, mücevherat ve silah parçaları gibi pahalı mallar rütbe ister ama kasa başına çok daha fazla kazandırır.`,
+      `Konyak, viski, halı, mücevherat ve silah parçaları ticaret puanıyla açılır. Puan, malı aldığın limandan başka bir limanda satınca kazanılır.`,
       `Yolculuk bileti ${money(S.travel_cost ?? st.travel_cost)}. Kaçak malla yolculukta %${Math.round(st.customs_chance * 100)} ihtimalle gümrüğe takılırsın; gümrük malının yarısına el koyar.`,
       `Daha hızlı ulaşım (${S.transports.map(t => esc(t.name)).join(', ')}) seferler arası beklemeyi kısaltır.`])],
     ['silah', '🔫 Silah, koruma, nişancılık', li([

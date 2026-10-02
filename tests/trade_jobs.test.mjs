@@ -49,14 +49,33 @@ await as(A, `select trade('kahve', -1)`);
 assert.equal((await as(A, `select get_state()`)).player.cash, cash0 + k.sell);
 ok('alış/satış farkı + alış kaydı');
 
-// ─── Pahalı mallar rütbe ister
+// ─── 027: pahalı mallar ticaret puanıyla açılır; puan başka şehirde satınca gelir
 assert.equal(s.market.length, 9);
-assert.match((await as(A, `select trade('mucevher', 1)`)).msg, /en az/);
-await set(A, { xp: 1500 });
+assert.match((await as(A, `select trade('mucevher', 1)`)).msg, /ticaret puanı gerekir/);
+assert.match((await as(A, `select trade('konyak', 1)`)).msg, /50 ticaret puanı/);
+// aynı şehirde al-sat puan vermez
+await db.query(`delete from player_goods where player_id = $1`, [A]);
+await as(A, `select trade('raki', 10)`);
+await as(A, `select trade('raki', -5)`);
+assert.equal((await as(A, `select get_state()`)).player.trade_xp, 0, 'aynı limanda puan yok');
+// başka şehirde satış: rakı kasa başı 1 puan
+await ready(A); await as(A, `select travel('izmir')`);
+await db.exec(`update game_settings set value = 0 where key = 'customs_chance'`);
+let sold = await as(A, `select trade('raki', -5)`);
+s = await as(A, `select get_state()`);
+assert.equal(s.player.trade_xp, 5); assert.match(sold.msg, /\+5 ticaret puanı/);
+assert.equal(s.market.find(g => g.id === 'konyak').min_trade, 50);
+// kilit açılınca haber
+await set(A, { trade_xp: 49 });
+await as(A, `select trade('raki', 1)`); await ready(A); await as(A, `select travel('istanbul')`);
+sold = await as(A, `select trade('raki', -1)`);
+assert.match(sold.msg, /Yeni mal açıldı: Konyak/);
+await set(A, { trade_xp: 1000 });
 assert.equal((await as(A, `select trade('mucevher', 1)`)).ok, true);
+await db.exec(`update game_settings set value = 0.08 where key = 'customs_chance'`);
 const top = await db.query(`select max(price_of(c.id, 'silah_parca')) m from cities c`);
 assert.ok(top.rows[0].m > 5000, 'en pahalı mal 10 bine yaklaşır');
-ok('pahalı mallar ve rütbe kilidi');
+ok('ticaret puanı: kilit, başka şehirde satışta puan, açılış haberi');
 
 // ─── Gümrük: yarısına el koyar, liste döner
 await db.exec(`update game_settings set value = 1 where key = 'customs_chance'`);
