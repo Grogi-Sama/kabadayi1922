@@ -56,7 +56,7 @@ async function loadPanelData() {
   else if (kind === 'dedektif') extra.hitlist = await rpc('get_hitlist');
   else if (kind === 'garaj') extra.races = await rpc('get_races');
   else if (kind === 'carsi') extra.market = await rpc('get_market');
-  else if (kind === 'kahvehane') extra.men = await rpc('get_men');
+  else if (kind === 'kahvehane' || kind === 'konak') extra.men = await rpc('get_men');
   else if (kind === 'spot') [extra.spots, extra.lottery, extra.bj, extra.men] = await Promise.all([rpc('get_spots'), rpc('get_lottery'), rpc('bj_current'), rpc('get_men')]);
 }
 
@@ -107,6 +107,18 @@ function showBattle(r) {
       ${x.wall ? '<em>barikat yıkık</em>' : ''}</div>`).join('')}</div>`;
   $('#modal').classList.remove('hidden');
   navigator.vibrate?.(r.success ? [40, 60, 40, 60, 120] : [200]);
+}
+
+// Onay penceresi: ask('Başlık', 'metin', 'Evet') → true/false
+let askResolve = null;
+function ask(title, text, okLabel = 'Evet', art = '') {
+  return new Promise(res => {
+    askResolve = res;
+    $('#modal-body').innerHTML = `${art}<div class="logo-sm">${title}</div><p class="small">${text}</p>
+      <div class="ask-actions"><button class="btn primary" data-ask="1">${okLabel}</button><button class="btn" data-ask="0">Vazgeç</button></div>`;
+    $('#modal').classList.add('asking');
+    $('#modal').classList.remove('hidden');
+  });
 }
 
 // Gümrük baskını: el konan mallar ayrı pencerede
@@ -242,6 +254,7 @@ const BUILDINGS = {
   garaj:    { name: 'Garaj',            emoji: '🚗' },
   kahvehane:{ name: 'Kahvehane',        emoji: '☕' },
   bos:      { name: 'Boş Dükkân',       emoji: '🏚' },
+  konak:    { name: 'Konağın',          emoji: '🏛' },
   carsi:    { name: 'Çarşı',            emoji: '🛍' },
 };
 const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
@@ -256,7 +269,7 @@ const STREETS = [
   ['spot', 'fabrika', 'spot'],
   ['silahci', 'dedektif', 'spot'],
   ['garaj', 'carsi', 'siginak'],
-  ['bos', 'kahvehane', 'bos'],
+  ['konak', 'kahvehane', 'bos'],
 ];
 
 // Süsler: her sokağa bir set. x = sokak genişliğinin %'si (parçanın ortası; 33/67 bina araları),
@@ -333,7 +346,7 @@ function panelInfo(id) {
   const b = BUILDINGS[id] || HOTSPOTS[id];
   const render = { karakol: jailSection, hastane: hospitalSection, banka: bankSection, fabrika: factorySection,
     silahci: gunsmithSection, dedektif: detectiveSection, garaj: garageSection, carsi: marketSection,
-    liman: harborSection, siginak: hideoutSection, kahvehane: menSection,
+    liman: harborSection, siginak: hideoutSection, kahvehane: menSection, konak: konakSection,
     bos: () => `<p class="muted">Kepenk inik, camlar tozlu. Şimdilik buraya taşınan bir kiracı yok.</p>` }[id];
   return { name: b.name, asset: BUILDINGS[id] || hasAsset(`buildings/${id}`) ? `buildings/${id}` : null, emoji: b.emoji, render };
 }
@@ -360,6 +373,7 @@ function panelHelp(id) {
   }
   return {
     bos: `Bu dükkân boş. Belki yakında biri kiralar…`,
+    konak: `Burası senin konağın. Adamların, arabaların, malın ve ailen bir bakışta burada.`,
     kahvehane: `Kahvehanede iş arayan delikanlılar oturur. Para verip adam tutarsın; eğitimden sonra yanına katılırlar.
       Adamların baskında savaşır, aile mekânında nöbet tutar, seni korur; gözcüler işlerde şansını artırır.
       Her adam haftalık maaş ister, her gün kasandan kesilir. Ödeyemezsen her gün bir kısmı seni bırakır.`,
@@ -594,6 +608,40 @@ function marketSection() {
       `<option value="${c.id}">${esc(c.name)} · ${esc(cityName(c.city))}</option>`).join('')}</select>
       <input id="f-sell-cprice" type="number" min="1" placeholder="Fiyat $" inputmode="numeric">
       <button class="btn" data-act="listcar">Sat</button></div>`;
+  return h;
+}
+
+// ═════════════════ KONAK: OYUNCUNUN KENDİ MEKÂNI ═════════════════
+function konakSection() {
+  const p = S.player, M = extra.men, weapon = S.weapons.find(w => w.id === p.weapon);
+  let h = `<div class="men-sum">
+      <div><b>${M ? M.owned : p.men}</b><span>adam</span></div>
+      <div><b>${S.cars.length}</b><span>araba</span></div>
+      <div><b>${S.market.reduce((a, g) => a + g.qty, 0)}</b><span>kasa mal</span></div>
+      <div><b>${M ? Math.round(M.power) : Math.round(p.power || 0)}</b><span>güç</span></div></div>`;
+  // Hane: eş
+  h += `<h2>Hane</h2>` + (p.spouse
+    ? card(`${nickLink(p.spouse)}`, `Eşin${p.spouse_rank != null ? ` · ${esc(rankName(p.spouse_rank))}` : ''}${p.spouse_city ? ` · ${esc(cityName(p.spouse_city))}` : ''}`,
+        '', p.spouse_avatar ? portrait(p.spouse_avatar, 'avatar') : aic('ico/yuzuk', '💍'))
+    : `<p class="muted small">Bekârsın. Arkadaşın olan karşı cinsten birine profilinden evlenme teklif edebilirsin.</p>`);
+  // Adamlar
+  if (M) {
+    h += `<h2>Adamların</h2>` + (M.owned ? M.types.filter(t => t.active + t.posted + t.training).map(t =>
+      card(esc(t.name), `${t.active} boşta${t.posted ? ` · ${t.posted} nöbette` : ''}${t.training ? ` · ${t.training} eğitimde` : ''} · Can ${t.defense} · Hasar ${t.attack}`,
+        '', img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`))).join('')
+      + (M.training.length ? `<p class="muted small">Eğitimi bitecekler: ${M.training.map(x => `${esc(M.types.find(t => t.id === x.type).name)} ${until(x.ready_at)}`).join(' · ')}</p>` : '')
+      + `<p class="muted small">Haftalık maaş: <b>${money(M.wage_week)}</b>.</p>`
+      : `<p class="muted small">Henüz adamın yok. Kahvehane'den tutabilirsin.</p>`);
+  }
+  // Arabalar (bütün şehirler)
+  h += `<h2>Arabaların</h2>` + (S.cars.length ? S.cars.map(c => card(esc(c.name), `${esc(cityName(c.city))} · ${money(c.value)}`, '',
+      icon('c_' + c.type, CAR_EMOJI[c.type]))).join('') : `<p class="muted small">Araban yok. Garajda sokaktan araba çalabilirsin.</p>`);
+  // Mal ve silah
+  const goods = S.market.filter(g => g.qty);
+  h += `<h2>Ambarın</h2>` + (goods.length ? goods.map(g => card(esc(g.name), `${g.qty} kasa${g.avg_cost ? ` · alışın ${money(g.avg_cost)}` : ''}${g.bought_city ? ` (${esc(cityName(g.bought_city))})` : ''}`, '',
+      icon('g_' + g.id, GOOD_EMOJI[g.id]))).join('') : `<p class="muted small">Elinde kaçak mal yok.</p>`);
+  h += `<h2>Silahlık</h2>` + card(weapon ? esc(weapon.name) : 'Silahın yok', `${p.bullets} kurşun · ${p.bodyguards}/5 koruma`, '',
+      weapon ? icon('w_' + weapon.id, WEAPON_EMOJI[weapon.id]) : '<span class="icon emoji">🔫</span>');
   return h;
 }
 
@@ -1128,7 +1176,7 @@ function logTab() {
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
       <div class="d-nick">${esc(p.nick)}</div>
       <div class="muted small">${esc(rankName(p.rank))}${p.family ? ` · ${esc(p.family)}` : ''}</div>
-      <div class="small d-line">${aic('ico/yuzuk', '💍')} ${p.spouse ? `${esc(p.spouse)} ile evli <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'}</div>
+      <div class="small d-line">${aic('ico/yuzuk', '💍')} ${p.spouse ? `${nickLink(p.spouse)} ile evli${p.spouse_rank != null ? ` · ${esc(rankName(p.spouse_rank))}` : ''} <a class="flag" data-act="divorce">boşan</a>` : 'bekâr'}</div>
       <div class="small d-line">${aic('ico/saygi', '🎩')} saygı <b>${p.respect}</b> <span class="muted">· bu hafta verebileceğin: ${p.respect_left}</span></div>
     </div></div>
     <div class="tiles">${tile(aic('rehber/olum', '☠'), 'öldürme', p.kills)}${tile(aic('ico/tabut', '⚰'), 'ölüm', p.deaths)}${tile(aic('ico/kilit', '🔓'), 'kurtarma', p.busts)}${tile(aic('rehber/kelle', '🎯'), 'nişancılık', p.kill_skill)}</div>`;
@@ -1409,7 +1457,7 @@ async function showProfile(nick) {
     ${pr.bounty > 0 ? `<p class="small">${aic('rehber/kelle', '🎯')} Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
     <p class="small">${aic('rehber/olum', '☠')} ${pr.kills} öldürme · ${aic('ico/tabut', '⚰')} ${pr.deaths} ölüm · ${aic('ico/kilit', '🔓')} ${pr.busts} kurtarma</p>
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
-    ${pr.spouse ? `<p class="small">${aic('ico/yuzuk', '💍')} ${esc(pr.spouse)} ile evli</p>` : ''}
+    ${pr.spouse ? `<p class="small">${aic('ico/yuzuk', '💍')} ${nickLink(pr.spouse)} ile evli${pr.spouse_rank != null ? ` · ${esc(rankName(pr.spouse_rank))}` : ''}</p>` : ''}
     ${pr.badges?.length ? `<p class="small">${badgeList(pr.badges)}</p>` : ''}
     <p class="small muted">${aic('ico/saygi', '🎩')} saygı ${pr.respect} · ${aic('rehber/araba', '🏁')} yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
     ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${genderAvatars(S.player.gender).map(n =>
@@ -1466,7 +1514,7 @@ setInterval(tick, 1000);
 // ═════════════════ ETKİLEŞİM ═════════════════
 const val = (id) => $('#' + id)?.value.trim() ?? '';
 const num = (id) => parseInt(val(id), 10) || 0;
-const closeModal = () => $('#modal').classList.add('hidden');
+const closeModal = () => { $('#modal').classList.add('hidden'); $('#modal').classList.remove('asking'); };
 
 async function openConv(nick) {
   extra.conv = nick; chatCh = 'dm';
@@ -1476,7 +1524,9 @@ async function openConv(nick) {
 }
 
 document.addEventListener('click', async (e) => {
-  if (e.target.closest('#modal-close') || e.target.id === 'modal') return closeModal();
+  const ak = e.target.closest('[data-ask]');
+  if (ak) { closeModal(); const r = askResolve; askResolve = null; return r?.(ak.dataset.ask === '1'); }
+  if (e.target.closest('#modal-close') || e.target.id === 'modal') { if (askResolve) { askResolve(false); askResolve = null; } return closeModal(); }
   if (e.target.closest('[data-close-sheet]') || e.target.id === 'sheet') return closePanel();
 
   const pick = e.target.closest('[data-pick]');
@@ -1631,7 +1681,9 @@ document.addEventListener('click', async (e) => {
     case 'reportmsg':  return openReport(b.dataset.kind, b.dataset.ref ? +b.dataset.ref : null, id);
     case 'sendreport': closeModal(); return act('report_content', { p_kind: b.dataset.kind, p_ref: b.dataset.ref ? +b.dataset.ref : null,
       p_nick: b.dataset.kind === 'player' ? b.dataset.nick : null, p_reason: b.dataset.reason });
-    case 'propose':    closeModal(); return confirm(`${id} kişisine evlenme teklif edilsin mi? Kabul ederse düğün masrafı (${moneyText(S.settings.marriage_cost)}) senden çıkar.`) && act('propose', { p_nick: id });
+    case 'propose':    return (await ask('Evlenme teklifi', `<b>${esc(id)}</b> kişisine evlenme teklif etmek istediğine emin misin?
+                         Kabul ederse düğün masrafı (${money(S.settings.marriage_cost)}) senden çıkar. Reddederse aynı kişiye ${S.settings.proposal_retry_days ?? 14} gün boyunca tekrar teklif edemezsin.`,
+                         'Teklif et', `<div class="ask-art">${aic('ico/yuzuk', '💍')}</div>`)) && act('propose', { p_nick: id });
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'rejectprop': closeModal(); return act('reject_proposal', { p_nick: id });
     case 'cancelprop': closeModal(); return act('cancel_proposal', {});

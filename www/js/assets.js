@@ -3,7 +3,7 @@
 
 const CITIES = ['istanbul', 'izmir', 'selanik', 'pire', 'iskenderiye', 'beyrut'];
 const BUILDINGS = ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hastane', 'banka', 'fabrika',
-  'silahci', 'dedektif', 'garaj', 'carsi', 'siginak', 'bos'];
+  'silahci', 'dedektif', 'garaj', 'carsi', 'siginak', 'bos', 'konak'];
 const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 'c_aile', 'c_spor', 'c_sedan', 'c_limuzin',
   'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 'g_hali', 'g_mucevher', 'g_silah_parca', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];

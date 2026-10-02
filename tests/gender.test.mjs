@@ -40,5 +40,7 @@ assert.equal((await as(A, `select cancel_proposal()`)).ok, true);
 assert.equal((await as(A, `select propose('Leyla')`)).ok, true);
 assert.equal((await as(uid, `select accept_proposal('Ahmet')`)).ok, true);
 assert.equal((await as(B, `select get_profile('Ahmet')`)).spouse, 'Leyla');
+assert.equal((await as(B, `select get_profile('Ahmet')`)).spouse_rank, 0, 'profilde eşin rütbesi');
+assert.equal((await as(A, `select get_state()`)).player.spouse_avatar, 8, 'Konak için eşin portresi');
 ok('teklif: karşı cins, arkadaş, tek teklif, ret sonrası 14 gün, geri çekme');
 done('gender');
