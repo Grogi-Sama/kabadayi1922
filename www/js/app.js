@@ -7,6 +7,7 @@ import { money, moneyText, richText } from './locale.js';
 
 let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1, pickedGender = null;
 // Portreler: 1–4 erkek, 5–8 kadın
+const premiumAvatars = (g) => g === 'k' ? [13, 14, 15, 16] : g === 'e' ? [9, 10, 11, 12] : [];
 const genderAvatars = (g) => g === 'k' ? [5, 6, 7, 8] : g === 'e' ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6, 7, 8];
 // sekmeye / panele girince çekilen listeler
 const extra = { jail: [], players: null, family: null, families: [], hitlist: [], crews: null, casino: null,
@@ -516,7 +517,8 @@ function garageSection() {
   const p = S.player, here = S.cars.filter(c => c.city === p.city), away = S.cars.length - here.length;
   const cc = Math.round((S.car_chance ?? 0.5) * 100);
   return card('Sokaktan araba çal', `${pctBar(cc, `%${cc} başarı`)}<span class="small">Başaramazsan yakalanırsın: %${100 - cc} ihtimalle ${S.settings.car_fail_jail_s} sn hapis. Başarınca +8 itibar.</span>`,
-      `<button class="btn sm primary" data-act="car" ${dis(waiting(p.car_ready_at))}>${left(p.car_ready_at) ? until(p.car_ready_at) : 'Çal'}</button>`) +
+      `<div class="market-actions"><button class="btn sm primary" data-act="car" ${dis(waiting(p.car_ready_at))}>${left(p.car_ready_at) ? until(p.car_ready_at) : 'Çal'}</button>
+       ${left(p.car_ready_at) > 5 && !blocked() ? boostBtn('car') : ''}</div>`) +
     `<h2>Garajın (${here.length})</h2>` +
     (here.length ? here.map(c => card(esc(c.name), `${money(c.value)} · hurdası ${Math.max(1, Math.floor(c.value / S.settings.crusher_divisor))} kurşun`,
       `<div class="market-actions"><button class="btn sm" data-act="sell" data-id="${c.id}">Sat</button>
@@ -580,7 +582,7 @@ function harborSection() {
     }).join('') +
     `<h2>Sefer</h2>
     <p class="muted small">Kaçak malla yolculukta %${Math.round(S.settings.customs_chance * 100)} ihtimalle gümrüğe takılırsın; gümrük malının yarısına el koyar.
-      ${travelWait && !blocked() ? `Sıradaki sefer: <b>${until(S.player.travel_ready_at)}</b>` : ''}</p>` +
+      ${travelWait && !blocked() ? `Sıradaki sefer: <b>${until(S.player.travel_ready_at)}</b> ${boostBtn('travel')}` : ''}</p>` +
     S.cities.filter(c => c.id !== S.player.city).map(c => card(esc(c.name), `Bilet ${money(S.travel_cost)}`,
       `<button class="btn sm primary" data-act="travel" data-id="${c.id}" ${dis(travelWait)}>Git</button>`)).join('') +
     `<h2>Ulaşım</h2><p class="muted small">Şu an: <b>${esc(cur.name)}</b> · her yolculuktan sonra ${cur.cooldown_s / 60} dk bekleme.</p>` +
@@ -645,6 +647,68 @@ function konakSection() {
   return h;
 }
 
+// ═════════════════ MAĞAZA ═════════════════
+const tl = (v) => '₺' + Number(v).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+async function loadShop() { extra.shop = await api.rpc('get_shop'); if (logView === 'shop') renderTab(); }
+async function openShop() {
+  logView = 'shop';
+  if (tab !== 'log') $('[data-go="log"]').click(); else { renderTab(); $('main').scrollTop = 0; }
+  await loadShop();
+}
+function shopView() {
+  const X = extra.shop, p = S.player;
+  let h = banner('ui/defter_bant', 'Mağaza', 'Sadece görünüm ve zaman; güç satılmaz') +
+    `<p><button class="btn sm" data-act="logmain">← Defter</button></p>`;
+  if (!X) return h + `<p class="muted">Yükleniyor…</p>`;
+  const prod = (kind) => X.products.filter(x => x.kind === kind);
+  const gift = X.club_gift_ready;
+  const buyBtn = (x) => `<button class="btn sm primary" data-act="shopbuy" data-id="${x.id}">${tl(x.price)}</button>`;
+  // Kulüp
+  const club = prod('club')[0];
+  h += `<div class="card col club-card"><div class="title">★ Kabadayı Kulübü <span class="muted small">aylık</span></div>
+    <ul class="small perk-list"><li>Sohbette altın isim ve Kulüp rozeti</li><li>Her gün ${S.settings.club_boosts_daily ?? 5} ücretsiz hızlandırma (reklamsız)</li>
+      <li>Her ay bir özel portre ya da aile arması hediye</li><li>Reklam yok</li></ul>
+    ${X.club_until ? `<p class="small">Üyesin · bitiş: <b>${new Date(X.club_until).toLocaleDateString('tr-TR')}</b>${gift ? ' · <b>bu ayın hediyesini aşağıdan seç</b>' : ''}</p>` : ''}
+    <div>${buyBtn(club)} <span class="muted small">${X.club_until ? 'süreni uzat' : '30 gün'}</span></div></div>`;
+  // Hızlandırma
+  h += `<h2>Hızlandırma</h2><p class="muted small">Bir bekleme süresini (iş, araba, vapur, adam eğitimi) yarıya indirir. Hapis ve hastane hızlanmaz.
+      Kum saatinin yanındaki ⚡ düğmesine dokun. Bugün kalan: <b>${X.today_left}</b>.</p>
+    <div class="men-sum"><div><b>${X.tokens}</b><span>jeton</span></div><div><b>${X.ads_enabled ? X.ad_left : '—'}</b><span>reklam hakkı</span></div>
+      <div><b>${X.club_until ? X.club_left : '—'}</b><span>kulüp hakkı</span></div><div><b>${X.today_left}</b><span>bugün</span></div></div>` +
+    prod('boosts').map(x => card(esc(x.name), 'İstediğin zaman kullan; süresi dolmaz.', buyBtn(x), '<span class="icon emoji">⚡</span>')).join('') +
+    (X.ads_enabled ? '' : `<p class="muted small">Reklam izleyerek ücretsiz hızlandırma çok yakında (günde ${S.settings.ad_boosts_daily ?? 8} hak).</p>`);
+  // Portreler (kendi cinsiyetine uygun)
+  const mine = prod('portrait').filter(x => !p.gender || x.gender === p.gender);
+  h += `<h2>Özel portreler</h2><div class="shop-grid">` + mine.map(x => `<div class="shop-item ${x.owned ? 'owned' : ''}">
+      ${img(`portraits/p${x.ref}`, 'shop-art', '')}<b>${esc(x.name)}</b>
+      ${x.owned ? (p.avatar === x.ref ? '<span class="muted small">Kullanılıyor</span>' : `<button class="btn sm" data-act="wear" data-id="${x.ref}">Kullan</button>`)
+        : gift ? `<button class="btn sm primary" data-act="clubgift" data-id="${x.id}" data-name="${esc(x.name)}">Hediye al</button>` : buyBtn(x)}</div>`).join('') + `</div>`;
+  // Armalar
+  h += `<h2>Özel aile armaları</h2><p class="muted small">Armayı ailenin Don'u seçer; satın aldığın armayı Don olduğun ailede kullanabilirsin.</p>
+    <div class="shop-grid">` + prod('crest').map(x => `<div class="shop-item ${x.owned ? 'owned' : ''}">
+      ${img(`crests/c${x.ref}`, 'shop-art', '')}<b>${esc(x.name)}</b>
+      ${x.owned ? '<span class="muted small">Sende</span>'
+        : gift ? `<button class="btn sm primary" data-act="clubgift" data-id="${x.id}" data-name="${esc(x.name)}">Hediye al</button>` : buyBtn(x)}</div>`).join('') + `</div>`;
+  h += `<p class="muted small">Satın alınanlar sezon sonunda silinmez. Ödeme, oyun telefon mağazalarına çıkınca açılacak.</p>`;
+  return h;
+}
+
+// Hızlandırma seçimi: reklam / kulüp hakkı / jeton
+async function openBoost(target) {
+  const X = extra.shop = await api.rpc('get_shop');
+  const opt = (via, label, sub, on) => `<button class="btn ${on ? 'primary' : ''}" data-act="useboost" data-id="${via}" data-target="${target}" ${dis(!on)}>
+    ${label}<small>${sub}</small></button>`;
+  $('#modal-body').innerHTML = `<div class="ask-art"><span class="boost-big">⚡</span></div><div class="logo-sm">Hızlandır</div>
+    <p class="small">Kalan bekleme süresi yarıya iner. Bugün kalan hakkın: <b>${X.today_left}</b>.</p>
+    <div class="menu-list boost-list">
+      ${opt('ad', 'Reklam izle', X.ads_enabled ? `bugün ${X.ad_left} hak` : 'çok yakında', X.ads_enabled && X.ad_left > 0)}
+      ${X.club_until ? opt('club', 'Kulüp hakkı', `bugün ${X.club_left} hak`, X.club_left > 0) : ''}
+      ${opt('token', 'Jeton kullan', `${X.tokens} jetonun var`, X.tokens > 0)}
+      <button class="btn" data-act="shop">Jeton al / Kulübe katıl</button></div>`;
+  $('#modal').classList.remove('hidden');
+}
+const boostBtn = (target) => `<button class="btn sm boost-btn" data-act="boost" data-id="${target}" title="Hızlandır">⚡</button>`;
+
 // ═════════════════ KAHVEHANE: ADAMLAR ═════════════════
 const MAN_EMOJI = { zorba: '👊', fedai: '🛡', gozcu: '👁', nisanci: '🎯' };
 function menSection() {
@@ -670,7 +734,7 @@ function menSection() {
       <div class="market-actions"><button class="btn sm primary" data-act="hireman" data-id="${t.id}" ${dis(locked || full || hireWait || blocked() || S.player.cash < t.price)}>Tut</button>
       ${t.active + t.posted + t.training ? `<button class="btn sm" data-act="fireman" data-id="${t.id}">Yolla</button>` : ''}</div></div>`;
   }).join('');
-  if (M.training.length) h += `<h2>Eğitimde</h2>` + M.training.map(t => card(esc(M.types.find(x => x.id === t.type).name),
+  if (M.training.length) h += `<h2>Eğitimde ${boostBtn('men')}</h2>` + M.training.map(t => card(esc(M.types.find(x => x.id === t.type).name),
     `Katılmasına ${until(t.ready_at)}`, '', img('men/' + t.type, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.type]}</span>`))).join('');
   if (M.posts.length) h += `<h2>Nöbette</h2>` + M.posts.map(x => card(esc(x.name), `${esc(cityName(x.city))} · ${x.count} adam`,
     `<button class="btn sm" data-act="recall" data-id="${x.spot}">Geri çağır</button>`)).join('');
@@ -829,6 +893,7 @@ function crimeTab() {
           : pctBar(pct, `%${pct} şans`)}
         ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(waiting(c.ready_at))}>${
           waiting(c.ready_at) && !blocked() ? ico('kum', '⏳') + ' ' + until(c.ready_at) : 'Yap'}</button>
+          ${left(c.ready_at) > 5 && !blocked() ? boostBtn('crime:' + c.id) : ''}
           <div class="muted small cd-note">Bekleme ${fmt(c.cooldown_s)}</div>`}</div>
     </div>`;
   }).join('') + `</div>` + crewSection();
@@ -925,7 +990,10 @@ function crest(name, cls = '', n = 0) {
 function crestPicker(F) {
   return `<details class="crest-pick" id="crest-pick"><summary class="muted small">Armayı değiştir</summary><div class="crest-grid">
     ${Array.from({ length: 9 }, (_, n) => `<button data-act="crest" data-id="${n}" class="${(F.family.crest || 0) === n ? 'on' : ''}">
-      ${crest(F.family.name, '', n)}</button>`).join('')}</div>
+      ${crest(F.family.name, '', n)}</button>`).join('')}
+    ${Array.from({ length: 8 }, (_, i) => i + 9).map(n => (S.player.items || []).includes('crest_' + n)
+      ? `<button data-act="crest" data-id="${n}" class="${F.family.crest === n ? 'on' : ''}">${crest(F.family.name, '', n)}</button>`
+      : `<button data-act="shop" class="locked">${crest(F.family.name, '', n)}<span class="lock-ic">${ico('kilit', '🔒')}</span></button>`).join('')}</div>
     <p class="muted small">Arma ailenin her yerde görünen işaretidir: aile listesi, aile sayfası, mekânlar.</p></details>`;
 }
 const stat = (icon, v, title) => `<span class="stat" title="${title}">${icon} ${v}</span>`;
@@ -1056,7 +1124,7 @@ function chatMsg(m, avatar, kind) {
   const mine = m.mine ?? m.nick === S.player.nick;
   const tap = mine ? '' : ` data-mnick="${esc(m.nick)}" data-mkind="${kind}" data-mid="${m.id}"`;
   return `<div class="msg ${mine ? 'me' : 'tap'}"${tap}>${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
-    <b>${esc(m.nick)}${m.at ? ` <time>${stamp(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
+    <b class="${m.club ? 'club-nick' : ''}">${m.club ? '★ ' : ''}${esc(m.nick)}${m.at ? ` <time>${stamp(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
 }
 
 // Mesaj/oyuncu menüsü: profil, şikâyet, engelle
@@ -1166,11 +1234,15 @@ function eventsSection() {
 function logTab() {
   if (logView === 'guide') return guideView();
   if (logView === 'events') return eventsView();
+  if (logView === 'shop') return shopView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
   h += `<div class="card clickable guide-link" data-act="guide"><span class="icon emoji">📖</span><div class="grow">
       <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
       <span class="muted">›</span></div>`;
+  h += `<div class="card clickable guide-link shop-link" data-act="shop"><span class="icon emoji">🛍</span><div class="grow">
+      <div class="title">Mağaza ${p.club ? '<span class="club-badge">★ Kulüp</span>' : ''}</div>
+      <div class="muted small">Özel portreler, aile armaları, Kabadayı Kulübü ve hızlandırma</div></div><span class="muted">›</span></div>`;
   if (p.is_admin) h += `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>`;
 
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
@@ -1451,7 +1523,7 @@ async function showProfile(nick) {
   if (!pr) return toast('Böyle biri yok.', 'bad');
   const self = pr.nick === S.player.nick;
   $('#modal-body').innerHTML = `${portrait(pr.avatar, 'portrait-lg')}<div class="logo-sm">${esc(pr.nick)}</div>
-    <p>${esc(rankName(pr.rank))} ${pr.online ? '· 🟢 çevrimiçi' : ''}</p>
+    <p>${esc(rankName(pr.rank))} ${pr.online ? '· 🟢 çevrimiçi' : ''}${pr.club ? ' <span class="club-badge">★ Kulüp</span>' : ''}</p>
     ${pr.family ? `<p class="small">${esc(ROLES[pr.family_role])} · ${esc(pr.family)}</p>` : ''}
     <p class="small">Durum: ${esc(pr.status)}${pr.protected ? ` · ${aic('ico/kalkan', '🛡')} çaylak koruması` : ''}</p>
     ${pr.bounty > 0 ? `<p class="small">${aic('rehber/kelle', '🎯')} Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
@@ -1461,7 +1533,11 @@ async function showProfile(nick) {
     ${pr.badges?.length ? `<p class="small">${badgeList(pr.badges)}</p>` : ''}
     <p class="small muted">${aic('ico/saygi', '🎩')} saygı ${pr.respect} · ${aic('rehber/araba', '🏁')} yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
     ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${genderAvatars(S.player.gender).map(n =>
-        `<button data-avatar="${n}" class="${pr.avatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', PORTRAIT_EMOJI[n - 1])}</button>`).join('')}</div>`
+        `<button data-avatar="${n}" class="${pr.avatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', PORTRAIT_EMOJI[n - 1])}</button>`).join('')}
+        ${premiumAvatars(S.player.gender).map(n => (S.player.items || []).includes('portrait_' + n)
+          ? `<button data-avatar="${n}" class="${pr.avatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', '★')}</button>`
+          : `<button data-act="shop" class="locked">${img(`portraits/p${n}`, '', '★')}<span class="lock-ic">${ico('kilit', '🔒')}</span></button>`).join('')}</div>
+        <p class="muted small">Kilitli portreler Mağaza'da.</p>`
     : `<div class="profile-actions">
       ${pr.friend === 'friends' || S.player.is_admin ? `<button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">${aic('ico/sohbet', '✉')} Mesaj</button>` : ''}
       ${pr.friend === 'friends' ? `<button class="btn sm" data-act="frremove" data-id="${esc(pr.nick)}">Arkadaşlıktan çıkar</button>`
@@ -1534,7 +1610,7 @@ document.addEventListener('click', async (e) => {
   const gpick = e.target.closest('[data-gender]');
   if (gpick) { pickedGender = gpick.dataset.gender; pickedAvatar = genderAvatars(pickedGender)[0]; return renderOnboard(); }
   const av = e.target.closest('[data-avatar]');
-  if (av) { await api.rpc('set_avatar', { p_avatar: +av.dataset.avatar }); closeModal(); return refresh(); }
+  if (av) { const r = await api.rpc('set_avatar', { p_avatar: +av.dataset.avatar }); if (r.ok === false) toast(r.msg, 'bad'); closeModal(); return refresh(); }
   if (e.target.closest('[data-me]')) return showProfile(S.player.nick);
   const prof = e.target.closest('[data-profile]');
   if (prof) return showProfile(prof.dataset.profile);
@@ -1670,6 +1746,13 @@ document.addEventListener('click', async (e) => {
       return;
     }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
+    case 'shop':       return openShop();
+    case 'boost':      return openBoost(id);
+    case 'useboost':   closeModal(); return act('use_boost', { p_target: b.dataset.target, p_via: id });
+    case 'clubgift':   return (await ask('Kulüp hediyesi', `<b>${esc(b.dataset.name)}</b> bu ayın hediyesi olarak senin olsun mu? Ayda bir hediye seçebilirsin.`, 'Al'))
+                         && act('club_claim', { p_product: id }).then(loadShop);
+    case 'wear':       return act('set_avatar', { p_avatar: +id }).then(loadShop);
+    case 'shopbuy':    return toast('Ödeme, oyun telefon mağazalarına çıkınca açılacak. Çok yakında!', 'good');
     case 'evcal':      logView = 'events'; if (tab !== 'log') return $('[data-go="log"]').click(); renderTab(); $('main').scrollTop = 0; return;
     case 'logmain':    logView = 'main'; renderTab(); $('main').scrollTop = 0; return;
     case 'tutorial':   return showTutorial(true);

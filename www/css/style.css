@@ -765,3 +765,24 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .ask-actions .btn { min-width: 120px; }
 .ask-art { text-align: center; margin-bottom: 6px; } .ask-art .ico { width: 72px; height: 72px; }
 #modal.asking #modal-close { display: none; }
+
+/* 025: mağaza, kulüp, hızlandırma */
+.club-badge { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #1b140c;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold)); vertical-align: middle; }
+.club-nick { color: #a8740f !important; }
+.club-card { border-color: var(--gold); background: linear-gradient(180deg, #3a2b14, var(--panel)); }
+.perk-list { margin: 6px 0; padding-left: 18px; }
+.shop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.shop-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 12px; text-align: center;
+  background: var(--panel-2); border: 1px solid #4a3a26; font-size: 13px; }
+.shop-item.owned { border-color: var(--gold); }
+.shop-item .shop-art { width: 96px; height: 96px; object-fit: contain; }
+.boost-btn { padding: 4px 9px; min-width: 0; color: var(--gold-hi); }
+.job .boost-btn { margin-top: 4px; }
+.boost-big { font-size: 46px; }
+.boost-list .btn { display: flex; justify-content: space-between; align-items: center; }
+.boost-list .btn small { font-size: 11px; opacity: .8; }
+.portrait-grid button.locked, .crest-grid button.locked { position: relative; opacity: .55; }
+.lock-ic { position: absolute; right: 2px; bottom: 2px; }
+.lock-ic .ico { width: 18px; height: 18px; }
+.job .body .btn.boost-btn { width: auto; align-self: center; padding: 3px 18px; font-size: 13px; margin-top: 6px; min-height: 0; }

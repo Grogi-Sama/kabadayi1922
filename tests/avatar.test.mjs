@@ -8,7 +8,8 @@ assert.equal((await as(A, `select get_state()`)).player.avatar, 1);
 assert.equal((await as(A, `select set_avatar(5)`)).ok, true);
 assert.equal((await as(A, `select get_state()`)).player.avatar, 5);
 assert.equal((await as(A, `select get_profile('portreci')`)).avatar, 5);
-await assert.rejects(as(A, `select set_avatar(9)`));
+assert.equal((await as(A, `select set_avatar(9)`)).ok, false, '025: özel portre satın alınmadan seçilemez');
+await assert.rejects(as(A, `select set_avatar(17)`));
 ok('portre seçimi');
 
 // Aile ekranlarında portreler: listede Don'unki, aile ekranında üyelerinki

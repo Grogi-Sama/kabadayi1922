@@ -115,7 +115,8 @@ assert.equal((await as(D, `select get_family()`)).family.crest, 0);
 assert.equal((await as(D, `select set_family_crest(5)`)).ok, true);
 assert.equal((await as(D, `select get_family()`)).family.crest, 5);
 assert.equal((await as(D, `select get_families()`)).find(f => f.name === 'Corleone').crest, 5);
-await assert.rejects(as(D, `select set_family_crest(9)`), /BAD_CREST/);
+assert.match((await as(D, `select set_family_crest(9)`)).msg, /mağazada/, '025: özel arma satın alınmadan seçilemez');
+await assert.rejects(as(D, `select set_family_crest(17)`), /BAD_CREST/);
 assert.equal((await as(L, `select set_family_crest(2)`)).ok, false, 'Don olmayan seçemez');
 ok('aile arması');
 
