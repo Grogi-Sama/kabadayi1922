@@ -720,3 +720,23 @@ nav button[data-badge]:not([data-badge=""])::after {
 .game:not(.wide) .bet-row { flex-wrap: wrap; justify-content: center; }
 .game:not(.wide) .bet-row input { flex: 1 0 100%; text-align: center; }
 .guide summary .g-ic { width: 30px; height: 30px; vertical-align: middle; margin-right: 8px; }
+
+/* 020: itibar çubuğu sonunda sonraki rütbe */
+.xprow { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.xprow .xpbar { flex: 1; margin: 0; }
+.xp-next { font-size: 10.5px; color: var(--muted, #a8957a); white-space: nowrap; }
+/* İş kartı: itibar rozeti (para rozetinin solunda), bekleme notu */
+.job .coin.xp { right: auto; left: 6px; background: linear-gradient(180deg, #2f6b70, #1f4e55); color: var(--paper); border-color: #6fb3b0; }
+.job .cd-note { text-align: center; margin-top: 4px; }
+/* Sohbet: saat; kaydırma sohbetin içinde kalsın, sayfayı sürüklemesin */
+.chat { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.chat time { font-size: 10px; font-weight: 400; opacity: .6; margin-left: 4px; }
+.chat.paper .bubble b time { color: #6b5636; }
+/* Çift dokunuşta yakınlaşma yok */
+html { touch-action: manipulation; }
+/* Profil düğmelerinde ve satırlarında görsel simgeler */
+.profile-actions .btn .ico { width: 18px; height: 18px; vertical-align: -4px; }
+#modal-body p .ico { width: 18px; height: 18px; vertical-align: -4px; }
+/* Gümrük penceresi */
+.seized-art { display: block; width: 96px; height: 96px; object-fit: contain; margin: 0 auto 6px; font-size: 64px; text-align: center; }
+.seized .card { margin-bottom: 6px; }

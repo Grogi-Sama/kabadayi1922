@@ -58,7 +58,7 @@ const B = await player('Cebci');
 await now(null, 'altin_saat');
 let gained = null;
 for (let i = 0; i < 40 && gained === null; i++) {
-  await db.exec(`update players set crime_ready_at = now(), jail_until = now()`);
+  await db.exec(`update players set crime_ready_at = now(), jail_until = now(); delete from player_cooldowns where kind like 'crime:%'`);
   const xp0 = (await get(B)).xp;
   const r = await as(B, `select do_crime('cep')`);
   if (r.success) gained = (await get(B)).xp - xp0;

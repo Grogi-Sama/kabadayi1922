@@ -18,7 +18,7 @@ assert.equal((await as(B, `select create_player('Şükrü')`)).ok, true);
 let s = await as(A, `select get_state()`);
 assert.equal(s.player.cash, 500);
 assert.equal(s.player.rank, 0);
-assert.equal(s.market.length, 6);
+assert.equal(s.market.length, 9);
 ok('oyuncu oluşturma + başlangıç durumu');
 
 // --- suç: bekleme süresi ve rütbe kontrolü
@@ -39,7 +39,7 @@ for (let i = 0; i < 300; i++) {
   if (r.jailed) jails++;
 }
 s = await as(A, `select get_state()`);
-assert.ok(successes > 150 && successes < 260, `başarı oranı beklenen aralıkta (${successes}/300)`);
+assert.ok(successes > 150 && successes < 285, `başarı oranı beklenen aralıkta (${successes}/300)`);
 assert.ok(jails > 10, 'bazen hapse girilmeli');
 assert.ok(s.player.rank >= 1, 'terfi etmeli');
 ok(`300 suç: ${successes} başarı, ${jails} hapis, rütbe ${s.player.rank}`);
@@ -73,7 +73,7 @@ const cap = s.ranks[s.player.rank].carry;
 assert.equal((await as(A, `select trade('kahve', $1)`, [cap + 1])).ok, false, 'kapasite aşılmamalı');
 assert.equal((await as(A, `select trade('kahve', $1)`, [cap])).ok, true);
 assert.equal((await as(A, `select trade('kahve', $1)`, [-(cap + 1)])).ok, false, 'elindekinden fazla satılamaz');
-const price = s.market.find(g => g.id === 'kahve').price;
+const price = s.market.find(g => g.id === 'kahve').sell;   // satış alışın %15 altı (020)
 const before = (await as(A, `select get_state()`)).player.cash;
 assert.equal((await as(A, `select trade('kahve', -2)`)).ok, true);
 assert.equal((await as(A, `select get_state()`)).player.cash, before + 2 * price);

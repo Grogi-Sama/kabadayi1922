@@ -42,9 +42,12 @@ export async function setup() {
   };
   const get = async (uid) => (await db.query(`select * from players where id = $1`, [uid])).rows[0];
   // Bütün bekleme sürelerini sıfırla
-  const ready = (uid) => db.query(`update players set crime_ready_at = now(), car_ready_at = now(),
-    travel_ready_at = now(), jail_until = now(), hospital_until = now(), kill_ready_at = now(),
-    bust_ready_at = now(), practice_ready_at = now() where id = $1`, [uid]);
+  const ready = async (uid) => {
+    await db.query(`update players set crime_ready_at = now(), car_ready_at = now(),
+      travel_ready_at = now(), jail_until = now(), hospital_until = now(), kill_ready_at = now(),
+      bust_ready_at = now(), practice_ready_at = now() where id = $1`, [uid]);
+    await db.query(`delete from player_cooldowns where player_id = $1 and kind like 'crime:%'`, [uid]);   // 020: işe özel bekleme
+  };
 
   // Özel mesaj için arkadaşlık gerekir (019): testlerde doğrudan arkadaş yap
   const befriend = (a, b) => db.query(`insert into friendships (low, high, requester, status)

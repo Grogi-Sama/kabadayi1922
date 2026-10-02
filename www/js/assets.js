@@ -5,12 +5,12 @@ const CITIES = ['istanbul', 'izmir', 'selanik', 'pire', 'iskenderiye', 'beyrut']
 const BUILDINGS = ['gazino', 'meyhane', 'kahvehane', 'antrepo', 'karakol', 'hastane', 'banka', 'fabrika',
   'silahci', 'dedektif', 'garaj', 'carsi', 'siginak'];
 const ITEMS = ['w_tabanca', 'w_pompali', 'w_thompson', 'c_kamyonet', 'c_taksi', 'c_aile', 'c_spor', 'c_sedan', 'c_limuzin',
-  'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
+  'g_kahve', 'g_tutun', 'g_sarap', 'g_raki', 'g_konyak', 'g_viski', 'g_hali', 'g_mucevher', 'g_silah_parca', 't_vapur', 't_motorbot', 't_deniz_ucagi'];
 const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun', 'organize', 'buyuk'];
 const DECOR = ['sarmasik', 'afis', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
 const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile', 'defter', 'can', 'kursun', 'banka',
-  'kilit', 'kum', 'uye', 'fabrika', 'mekan', 'sohbet'];
-const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris'];
+  'kilit', 'kum', 'uye', 'fabrika', 'mekan', 'sohbet', 'kalkan', 'tabut', 'yuzuk', 'engel', 'bayrak'];
+const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris', 'gumruk'];
 
 export const ALL = [
   ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...ICONS.map(i => `ico/${i}`), ...Array.from({ length: 8 }, (_, i) => `crests/c${i + 1}`),

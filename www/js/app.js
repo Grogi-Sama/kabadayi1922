@@ -77,7 +77,8 @@ async function act(name, args, opts = {}) {
   document.body.style.cursor = 'progress';
   try {
     const r = await api.rpc(name, args);
-    toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
+    if (r.seized?.length) showSeized(r);
+    else toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
     // başarılı işlemden sonra tutar/isim kutuları boşalsın (seçim kutuları kalsın)
     if (r.ok !== false) document.querySelectorAll(`section[data-tab="${tab}"] input, #sheet-body input`).forEach(i => i.value = '');
     await refresh();
@@ -89,6 +90,18 @@ async function act(name, args, opts = {}) {
     busy = false;
     document.body.style.cursor = '';
   }
+}
+
+// Gümrük baskını: el konan mallar ayrı pencerede
+function showSeized(r) {
+  $('#modal-body').innerHTML = `${img('results/gumruk', 'seized-art', img('rehber/liman', 'seized-art', '<div class="seized-art emoji">🛃</div>'))}
+    <div class="logo-sm">Gümrük baskını!</div>
+    <p class="small">${richText(r.msg)}</p>
+    <div class="seized">${r.seized.map(x => `<div class="card">${icon('g_' + x.good, GOOD_EMOJI[x.good] || '📦')}
+      <div class="grow"><div class="title">${esc(x.name)}</div><div class="muted small">${x.qty} kasaya el konuldu</div></div></div>`).join('')}</div>
+    <p class="muted small">Kalan malın seninle. Gümrük her kaçak yolculukta %${Math.round(S.settings.customs_chance * 100)} ihtimalle yoklar.</p>`;
+  $('#modal').classList.remove('hidden');
+  navigator.vibrate?.([200]);
 }
 
 let toastTimer;
@@ -109,7 +122,13 @@ const portrait = (n, cls) => img(`portraits/p${n}`, cls, `<span class="${cls} em
 const icon = (name, emoji) => img(`items/${name}`, 'icon', `<span class="icon emoji">${emoji}</span>`);
 const WEAPON_EMOJI = { tabanca: '🔫', pompali: '🔫', thompson: '🔫' };
 const CAR_EMOJI = { kamyonet: '🛻', taksi: '🚕', aile: '🚗', spor: '🏎', sedan: '🚘', limuzin: '🚙' };
-const GOOD_EMOJI = { kahve: '☕', tutun: '🍂', sarap: '🍷', raki: '🥛', konyak: '🥃', viski: '🛢' };
+const GOOD_EMOJI = { kahve: '☕', tutun: '🍂', sarap: '🍷', raki: '🥛', konyak: '🥃', viski: '🛢', hali: '🧶', mucevher: '💎', silah_parca: '⚙️' };
+// Satır içi küçük görsel (yoksa emoji): profil, sayaçlar
+const aic = (path, emoji) => img(path, 'ico', emoji);
+// İşlerin her birinin kendi beklemesi var (020); üstteki "İş" çipi: açık işlerden en erken hazır olan
+const openCrimes = () => S.crimes.filter(c => S.player.rank >= c.min_rank);
+const crimeReadyAt = () => openCrimes().map(c => c.ready_at).sort((a, b) => new Date(a) - new Date(b))[0] ?? S.player.crime_ready_at;
+const until = (at) => `<span data-until="${at}">${fmt(left(at))}</span>`;
 const TRANSPORT_EMOJI = { vapur: '⛴', motorbot: '🚤', deniz_ucagi: '🛩' };
 const JOB_EMOJI = { cep: '👛', dukkan: '🏪', kumarhane: '🃏', liman: '📦', kuyumcu: '💍', banka: '🏦', soygun: '🚂', organize: '🏛', buyuk: '⚓' };
 
@@ -144,6 +163,7 @@ function render() {
   $('#h-stats').innerHTML = `${ico('can', '❤')} ${p.health} · ${ico('kursun', '🔫')} ${p.bullets} kurşun · ${ico('banka', '🏦')} ${money(p.bank)}`;
   $('[data-go="chat"]').dataset.badge = p.unread > 0 ? p.unread : '';
   $('#xpbar div').style.width = next ? `${100 * (p.xp - rank.min_xp) / (next.min_xp - rank.min_xp)}%` : '100%';
+  $('#xp-next').textContent = next ? `${next.name} · ${(next.min_xp - p.xp).toLocaleString('tr-TR')} itibar kaldı` : 'En yüksek rütbe';
   renderTab();
   tick();
 }
@@ -174,9 +194,14 @@ function keepInputs(el, fn) {
   const keep = {};
   el.querySelectorAll('input[id], select[id]').forEach(i => keep[i.id] = i.value);
   const open = [...el.querySelectorAll('details[id][open]')].map(d => d.id);
+  // sohbet kutuları: en alttaysa altta kalsın, okurken yukarıdaysa yerinde dursun
+  const scroll = [...el.querySelectorAll('#chat, #dm')].map(c => [c.id, c.scrollTop, c.scrollHeight - c.scrollTop - c.clientHeight < 40]);
+  const focus = el.contains(document.activeElement) && document.activeElement.id;
   el.innerHTML = fn();
   for (const [id, v] of Object.entries(keep)) { const i = el.querySelector('#' + id); if (i) i.value = v; }
   for (const id of open) { const d = el.querySelector('#' + id); if (d) d.open = true; }
+  for (const [id, top, bottom] of scroll) { const c = el.querySelector('#' + id); if (c) c.scrollTop = bottom ? c.scrollHeight : top; }
+  if (focus) el.querySelector('#' + focus)?.focus({ preventScroll: true });
 }
 
 function renderTab() {
@@ -445,8 +470,9 @@ function hitlistSection() {
 
 function garageSection() {
   const p = S.player, here = S.cars.filter(c => c.city === p.city), away = S.cars.length - here.length;
-  return card('Sokaktan araba çal', 'Yakalanırsan kısa süre hapis.',
-      `<button class="btn sm primary" data-act="car" ${dis(waiting(p.car_ready_at))}>${left(p.car_ready_at) ? fmt(left(p.car_ready_at)) : 'Çal'}</button>`) +
+  const cc = Math.round((S.car_chance ?? 0.5) * 100);
+  return card('Sokaktan araba çal', `${pctBar(cc, `%${cc} başarı`)}<span class="small">Başaramazsan yakalanırsın: %${100 - cc} ihtimalle ${S.settings.car_fail_jail_s} sn hapis. Başarınca +8 itibar.</span>`,
+      `<button class="btn sm primary" data-act="car" ${dis(waiting(p.car_ready_at))}>${left(p.car_ready_at) ? until(p.car_ready_at) : 'Çal'}</button>`) +
     `<h2>Garajın (${here.length})</h2>` +
     (here.length ? here.map(c => card(esc(c.name), `${money(c.value)} · hurdası ${Math.max(1, Math.floor(c.value / S.settings.crusher_divisor))} kurşun`,
       `<div class="market-actions"><button class="btn sm" data-act="sell" data-id="${c.id}">Sat</button>
@@ -484,6 +510,7 @@ function raceSection() {
 function maxFor(g, buying) {
   if (!buying) return g.qty;
   const held = S.market.reduce((a, x) => a + x.qty, 0);
+  if (S.player.rank < (g.min_rank || 0)) return 0;
   return Math.max(0, Math.min(S.ranks[S.player.rank].carry - held, Math.floor(S.player.cash / g.price)));
 }
 
@@ -492,21 +519,25 @@ function harborSection() {
   const travelWait = waiting(S.player.travel_ready_at);
   const cur = S.transports.find(t => t.id === S.player.transport);
   return `<h2>Kaçak Mal</h2>
-    <p class="muted small">Fiyatlar her saat ve her şehirde değişir. Ucuza al, başka limanda pahalıya sat.
+    <p class="muted small">Fiyatlar her saat ve her şehirde değişir. Ucuza al, başka limanda pahalıya sat; aynı limanda satarsan alışın %${Math.round((1 - S.settings.trade_sell_rate) * 100)} altına gider.
       Taşıyabileceğin: <b>${held}/${S.ranks[S.player.rank].carry}</b> kasa.</p>
     <div class="qtybar">${[1, 5, 10, 'max'].map(q => `<button class="btn sm ${qty === q ? 'on' : ''}" data-qty="${q}">${q === 'max' ? 'Hepsi' : q}</button>`).join('')}</div>` +
     S.market.map(g => {
       const nb = qty === 'max' ? maxFor(g, true) : qty, ns = qty === 'max' ? maxFor(g, false) : qty;
-      return card(esc(g.name), `${money(g.price)} / kasa · elinde ${g.qty}`,
+      const locked = S.player.rank < (g.min_rank || 0);
+      const sub = `Al <b>${money(g.price)}</b> · Sat <b>${money(g.sell ?? g.price)}</b>` +
+        (locked ? `<br>${ico('kilit', '🔒')} ${esc(rankName(g.min_rank))} rütbesi gerekir`
+          : g.qty ? `<br>Elinde ${g.qty} · alışın ${money(g.avg_cost ?? 0)}${g.bought_city ? ` (${esc(cityName(g.bought_city))})` : ''}` : '');
+      return card(esc(g.name), sub,
         `<div class="market-actions">
           <button class="btn sm primary" data-act="buy" data-id="${g.id}" data-n="${nb}" ${dis(!nb)}>Al</button>
           <button class="btn sm" data-act="sellg" data-id="${g.id}" data-n="${ns}" ${dis(!(g.qty && ns))}>Sat</button>
         </div>`, icon('g_' + g.id, GOOD_EMOJI[g.id]));
     }).join('') +
     `<h2>Sefer</h2>
-    <p class="muted small">Bilet ${money(S.travel_cost)}. Kaçak malla yolculukta gümrüğe takılma riski var.
-      ${travelWait && !blocked() ? `Sıradaki sefer: ${fmt(left(S.player.travel_ready_at))}` : ''}</p>` +
-    S.cities.filter(c => c.id !== S.player.city).map(c => card(esc(c.name), '',
+    <p class="muted small">Kaçak malla yolculukta %${Math.round(S.settings.customs_chance * 100)} ihtimalle gümrüğe takılırsın; gümrük malının yarısına el koyar.
+      ${travelWait && !blocked() ? `Sıradaki sefer: <b>${until(S.player.travel_ready_at)}</b>` : ''}</p>` +
+    S.cities.filter(c => c.id !== S.player.city).map(c => card(esc(c.name), `Bilet ${money(S.travel_cost)}`,
       `<button class="btn sm primary" data-act="travel" data-id="${c.id}" ${dis(travelWait)}>Git</button>`)).join('') +
     `<h2>Ulaşım</h2><p class="muted small">Şu an: <b>${esc(cur.name)}</b> · her yolculuktan sonra ${cur.cooldown_s / 60} dk bekleme.</p>` +
     S.transports.filter(t => t.cooldown_s < cur.cooldown_s).map(t => {
@@ -662,19 +693,19 @@ function banner(asset, title, sub = '', extra = '') {
 const pctBar = (v, label) => `<div class="odds"><div style="width:${Math.max(0, Math.min(100, v))}%"></div><span>${label}</span></div>`;
 
 function crimeTab() {
-  const wait = waiting(S.player.crime_ready_at);
   return banner('ui/isler_bant', 'İşler', 'Küçük işle başla, büyük vurgunla çık') +
     `<h2>Suçlar</h2><div class="jobs-grid">` + S.crimes.map(c => {
     const locked = S.player.rank < c.min_rank, pct = Math.round(c.chance * 100);
     return `<div class="card job ${locked ? 'locked' : ''}">
       <div class="job-art">${img('jobs/' + c.id, 'art', `<div class="art ph">${JOB_EMOJI[c.id]}</div>`)}
         ${locked ? `<div class="lock"><span>${ico('kilit', '🔒')}</span><em>${esc(rankName(c.min_rank))}</em></div>`
-          : `<span class="coin">${money(c.reward_min)}–${money(c.reward_max)}</span>`}</div>
+          : `<span class="coin">${money(c.reward_min)}–${money(c.reward_max)}</span><span class="coin xp">+${c.xp} itibar</span>`}</div>
       <div class="body"><div class="title">${esc(c.name)}</div>
         ${locked ? `<div class="lock-note">Bu işi açmak için en az <b>${esc(rankName(c.min_rank))}</b> rütbesinde olmalısın. Suç işledikçe itibar kazanır, rütbe atlarsın.</div>`
           : pctBar(pct, `%${pct} şans`)}
-        ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(wait)}>${
-          wait && !blocked() ? ico('kum', '⏳') + ' ' + fmt(left(S.player.crime_ready_at)) : 'Yap'}</button>`}</div>
+        ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(waiting(c.ready_at))}>${
+          waiting(c.ready_at) && !blocked() ? ico('kum', '⏳') + ' ' + until(c.ready_at) : 'Yap'}</button>
+          <div class="muted small cd-note">Bekleme ${fmt(c.cooldown_s)}</div>`}</div>
     </div>`;
   }).join('') + `</div>` + crewSection();
 }
@@ -901,7 +932,7 @@ function chatMsg(m, avatar, kind) {
   const mine = m.mine ?? m.nick === S.player.nick;
   const tap = mine ? '' : ` data-mnick="${esc(m.nick)}" data-mkind="${kind}" data-mid="${m.id}"`;
   return `<div class="msg ${mine ? 'me' : 'tap'}"${tap}>${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
-    <b>${esc(m.nick)}</b> ${esc(m.text)}</div></div>`;
+    <b>${esc(m.nick)}${m.at ? ` <time>${hm(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
 }
 
 // Mesaj/oyuncu menüsü: profil, şikâyet, engelle
@@ -981,14 +1012,14 @@ function messagesSection() {
   if (extra.conv) {
     return `<h2>${esc(extra.conv)}</h2>
       <p><button class="btn sm" data-act="closeconv">← Mesajlar</button></p>
-      <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)}${!m.mine
+      <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)} <time>${hm(m.at)}</time>${!m.mine
         ? ` <a class="flag" data-report="message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`).join('') || '<div class="muted small">Henüz mesaj yok.</div>'}</div>
       <form class="form-row" id="dm-form"><input id="f-dm" maxlength="500" placeholder="Mesaj yaz…" autocomplete="off">
         <button class="btn primary">Gönder</button></form>`;
   }
   return `<p class="muted small chat-note">Sadece arkadaşlarınla yazışırsın. Arkadaş eklemek için Defter'deki Arkadaşlar bölümüne bak.</p>` +
     (extra.inbox.length ? extra.inbox.map(c => `<div class="card clickable" data-act="openconv" data-id="${esc(c.nick)}">
-      <span class="icon emoji">${c.unread > 0 ? '📩' : '✉'}</span><div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
+      ${portrait(c.avatar || 1, 'avatar')}<div class="grow"><div class="title">${esc(c.nick)} ${c.unread > 0 ? `<span class="pill">${c.unread}</span>` : ''}</div>
       <div class="muted small ellipsis">${esc(c.last)}</div></div></div>`).join('')
       : `<p class="muted small">Henüz mesaj yok. Arkadaşına yazmak için Defter → Arkadaşlar listesinde ✉'ye dokun.</p>`);
 }
@@ -1159,7 +1190,8 @@ function guideSections() {
       <p class="small">"Taşıma": limanda aynı anda elinde tutabileceğin kaçak mal kasası.</p>`],
     ['suc', '🕶 Suçlar ve hapis', li([
       `İşler sekmesindeki suçlar para ve itibar getirir. Şans yüzdesi kartta yazar; başarısız olursan kısa süre hapse girersin.`,
-      `Suçlar arasında ${mins(st.crime_cooldown_s)} beklersin. Büyük suçlar rütbeyle açılır.`,
+      `Her işin kendi bekleme süresi var: küçük işler ${mins(S.crimes[0].cooldown_s)}, en büyüğü ${mins(S.crimes.at(-1).cooldown_s)}. Biri beklerken diğerini yapabilirsin. Büyük işler rütbeyle açılır.`,
+      `Tecrübe kazandıkça (itibar) işlerin başarı şansı artar; rütbe atlamadan da her itibar puanı şansı biraz yükseltir.`,
       `Hapisteyken firar etmeyi deneyebilirsin (hakkın sınırlı) ya da biri seni Karakol'dan kurtarabilir.`,
       `Başkalarını kurtarmak itibar kazandırır, ama gardiyana yakalanırsan ${mins(st.bust_fail_jail_s)} içeride kalırsın.`])],
     ['araba', '🚗 Arabalar ve yarış', li([
@@ -1167,8 +1199,9 @@ function guideSections() {
       `Arabayı satabilir ya da hurdada ezip kurşuna çevirebilirsin (değerinin 1/${st.crusher_divisor} oranında kurşun).`,
       `Yarışlara girip para kazanabilirsin; kazanan havuzdan %${Math.round((1 - st.race_house_cut) * 100)} pay alır.`])],
     ['liman', '⚓ Kaçak mal ve yolculuk', li([
-      `Rakı, şarap, tütün, kahve gibi mallar her şehirde ve her saat farklı fiyattadır: ucuza al, pahalı limanda sat.`,
-      `Yolculuk bileti ${money(S.travel_cost ?? st.travel_cost)}. Kaçak malla yolculukta %${Math.round(st.customs_chance * 100)} gümrüğe takılma riski var.`,
+      `Rakı, şarap, tütün, kahve gibi mallar her şehirde ve her saat farklı fiyattadır: ucuza al, pahalı limanda sat. Aynı limanda satış alışın %${Math.round((1 - st.trade_sell_rate) * 100)} altındadır.`,
+      `Halı, mücevherat ve silah parçaları gibi pahalı mallar rütbe ister ama kasa başına çok daha fazla kazandırır.`,
+      `Yolculuk bileti ${money(S.travel_cost ?? st.travel_cost)}. Kaçak malla yolculukta %${Math.round(st.customs_chance * 100)} ihtimalle gümrüğe takılırsın; gümrük malının yarısına el koyar.`,
       `Daha hızlı ulaşım (${S.transports.map(t => esc(t.name)).join(', ')}) seferler arası beklemeyi kısaltır.`])],
     ['silah', '🔫 Silah, koruma, nişancılık', li([
       `Silahın yoksa kimseyi vuramazsın. ${S.weapons.map(w => `${esc(w.name)}: ${money(w.price)}, kurşun ihtiyacı ×${w.bullet_mult}`).join(' · ')}.`,
@@ -1292,27 +1325,27 @@ async function showProfile(nick) {
   $('#modal-body').innerHTML = `${portrait(pr.avatar, 'portrait-lg')}<div class="logo-sm">${esc(pr.nick)}</div>
     <p>${esc(rankName(pr.rank))} ${pr.online ? '· 🟢 çevrimiçi' : ''}</p>
     ${pr.family ? `<p class="small">${esc(ROLES[pr.family_role])} · ${esc(pr.family)}</p>` : ''}
-    <p class="small">Durum: ${esc(pr.status)}${pr.protected ? ' · 🛡 çaylak koruması' : ''}</p>
-    ${pr.bounty > 0 ? `<p class="small">🎯 Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
-    <p class="small">☠ ${pr.kills} öldürme · ⚰ ${pr.deaths} ölüm · 🔓 ${pr.busts} kurtarma</p>
+    <p class="small">Durum: ${esc(pr.status)}${pr.protected ? ` · ${aic('ico/kalkan', '🛡')} çaylak koruması` : ''}</p>
+    ${pr.bounty > 0 ? `<p class="small">${aic('rehber/kelle', '🎯')} Başına ödül: <b class="cash-sm">${money(pr.bounty)}</b></p>` : ''}
+    <p class="small">${aic('rehber/olum', '☠')} ${pr.kills} öldürme · ${aic('ico/tabut', '⚰')} ${pr.deaths} ölüm · ${aic('ico/kilit', '🔓')} ${pr.busts} kurtarma</p>
     ${pr.protected ? '' : `<p class="small muted">Tahmini gereken kurşun: ~${pr.est_bullets} (korumalar ve silah hariç)</p>`}
-    ${pr.spouse ? `<p class="small">💍 ${esc(pr.spouse)} ile evli</p>` : ''}
+    ${pr.spouse ? `<p class="small">${aic('ico/yuzuk', '💍')} ${esc(pr.spouse)} ile evli</p>` : ''}
     ${pr.badges?.length ? `<p class="small">${badgeList(pr.badges)}</p>` : ''}
-    <p class="small muted">🤝 saygı ${pr.respect} · 🏁 yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
+    <p class="small muted">${aic('rehber/aile', '🤝')} saygı ${pr.respect} · ${aic('rehber/araba', '🏁')} yarış formu ${pr.race_form} · katılış ${new Date(pr.joined).toLocaleDateString('tr-TR')}</p>
     ${self ? `<h2>Portreni değiştir</h2><div class="portrait-grid">${Array.from({ length: 8 }, (_, i) =>
         `<button data-avatar="${i + 1}" class="${pr.avatar === i + 1 ? 'on' : ''}">${img(`portraits/p${i + 1}`, '', PORTRAIT_EMOJI[i])}</button>`).join('')}</div>`
     : `<div class="profile-actions">
-      ${pr.friend === 'friends' || S.player.is_admin ? `<button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">✉ Mesaj</button>` : ''}
+      ${pr.friend === 'friends' || S.player.is_admin ? `<button class="btn sm primary" data-act="dmto" data-id="${esc(pr.nick)}">${aic('ico/sohbet', '✉')} Mesaj</button>` : ''}
       ${pr.friend === 'friends' ? `<button class="btn sm" data-act="frremove" data-id="${esc(pr.nick)}">Arkadaşlıktan çıkar</button>`
         : pr.friend === 'sent' ? `<button class="btn sm" disabled>İstek gönderildi</button>`
         : pr.friend === 'received' ? `<button class="btn sm primary" data-act="fraccept" data-id="${esc(pr.nick)}">Arkadaşlığı kabul et</button>`
         : `<button class="btn sm primary" data-act="fradd" data-id="${esc(pr.nick)}">➕ Arkadaş ekle</button>`}
-      <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>🤝 Saygı</button>
+      <button class="btn sm" data-act="respect" data-id="${esc(pr.nick)}" ${dis(!S.player.respect_left)}>${aic('rehber/aile', '🤝')} Saygı</button>
       ${!S.player.spouse && !pr.spouse ? (pr.proposed_to_me
-        ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">💍 Kabul et</button>`
-        : `<button class="btn sm" data-act="propose" data-id="${esc(pr.nick)}">💍 Teklif</button>`) : ''}
-      <button class="btn sm" data-act="${pr.blocked ? 'unblock' : 'block'}" data-id="${esc(pr.nick)}">${pr.blocked ? 'Engeli kaldır' : '🚫 Engelle'}</button>
-      <button class="btn sm" data-act="reportplayer" data-id="${esc(pr.nick)}">⚑ Şikâyet</button>
+        ? `<button class="btn sm" data-act="acceptprop" data-id="${esc(pr.nick)}">${aic('ico/yuzuk', '💍')} Kabul et</button>`
+        : `<button class="btn sm" data-act="propose" data-id="${esc(pr.nick)}">${aic('ico/yuzuk', '💍')} Teklif</button>`) : ''}
+      <button class="btn sm" data-act="${pr.blocked ? 'unblock' : 'block'}" data-id="${esc(pr.nick)}">${pr.blocked ? 'Engeli kaldır' : aic('ico/engel', '🚫') + ' Engelle'}</button>
+      <button class="btn sm" data-act="reportplayer" data-id="${esc(pr.nick)}">${aic('ico/bayrak', '⚑')} Şikâyet</button>
     </div>`}`;
   $('#modal').classList.remove('hidden');
 }
@@ -1323,7 +1356,7 @@ let lastReady = '';
 function tick() {
   if (!S?.player) return;
   const p = S.player;
-  const timed = [p.crime_ready_at, p.car_ready_at, p.travel_ready_at, p.jail_until, p.hospital_until, p.hideout_until,
+  const timed = [...S.crimes.map(c => c.ready_at), p.car_ready_at, p.travel_ready_at, p.jail_until, p.hospital_until, p.hideout_until,
     p.kill_ready_at, p.bust_ready_at, p.practice_ready_at, ...S.searches.map(s => s.ready_at)];
   const ready = timed.map(t => left(t) > 0).join();
   if (ready !== lastReady) {
@@ -1331,7 +1364,8 @@ function tick() {
     if (lastReady && S.searches.some(s => !s.resolved && !left(s.ready_at))) refresh();
     lastReady = ready; renderTab();
   }
-  for (const [id, at, label] of [['t-crime', p.crime_ready_at, 'İş'], ['t-car', p.car_ready_at, 'Araba'], ['t-travel', p.travel_ready_at, 'Vapur']]) {
+  document.querySelectorAll('[data-until]').forEach(el => el.textContent = fmt(left(el.dataset.until)));
+  for (const [id, at, label] of [['t-crime', crimeReadyAt(), 'İş'], ['t-car', p.car_ready_at, 'Araba'], ['t-travel', p.travel_ready_at, 'Vapur']]) {
     const s = left(at), el = $('#' + id);
     el.textContent = s ? `${label} ${fmt(s)}` : `${label} hazır`;
     el.classList.toggle('wait', s > 0);
