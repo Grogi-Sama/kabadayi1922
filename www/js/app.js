@@ -647,7 +647,7 @@ function konakSection() {
   h += `<h2>Ambarın</h2>` + (goods.length ? goods.map(g => card(esc(g.name), `${g.qty} kasa${g.avg_cost ? ` · alışın ${money(g.avg_cost)}` : ''}${g.bought_city ? ` (${esc(cityName(g.bought_city))})` : ''}`, '',
       icon('g_' + g.id, GOOD_EMOJI[g.id]))).join('') : `<p class="muted small">Elinde kaçak mal yok.</p>`);
   h += `<h2>Silahlık</h2>` + card(weapon ? esc(weapon.name) : 'Silahın yok', `${p.bullets} kurşun · ${p.bodyguards}/5 koruma`, '',
-      weapon ? icon('w_' + weapon.id, WEAPON_EMOJI[weapon.id]) : '<span class="icon emoji">🔫</span>');
+      weapon ? icon('w_' + weapon.id, WEAPON_EMOJI[weapon.id]) : icon('w_yumruk', '✊'));
   return h;
 }
 
