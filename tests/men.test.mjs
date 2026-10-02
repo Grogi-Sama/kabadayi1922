@@ -28,7 +28,7 @@ await hire(C, 'zorba', 4);
 assert.match((await hire(C, 'zorba')).msg, /en fazla 5/, 'Çaylak en fazla 5 adam');
 await train(C);
 m = await as(C, `select get_men()`);
-assert.equal(m.attack, 15); assert.equal(m.power, 20);
+assert.equal(m.attack, 10, '5 zorba × 2 hasar'); assert.equal(m.defense, 100, '5 zorba × 20 can'); assert.equal(m.power, 50, 'güç = can × hasar / 4');
 assert.equal((await as(C, `select get_state()`)).player.men, 5);
 ok('adam tutma, eğitim, bekleme, rütbe ve sayı sınırı');
 
@@ -50,7 +50,7 @@ const need = async () => (await q(`select required_bullets(t, s) n from players 
 const n0 = await need();
 await hire(B, 'fedai', 5); await train(B);
 const n1 = await need();
-assert.ok(n1 > n0 * 1.25, `fedailer vurmayı zorlaştırır: ${n0} → ${n1}`);
+assert.ok(n1 > n0 * 1.2, `fedailer vurmayı zorlaştırır: ${n0} → ${n1}`);
 const chance = async () => (await as(A, `select get_state()`)).crimes.find(c => c.id === 'cep').chance;
 const c0 = await chance();
 await hire(A, 'gozcu', 3); await train(A);
@@ -62,11 +62,11 @@ await as(A, `select create_family('Aslanlar')`);
 await as(B, `select create_family('Boğalar')`);
 const spotId = async (name) => (await q(`select id from spots where name = $1`, [name])).rows[0].id;
 const pera = await spotId('Pera Gazinosu'), galata = await spotId('Galata Meyhanesi');
-await hire(A, 'zorba', 12); await train(A);   // 12 zorba = 36 saldırı = 720 kurşun değerinde
+await hire(A, 'zorba', 12); await train(A);   // 12 zorba: 240 can, tur başına 24 hasar; yerel kabadayılar 6 × 12 can
 const before = Number((await q(`select count(*) n from player_men where player_id = $1`, [A])).rows[0].n);
 r = await as(A, `select raid_spot($1, 0)`, [pera]);
-assert.equal(r.success, true, 'sadece adamlarla yerel savunma (600) aşılır');
-assert.ok(r.lost >= 1, 'kazanan da az kayıp verir');
+assert.equal(r.success, true, 'sadece adamlarla yerel kabadayılar dağıtılır');
+assert.ok(r.rounds.length >= 1 && r.enemy_lost >= 3, 'tur raporu ve karşı kayıp');
 const after = Number((await q(`select count(*) n from player_men where player_id = $1`, [A])).rows[0].n);
 assert.equal(before - after, r.lost);
 
@@ -77,7 +77,7 @@ assert.equal((await as(B, `select station_men($1, 'fedai', 20)`, [galata])).ok, 
 assert.equal((await as(A, `select station_men($1, 'zorba', 1)`, [galata])).ok, false, 'başka ailenin mekânına nöbet yok');
 await q(`update families set raid_ready_at = now()`);
 r = await as(A, `select raid_spot($1, 100)`, [galata]);
-assert.equal(r.success, false, 'nöbetçi fedailer (60 savunma = 1200) baskını durdurur');
+assert.equal(r.success, false, 'nöbetteki 20 fedai (300 can, tur başına 80+ hasar) baskını durdurur');
 assert.ok(r.lost >= 1 && r.enemy_lost >= 1, 'iki taraf da kayıp verir');
 m = await as(B, `select get_men()`);
 assert.ok(m.posts[0].count < 20, 'nöbetçiler azaldı');

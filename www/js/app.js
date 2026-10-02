@@ -81,6 +81,7 @@ async function act(name, args, opts = {}) {
   try {
     const r = await api.rpc(name, args);
     if (r.seized?.length) showSeized(r);
+    else if (r.rounds) showBattle(r);
     else toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
     // başarılı işlemden sonra tutar/isim kutuları boşalsın (seçim kutuları kalsın)
     if (r.ok !== false) document.querySelectorAll(`section[data-tab="${tab}"] input, #sheet-body input`).forEach(i => i.value = '');
@@ -93,6 +94,19 @@ async function act(name, args, opts = {}) {
     busy = false;
     document.body.style.cursor = '';
   }
+}
+
+// Baskın: tur tur savaş raporu
+function showBattle(r) {
+  $('#modal-body').innerHTML = `${img(r.success ? 'results/basari' : 'results/kacti', 'seized-art', '')}
+    <div class="logo-sm">${r.success ? 'Mekân senin!' : 'Püskürtüldün'}</div>
+    <p class="small">${richText(r.msg)}</p>
+    <p class="muted small">Senin tarafın: ${r.att_men} adam · Karşı taraf: ${r.def_men} adam${r.wall ? ' + barikat' : ''}</p>
+    <div class="battle">${r.rounds.map(x => `<div class="b-round"><b>${x.round}. tur</b>
+      <span class="${x.att_lost ? 'bad' : ''}">Sen: −${x.att_lost}</span><span class="${x.def_lost ? 'good' : ''}">Onlar: −${x.def_lost}</span>
+      ${x.wall ? '<em>barikat yıkık</em>' : ''}</div>`).join('')}</div>`;
+  $('#modal').classList.remove('hidden');
+  navigator.vibrate?.(r.success ? [40, 60, 40, 60, 120] : [200]);
 }
 
 // Gümrük baskını: el konan mallar ayrı pencerede
@@ -591,16 +605,16 @@ function menSection() {
   const hireWait = left(M.hire_ready_at), full = M.owned >= M.cap;
   let h = `<div class="men-sum">
       <div><b>${M.owned}<small>/${M.cap}</small></b><span>adam</span></div>
-      <div><b>${M.attack}</b><span>saldırı</span></div>
-      <div><b>${M.defense}</b><span>savunma</span></div>
+      <div><b>${M.attack}</b><span>hasar</span></div>
+      <div><b>${M.defense}</b><span>can</span></div>
       <div><b>${Math.round(M.power)}</b><span>güç</span></div></div>
     <p class="muted small">Haftalık maaş: <b>${money(M.wage_week)}</b> (her gün yedide biri kesilir, önce cepten sonra bankadan).
-      Boştaki adamların seni vurmayı <b>%${Math.round(M.guard * 100)}</b> zorlaştırıyor.${M.job ? ` Gözcülerin işlerde <b>+%${Math.round(M.job * 100)}</b> şans veriyor.` : ''}
+      Boştaki adamların (toplam canları) seni vurmayı <b>%${Math.round(M.guard * 100)}</b> zorlaştırıyor.${M.job ? ` Gözcülerin işlerde <b>+%${Math.round(M.job * 100)}</b> şans veriyor.` : ''}
       ${M.family_power != null ? `Ailenin toplam gücü: <b>${Math.round(M.family_power)}</b>.` : ''}</p>`;
   if (hireWait) h += `<p class="small">${ico('kum', '⏳')} Sıradaki adam için: <b>${until(M.hire_ready_at)}</b></p>`;
   h += `<h2>Adam tut</h2>` + M.types.map(t => {
     const locked = S.player.rank < t.min_rank;
-    const sub = `Saldırı ${t.attack} · Savunma ${t.defense} · Maaş ${money(t.wage)}/hafta · Eğitim ${t.train_min}-${t.train_max} dk
+    const sub = `Can ${t.defense} · Hasar ${t.attack} · Maaş ${money(t.wage)}/hafta · Eğitim ${t.train_min}-${t.train_max} dk
       <br>${esc(t.descr)}${t.active + t.posted + t.training ? `<br>Sende: ${t.active} boşta${t.posted ? `, ${t.posted} nöbette` : ''}${t.training ? `, ${t.training} eğitimde` : ''}` : ''}
       ${locked ? `<br>${ico('kilit', '🔒')} ${esc(rankName(t.min_rank))} rütbesi gerekir` : ''}`;
     return `<div class="card ${locked ? 'locked' : ''}">${img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`)}
@@ -640,16 +654,16 @@ function spotPanel(sp) {
       <button class="btn" data-act="fortify" data-id="${sp.id}">Tahkim et</button></div>`;
     if (M) {
       const here = M.posts.find(x => x.spot === sp.id)?.count || 0, free = M.types.filter(t => t.active > 0);
-      h += `<h2>Nöbet</h2><p class="muted small">Buraya bıraktığın adamlar baskında savunmaya katılır (her savunma puanı ${S.settings.men_power_unit} kurşun değerinde).
-        Baskın başarılı olursa nöbetçilerin bir kısmı düşer. Bu mekânda nöbet tutan adamın: <b>${here}</b>.</p>` +
+      h += `<h2>Nöbet</h2><p class="muted small">Buraya bıraktığın adamlar baskında mekânı savunur ve +%25 hasarla vurur.
+        Bıraktığın kurşunlar barikat olur: önce barikat yıkılır, sonra adamlara sıra gelir. Canı biten nöbetçi ölür. Bu mekânda nöbet tutan adamın: <b>${here}</b>.</p>` +
         (free.length ? `<div class="form-row"><select id="f-post-type-${sp.id}">${free.map(t => `<option value="${t.id}">${esc(t.name)} (${t.active} boşta)</option>`).join('')}</select>
           <input id="f-post-n-${sp.id}" type="number" min="1" placeholder="Kaç" inputmode="numeric">
           <button class="btn" data-act="post" data-id="${sp.id}">Bırak</button></div>` : `<p class="muted small">Boşta eğitimli adamın yok; Kahvehane'den tutabilirsin.</p>`) +
         (here ? `<button class="btn sm" data-act="recall" data-id="${sp.id}">Nöbetçileri geri çağır</button>` : '');
     }
   } else if (canRaid && !prot) {
-    if (M?.attack) h += `<p class="muted small">Boştaki adamların baskına katılır: <b>${M.attack}</b> saldırı gücü (≈${Math.round(M.attack * S.settings.men_power_unit)} kurşun).
-      Kurşunsuz da girebilirsin. Kaybedersen adamlarının %20-40'ı, kazanırsan %5-15'i düşer.</p>`;
+    h += `<p class="muted small">Baskın en fazla ${S.settings.battle_rounds ?? 5} tur süren bir çatışmadır. Boştaki adamların (gözcüler hariç) seninle gelir${M?.attack ? `: tur başına <b>${M.attack}</b> hasar, toplam <b>${M.defense}</b> can` : ''}.
+      Her ${S.settings.battle_bullet_div ?? 100} kurşun tur başına +1 hasar ekler. Canının yarısını kaybeden taraf dağılır; canı biten adam ölür.</p>`;
     h += `<div class="form-row"><input id="f-raid-${sp.id}" type="number" min="0" placeholder="Baskın kurşunu" inputmode="numeric">
       <button class="btn danger" data-act="raid" data-id="${sp.id}" ${dis(raidWait || blocked())}>Baskın</button></div>
       ${raidWait ? `<p class="muted small">${ico('kum', '⏳')} Ailenin sıradaki baskını: ${fmt(raidWait)}</p>` : ''}`;

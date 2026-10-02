@@ -753,3 +753,9 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .gender-pick { display: flex; gap: 8px; justify-content: center; margin: 4px 0 10px; }
 .gender-pick .btn { min-width: 110px; }
 .tile .t-ic .ico { width: 24px; height: 24px; }
+
+/* 023: savaş raporu */
+.battle { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.b-round { display: grid; grid-template-columns: 52px 1fr 1fr auto; gap: 6px; align-items: center; font-size: 13px;
+  padding: 6px 8px; border-radius: 8px; background: var(--panel-2); border: 1px solid #4a3a26; }
+.b-round .bad { color: #e07a6e; } .b-round .good { color: #9fd49a; } .b-round em { font-size: 11px; color: var(--muted); }

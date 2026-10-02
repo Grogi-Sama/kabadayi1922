@@ -53,12 +53,12 @@ ok('haraç: saatlik gelir, 24 sa tavanı');
 // ─── Rakip baskını: savunma + çevrimiçi savunucu bonusu
 await db.query(`update spots set protected_until = now() where id = $1`, [pera]);
 await db.exec(`update families set raid_ready_at = now()`);
-// A ve A2 İstanbul'da çevrimiçi: savunma 750 * (1 + 0.15*2) = 975
-assert.equal((await as(B, `select raid_spot($1, 900)`, [pera])).success, false, 'savunucular varken 900 yetmez');
+// 023: barikat canı 750/10 * (1 + 0.15*2) = 97,5; yarısını kırmak 5 turda ~975 kurşun ister
+assert.equal((await as(B, `select raid_spot($1, 800)`, [pera])).success, false, 'savunucular varken 800 yetmez');
 const left = (await as(A, `select get_spots()`)).spots.find(s => s.id === pera).defense;
-assert.equal(left, 750 - 450, 'başarısız baskın savunmayı aşındırır');
+assert.equal(left, 750 - 400, 'başarısız baskın savunmayı aşındırır');
 await db.exec(`update families set raid_ready_at = now()`);
-assert.equal((await as(B, `select raid_spot($1, 500)`, [pera])).success, true, 'aşınmış savunma düşer');
+assert.equal((await as(B, `select raid_spot($1, 600)`, [pera])).success, true, 'aşınmış savunma düşer');
 assert.equal((await as(A, `select get_spots()`)).spots.find(s => s.id === pera).owner, 'Boğalar');
 const famA = await as(A, `select get_family()`);
 assert.ok(famA.messages.some(m => /elimizden çıktı/.test(m.text)), 'eski sahibe haber gider');
