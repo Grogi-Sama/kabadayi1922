@@ -790,7 +790,7 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .lock-ic { position: absolute; right: 2px; bottom: 2px; }
 .lock-ic .ico { width: 18px; height: 18px; }
 .job .body .btn.boost-btn { width: auto; align-self: center; padding: 3px 18px; font-size: 13px; margin-top: 6px; min-height: 0; }
-.jail[data-act] { cursor: pointer; }
+.jail[data-open] { cursor: pointer; }
 .toast.out { opacity: 0; transform: translateY(6px); }
 
 /* 027: ticaret puanı */

@@ -1596,8 +1596,10 @@ function tick() {
   }
   const j = left(p.jail_until), h = left(p.hospital_until), hid = left(p.hideout_until);
   $('#jail').classList.toggle('hidden', !j && !h && !hid);
-  if (j) { $('#jail').dataset.act = 'boost'; $('#jail').dataset.id = 'jail'; } else delete $('#jail').dataset.act;   // dokununca reklamla kısalt
-  if (j) $('#jail').textContent = `⛓ Hapistesin — ${fmt(j)}  ⚡`;
+  // şeride dokununca ilgili bina açılır (Karakol'da reklamla süreyi kısaltma da var)
+  const where = j ? 'karakol' : h ? 'hastane' : hid ? 'siginak' : null;
+  if (where) $('#jail').dataset.open = where; else delete $('#jail').dataset.open;
+  if (j) $('#jail').textContent = `⛓ Hapistesin — ${fmt(j)}`;
   else if (h) $('#jail').textContent = `🏥 Hastanedesin — ${fmt(h)}`;
   else if (hid) $('#jail').textContent = `🕳 Sığınaktasın — ${fmt(hid)}`;
 }
