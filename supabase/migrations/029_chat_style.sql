@@ -90,5 +90,18 @@ begin
     from players where id = auth.uid()));
 end $$;
 
+-- Konak'tan adam dağıtma (eski adı "yolla")
+create or replace function dismiss_man(p_type text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare p players; mid bigint; nm text;
+begin
+  p := me_for_update();
+  select m.id, t.name into mid, nm from player_men m join man_types t on t.id = m.type_id
+   where m.player_id = p.id and m.type_id = p_type order by m.spot_id is not null, m.ready_at desc limit 1;
+  if mid is null then return fail('Bu türden adamın yok.'); end if;
+  delete from player_men where id = mid;
+  return done('Bir ' || nm || ' dağıtıldı. Maaşı artık ödenmeyecek.');
+end $$;
+
 insert into api_rpcs values ('set_chat_style(text, text)') on conflict do nothing;
 select apply_grants();

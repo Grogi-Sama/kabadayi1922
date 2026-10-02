@@ -643,9 +643,10 @@ function konakSection() {
     : `<p class="muted small">Bekârsın. Arkadaşın olan karşı cinsten birine profilinden evlenme teklif edebilirsin.</p>`);
   // Adamlar
   if (M) {
-    h += `<h2>Adamların</h2>` + (M.owned ? M.types.filter(t => t.active + t.posted + t.training).map(t =>
-      card(esc(t.name), `${t.active} boşta${t.posted ? ` · ${t.posted} nöbette` : ''}${t.training ? ` · ${t.training} eğitimde` : ''} · Can ${t.defense} · Hasar ${t.attack}`,
-        '', img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`))).join('')
+    h += `<h2>Adamların</h2>` + (M.owned ? `<p class="muted small">Bir adamı dağıtmak için üstüne dokun.</p>` + M.types.filter(t => t.active + t.posted + t.training).map(t =>
+      `<div class="card clickable" data-act="fireman" data-id="${t.id}" data-name="${esc(t.name)}">${img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`)}
+        <div class="grow"><div class="title">${esc(t.name)}</div><div class="muted small">${t.active} boşta${t.posted ? ` · ${t.posted} nöbette` : ''}${t.training ? ` · ${t.training} eğitimde` : ''} · Can ${t.defense} · Hasar ${t.attack}</div></div>
+        <span class="muted">›</span></div>`).join('')
       + (M.training.length ? `<p class="muted small">Eğitimi bitecekler: ${M.training.map(x => `${esc(M.types.find(t => t.id === x.type).name)} ${until(x.ready_at)}`).join(' · ')}</p>` : '')
       + `<p class="muted small">Haftalık maaş: <b>${money(M.wage_week)}</b>.</p>`
       : `<p class="muted small">Henüz adamın yok. Kahvehane'den tutabilirsin.</p>`);
@@ -761,8 +762,7 @@ function menSection() {
       ${locked ? `<br>${ico('kilit', '🔒')} ${esc(rankName(t.min_rank))} rütbesi gerekir` : ''}`;
     return `<div class="card ${locked ? 'locked' : ''}">${img('men/' + t.id, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.id]}</span>`)}
       <div class="grow"><div class="title">${esc(t.name)} · ${money(t.price)}</div><div class="muted small">${sub}</div></div>
-      <div class="market-actions"><button class="btn sm primary" data-act="hireman" data-id="${t.id}" ${dis(locked || full || hireWait || blocked() || S.player.cash < t.price)}>Tut</button>
-      ${t.active + t.posted + t.training ? `<button class="btn sm" data-act="fireman" data-id="${t.id}">Yolla</button>` : ''}</div></div>`;
+      <div class="market-actions"><button class="btn sm primary" data-act="hireman" data-id="${t.id}" ${dis(locked || full || hireWait || blocked() || S.player.cash < t.price)}>Tut</button></div></div>`;
   }).join('');
   if (M.training.length) h += `<h2>Eğitimde ${boostBtn('men')}</h2>` + M.training.map(t => card(esc(M.types.find(x => x.id === t.type).name),
     `Katılmasına ${until(t.ready_at)}`, '', img('men/' + t.type, 'icon', `<span class="icon emoji">${MAN_EMOJI[t.type]}</span>`))).join('');
@@ -1708,7 +1708,9 @@ document.addEventListener('click', async (e) => {
     case 'post':       return act('station_men', { p_spot: +id, p_type: val('f-post-type-' + id), p_qty: num('f-post-n-' + id) });
     case 'recall':     return act('recall_men', { p_spot: +id });
     case 'hireman':    return act('hire_man', { p_type: id });
-    case 'fireman':    return confirm('Bu adamı yollayalım mı? Parası geri gelmez.') && act('dismiss_man', { p_type: id });
+    case 'fireman':    return (await ask('Adamı dağıt', `Bir <b>${esc(b.dataset.name)}</b> dağıtılsın mı? Tutarken ödediğin para geri gelmez,
+                         ama maaşı da artık ödenmez. Önce boştaki adamlardan biri gider.`, 'Dağıt',
+                         `<div class="ask-art">${img('men/' + id, 'shop-art', '')}</div>`)) && act('dismiss_man', { p_type: id });
     case 'fortify':    return num('f-fort-' + id) > 0 && act('fortify_spot', { p_spot: +id, p_bullets: num('f-fort-' + id) });
     // pazar
     case 'listbullets': return num('f-sell-bullets') > 0 && num('f-sell-bprice') > 0 &&
