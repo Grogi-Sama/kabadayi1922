@@ -134,13 +134,16 @@ function showSeized(r) {
   navigator.vibrate?.([200]);
 }
 
-let toastTimer;
+// Bildirimler üst üste dizilir: en yenisi altta, en fazla 3 tane; her biri kendi süresinde kaybolur, dokununca kapanır
 function toast(msg, kind, art) {
-  const t = $('#toast');
-  t.innerHTML = (art && hasAsset(art) ? `<img src="${assetUrl(art)}" alt="">` : '') + `<span>${richText(msg)}</span>`;
+  const box = $('#toast'), t = document.createElement('div');
   t.className = 'toast ' + (kind || '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add('hidden'), art ? 4200 : 3200);
+  t.innerHTML = (art && hasAsset(art) ? `<img src="${assetUrl(art)}" alt="">` : '') + `<span>${richText(msg)}</span>`;
+  const close = () => { t.classList.add('out'); setTimeout(() => t.remove(), 200); };
+  t.onclick = close;
+  box.append(t);
+  while (box.children.length > 3) box.firstElementChild.remove();
+  setTimeout(close, art ? 4200 : 3200);
 }
 
 // ─────────────── Görsel yardımcılar ───────────────
@@ -895,8 +898,7 @@ function crimeTab() {
           : pctBar(pct, `%${pct} şans`)}
         ${locked ? '' : `<button class="btn sm primary" data-act="crime" data-id="${c.id}" ${dis(waiting(c.ready_at))}>${
           waiting(c.ready_at) && !blocked() ? ico('kum', '⏳') + ' ' + until(c.ready_at) : 'Yap'}</button>
-          ${left(c.ready_at) > 5 && !blocked() ? boostBtn('crime:' + c.id) : ''}
-          <div class="muted small cd-note">Bekleme ${fmt(c.cooldown_s)}</div>`}</div>
+          ${left(c.ready_at) > 5 && !blocked() ? boostBtn('crime:' + c.id) : ''}`}</div>
     </div>`;
   }).join('') + `</div>` + crewSection();
 }

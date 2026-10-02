@@ -385,9 +385,13 @@ nav button[data-badge]:not([data-badge=""])::after {
 .sheet-head .title { flex: 1; font: 20px var(--display); color: var(--gold); letter-spacing: 1px; }
 
 /* ─── Bildirim ─── */
-.toast {
+.toast-stack {
   position: fixed; left: 16px; right: 16px; bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); z-index: 20;
-  display: flex; align-items: center; gap: 10px; max-width: 520px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 6px; max-width: 520px; margin: 0 auto; pointer-events: none;
+}
+.toast {
+  pointer-events: auto; cursor: pointer; transition: opacity .2s, transform .2s;
+  display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 10px; background: #221a12; border: 1px solid var(--gold);
   box-shadow: 0 8px 24px rgba(0,0,0,.6); animation: pop .2s ease-out;
 }
@@ -787,3 +791,4 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .lock-ic .ico { width: 18px; height: 18px; }
 .job .body .btn.boost-btn { width: auto; align-self: center; padding: 3px 18px; font-size: 13px; margin-top: 6px; min-height: 0; }
 .jail[data-act] { cursor: pointer; }
+.toast.out { opacity: 0; transform: translateY(6px); }
