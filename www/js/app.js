@@ -420,6 +420,7 @@ function jailSection() {
   if (jailLeft) {
     h += card('Firar et', `%15 şans · kalan hakkın: ${p.self_bust_left}`,
       `<button class="btn sm primary" data-act="selfbust" ${dis(!p.self_bust_left)}>Dene</button>`);
+    h += card('Süreyi kısalt', 'Reklam izle, kalan hapis süren yarıya insin.', boostBtn('jail'));
   }
   const others = extra.jail.filter(j => j.nick !== p.nick);
   h += `<h2>Mahkûmlar</h2>` + (others.length ? others.map(j => card(nickLink(j.nick), `${esc(rankName(j.rank))} · ${fmt(j.secs)} kaldı`,
@@ -702,9 +703,10 @@ async function openBoost(target) {
     <p class="small">Kalan bekleme süresi yarıya iner. Bugün kalan hakkın: <b>${X.today_left}</b>.</p>
     <div class="menu-list boost-list">
       ${opt('ad', 'Reklam izle', X.ads_enabled ? `bugün ${X.ad_left} hak` : 'çok yakında', X.ads_enabled && X.ad_left > 0)}
+      ${target === 'jail' ? `</div><p class="muted small">Hapis süresi sadece reklam izleyerek kısalır; jeton ve kulüp hakkı burada geçmez.</p>` : `
       ${X.club_until ? opt('club', 'Kulüp hakkı', `bugün ${X.club_left} hak`, X.club_left > 0) : ''}
       ${opt('token', 'Jeton kullan', `${X.tokens} jetonun var`, X.tokens > 0)}
-      <button class="btn" data-act="shop">Jeton al / Kulübe katıl</button></div>`;
+      <button class="btn" data-act="shop">Jeton al / Kulübe katıl</button></div>`}`;
   $('#modal').classList.remove('hidden');
 }
 const boostBtn = (target) => `<button class="btn sm boost-btn" data-act="boost" data-id="${target}" title="Hızlandır">⚡</button>`;
@@ -1581,7 +1583,8 @@ function tick() {
   }
   const j = left(p.jail_until), h = left(p.hospital_until), hid = left(p.hideout_until);
   $('#jail').classList.toggle('hidden', !j && !h && !hid);
-  if (j) $('#jail').textContent = `⛓ Hapistesin — ${fmt(j)}`;
+  if (j) { $('#jail').dataset.act = 'boost'; $('#jail').dataset.id = 'jail'; } else delete $('#jail').dataset.act;   // dokununca reklamla kısalt
+  if (j) $('#jail').textContent = `⛓ Hapistesin — ${fmt(j)}  ⚡`;
   else if (h) $('#jail').textContent = `🏥 Hastanedesin — ${fmt(h)}`;
   else if (hid) $('#jail').textContent = `🕳 Sığınaktasın — ${fmt(hid)}`;
 }

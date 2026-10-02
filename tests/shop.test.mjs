@@ -64,4 +64,16 @@ await db.query(`insert into boost_log values ($1, (now() at time zone 'Europe/Is
   on conflict (player_id, day, via) do update set n = 20`, [A]);
 assert.match((await as(A, `select use_boost('crime:cep', 'token')`)).msg, /Bugünlük/);
 ok('kulüp hediyesi, sohbet/profil rozeti, günlük tavan');
+
+// ─── 026: hapis sadece reklamla hızlanır
+await db.query(`delete from boost_log where player_id = $1`, [A]);
+await db.query(`update players set jail_until = now() + interval '100 seconds' where id = $1`, [A]);
+assert.match((await as(A, `select use_boost('jail', 'token')`)).msg, /sadece reklam/);
+assert.match((await as(A, `select use_boost('jail', 'club')`)).msg, /sadece reklam/);
+await db.exec(`update game_settings set value = 1 where key = 'ads_enabled'`);
+assert.equal((await as(A, `select use_boost('jail', 'ad')`)).ok, true);
+const jl = await db.query(`select extract(epoch from jail_until - now()) s from players where id = $1`, [A]);
+assert.ok(jl.rows[0].s < 52 && jl.rows[0].s > 45, `100 sn → ~50 sn (${jl.rows[0].s})`);
+await db.exec(`update game_settings set value = 0 where key = 'ads_enabled'`);
+ok('hapis: sadece reklamla yarıya iner');
 done('shop');
