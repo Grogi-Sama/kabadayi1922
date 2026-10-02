@@ -932,7 +932,7 @@ function chatMsg(m, avatar, kind) {
   const mine = m.mine ?? m.nick === S.player.nick;
   const tap = mine ? '' : ` data-mnick="${esc(m.nick)}" data-mkind="${kind}" data-mid="${m.id}"`;
   return `<div class="msg ${mine ? 'me' : 'tap'}"${tap}>${portrait(avatar || 1, 'avatar xs')}<div class="bubble">
-    <b>${esc(m.nick)}${m.at ? ` <time>${hm(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
+    <b>${esc(m.nick)}${m.at ? ` <time>${stamp(m.at)}</time>` : ''}</b> ${esc(m.text)}</div></div>`;
 }
 
 // Mesaj/oyuncu menüsü: profil, şikâyet, engelle
@@ -1012,7 +1012,7 @@ function messagesSection() {
   if (extra.conv) {
     return `<h2>${esc(extra.conv)}</h2>
       <p><button class="btn sm" data-act="closeconv">← Mesajlar</button></p>
-      <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)} <time>${hm(m.at)}</time>${!m.mine
+      <div class="chat" id="dm">${extra.convMsgs.map(m => `<div class="${m.mine ? 'me' : ''}">${esc(m.text)} <time>${stamp(m.at)}</time>${!m.mine
         ? ` <a class="flag" data-report="message" data-id="${m.id}" title="Şikâyet et">⚑</a>` : ''}</div>`).join('') || '<div class="muted small">Henüz mesaj yok.</div>'}</div>
       <form class="form-row" id="dm-form"><input id="f-dm" maxlength="500" placeholder="Mesaj yaz…" autocomplete="off">
         <button class="btn primary">Gönder</button></form>`;
@@ -1092,6 +1092,8 @@ const EVENTS = {
 };
 const evActive = (e) => new Date(e.starts) <= Date.now() + clockOffset;
 const hm = (d) => new Date(d).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+// Sohbet damgası: tarih + saat ("2 Eki 14:05")
+const stamp = (d) => `${new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${hm(d)}`;
 
 // Haritada: bu şehirde süren ya da birazdan başlayacak etkinlikler
 function eventStrip() {
