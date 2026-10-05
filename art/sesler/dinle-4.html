@@ -1,0 +1,30 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vapur sesi · Kabadayı</title>
+<style>body{background:#15110d;color:#efe3c8;font:16px system-ui;max-width:760px;margin:0 auto;padding:16px}
+h1,h2{color:#e6c476} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+button{padding:12px 6px;border-radius:8px;border:1px solid #8a6a26;background:#2a2119;color:#efe3c8;font-size:15px;cursor:pointer}
+button.on{background:#e6c476;color:#1b140c} p{color:#cdbb98}</style></head><body>
+<h1>Vapur yolculuğu sesi</h1>
+<p>Sefere çıkınca çalacak. Oyunda nasıl duyulacaksa öyle kısaltıldı (en fazla 3 sn, sonu yumuşak kısılır). Birini seç (ör. V3). Lisans: CC0 (BigSoundBank "Ocean Liner Horn", OpenGameArt "Steam whistle").</p>
+<div class="grid">
+<button data-p='[["vapur/horn1.mp3",0,3]]'>V1 gemi düdüğü (kalın)</button>
+<button data-p='[["vapur/horn2.mp3",0,3]]'>V2 gemi düdüğü 2</button>
+<button data-p='[["vapur/whistle1.wav",0,2.3]]'>V3 buhar düdüğü</button>
+<button data-p='[["vapur/whistle2.wav",0,2.1]]'>V4 buhar düdüğü 2</button>
+<button data-p='[["vapur/horn1.mp3",0,3],["vapur/waves.mp3",0,3,0.5]]'>V5 gemi düdüğü + dalga</button>
+<button data-p='[["vapur/whistle1.wav",0,2.3],["vapur/waves.mp3",0,3,0.5]]'>V6 buhar düdüğü + dalga</button>
+<button data-p='[["vapur/waves.mp3",0,3,0.8]]'>V7 sadece dalga</button>
+</div>
+<script>const ctx = new AudioContext(), cache = {}; let cur = [];
+const load = s => cache[s] ??= fetch(s).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b));
+document.addEventListener('click', async e => { const b = e.target.closest('button[data-p]'); if (!b) return;
+  ctx.resume(); cur.forEach(x => { try { x.stop(); } catch {} }); cur = [];
+  document.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  let end = 0;
+  for (const [src, st, dur, vol = 1] of JSON.parse(b.dataset.p)) {
+    const buf = await load(src), s = ctx.createBufferSource(), g = ctx.createGain(), t = ctx.currentTime;
+    s.buffer = buf; s.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + Math.max(0, dur - 0.8)); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    s.start(t, st, dur); cur.push(s); end = Math.max(end, dur);
+  }
+  setTimeout(() => b.classList.remove('on'), end * 1000); });</script></body></html>

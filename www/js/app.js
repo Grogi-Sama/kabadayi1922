@@ -2020,7 +2020,7 @@ document.addEventListener('click', async (e) => {
     case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
     // kumarhane
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
-    case 'scratch':    sfx.scratch(); return act('scratch_card');
+    case 'scratch':    if (!blocked()) sfx.scratch(); return act('scratch_card');
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
     case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; extra.bets = { ...extra.bets, [b.dataset.game]: id }; return;
     case 'reset':
@@ -2043,18 +2043,20 @@ async function playCasino(b) {
   if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
   busy = true;
   if (a === 'casino') casinoLockUntil = Infinity;
-  // Oyunun sesi hemen; sonuç sesi animasyon bitince
-  const g = a === 'casino' ? b.dataset.game : 'bj';
-  if (a === 'casino') sfx.bet();
-  if (g === 'zar') setTimeout(sfx.dice, 120); else if (g === 'rulet') setTimeout(sfx.roulette, 150); else if (g === 'slot') setTimeout(sfx.slot, 150);
-  else if (a === 'bjstart') { sfx.bet(); sfx.shuffle(); setTimeout(sfx.deal, 700); setTimeout(sfx.deal, 950); } else if (a === 'bjhit') sfx.deal();
+  // Oyunun sesi hemen; sonuç sesi animasyon bitince. Hapiste/hastanede/sığınaktaysa oyun yok: sadece ret sesi
+  const g = a === 'casino' ? b.dataset.game : 'bj', quiet = blocked();
+  if (!quiet) {
+    if (a === 'casino') sfx.bet();
+    if (g === 'zar') setTimeout(sfx.dice, 120); else if (g === 'rulet') setTimeout(sfx.roulette, 150); else if (g === 'slot') setTimeout(sfx.slot, 150);
+    else if (a === 'bjstart') { sfx.bet(); sfx.shuffle(); setTimeout(sfx.deal, 700); setTimeout(sfx.deal, 950); } else if (a === 'bjhit') sfx.deal();
+  }
   const resultDelay = { zar: 800, slot: 1500 }[g] || 0;   // rulet: sonuç sesi hemen
   try {
     const r = a === 'casino' ? await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice })
       : a === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })
       : await api.rpc(a === 'bjhit' ? 'bj_hit' : 'bj_stand');
     if (game && bet) extra.bets = { ...extra.bets, [game]: bet };   // aynı bahisle tekrar oynanabilsin
-    if (!r.ok) { if (!/karıştırıyor/.test(r.msg || '')) toast(r.msg, 'bad'); }   // bekleme mesajı gösterilmez
+    if (!r.ok) { if (!/karıştırıyor/.test(r.msg || '')) { toast(r.msg, 'bad'); sfx.error(); } }   // bekleme mesajı gösterilmez
     else if (a === 'casino') extra.casino = r;
     else {
       if (a === 'bjstart') extra.bjSeen = { d: 0, p: 0 };
