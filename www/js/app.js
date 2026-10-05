@@ -2010,8 +2010,9 @@ async function playCasino(b) {
   busy = true;
   // Oyunun sesi hemen; sonuç sesi animasyon bitince
   const g = a === 'casino' ? b.dataset.game : 'bj';
-  if (g === 'zar') sfx.dice(); else if (g === 'rulet') sfx.roulette(); else if (g === 'slot') sfx.slot();
-  else if (a === 'bjstart') { sfx.chips(); setTimeout(sfx.card, 150); setTimeout(sfx.card, 400); } else if (a === 'bjhit') sfx.card();
+  if (a === 'casino') sfx.bet();
+  if (g === 'zar') setTimeout(sfx.dice, 120); else if (g === 'rulet') setTimeout(sfx.roulette, 150); else if (g === 'slot') setTimeout(sfx.slot, 150);
+  else if (a === 'bjstart') { sfx.bet(); sfx.shuffle(); setTimeout(sfx.deal, 700); setTimeout(sfx.deal, 950); } else if (a === 'bjhit') sfx.deal();
   const resultDelay = { zar: 800, rulet: 2800, slot: 1500 }[g] || 0;
   try {
     const r = a === 'casino' ? await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice })

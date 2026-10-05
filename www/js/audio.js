@@ -25,6 +25,7 @@ function boot() {
   ctx = new AC();
   musicBus = ctx.createGain(); musicBus.gain.value = 0; musicBus.connect(ctx.destination);
   sfxBus = ctx.createGain(); sfxBus.gain.value = cfg.sfxOn ? cfg.sfx : 0; sfxBus.connect(ctx.destination);
+  loadSamples();
   musicBus.gain.setTargetAtTime(cfg.musicOn ? cfg.music : 0, ctx.currentTime, 1.5);   // yavaşça girsin
   startMusic();
 }
@@ -118,6 +119,25 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
   s.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; s.connect(f); f.connect(g); g.connect(sfxBus);
   g.gain.value = vol; s.start(t);
 }
+// ─────────────── Kayıtlı sesler (Kenney "Casino Audio", CC0) ───────────────
+const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
+  'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1'];
+const buffers = {};
+async function loadSamples() {
+  await Promise.all(SAMPLES.map(async (n) => {
+    try { buffers[n] = await ctx.decodeAudioData(await (await fetch(`assets/audio/${n}.wav`)).arrayBuffer()); } catch {}
+  }));
+}
+// Kaydı çal: ses düzeyi, küçük perde oynaması (hep aynı duyulmasın), gecikme, en fazla süre
+function play(name, { vol = 0.8, delay = 0, max, rate } = {}) {
+  if (!ctx || !cfg.sfxOn || !buffers[name]) return;
+  const t = ctx.currentTime + delay, src = ctx.createBufferSource(), g = ctx.createGain();
+  src.buffer = buffers[name]; src.playbackRate.value = rate ?? (0.94 + Math.random() * 0.12);
+  g.gain.value = vol; src.connect(g); g.connect(sfxBus); src.start(t);
+  if (max) { g.gain.setValueAtTime(vol, t + max - 0.05); g.gain.linearRampToValueAtTime(0.0001, t + max); src.stop(t + max + 0.02); }
+}
+const pick = (...names) => names[Math.floor(Math.random() * names.length)];
+
 // Karanlık "kontrbas + tok tel" akoru: başarı ve başarısızlık için (mafya havası: minör, kalın, kısa)
 function stab(freqs, dur, vol = 0.14, cutoff = 900, delayS = 0) {
   if (!ctx || !cfg.sfxOn) return;
@@ -126,10 +146,6 @@ function stab(freqs, dur, vol = 0.14, cutoff = 900, delayS = 0) {
   f.connect(g); g.connect(sfxBus); env(g, t, 0.01, vol, dur);
   freqs.forEach((fr) => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.detune.value = (Math.random() - .5) * 10;
     o.connect(f); o.start(t); o.stop(t + dur + 0.05); });
-}
-function clicks(n, spacingStart, spacingEnd, vol, freq, delayS = 0) {   // ard arda tıkırtılar (yavaşlayarak)
-  let t = delayS;
-  for (let i = 0; i < n; i++) { noise(0.025, vol, freq + Math.random() * 300, t); t += spacingStart + (spacingEnd - spacingStart) * (i / n); }
 }
 
 export const sfx = {
@@ -143,11 +159,14 @@ export const sfx = {
   shot:    () => { noise(0.25, 0.5, 900); tone(120, 0.25, 'sine', 0.2, 50); },
   open:    () => tone(660, 0.08, 'sine', 0.07, 880),                     // panel açılışı
   notify:  () => { tone(523, 0.14, 'sine', 0.08); tone(392, 0.22, 'sine', 0.07, null, 0.12); },
-  // ── Kumarhane
-  dice:    () => { clicks(9, 0.04, 0.11, 0.35, 2600); noise(0.06, 0.4, 1800, 0.62); },          // zar sallanır, masaya düşer
-  roulette:() => { clicks(30, 0.035, 0.16, 0.18, 3200); noise(0.05, 0.3, 2400, 2.6); },          // top döner, yavaşlar, cebe düşer
-  slot:    () => { noise(0.9, 0.12, 500); [0.9, 1.1, 1.3].forEach(d => { noise(0.05, 0.45, 1500, d); tone(180, 0.08, 'square', 0.06, 120, d); }); },
-  card:    () => { noise(0.09, 0.3, 4200); tone(900, 0.04, 'triangle', 0.04, 500, 0.03); },     // kart masaya kayar
-  chips:   () => { [0, 0.05, 0.09].forEach(d => tone(2400 + Math.random() * 600, 0.05, 'triangle', 0.06, null, d)); },
-  scratch: () => { noise(0.5, 0.2, 3500); },
+  // ── Kumarhane (gerçek kayıtlar)
+  dice:    () => { play('dice-shake-1', { vol: 0.7, max: 0.55 }); play('dice-throw-1', { delay: 0.5 }); },   // sallanır, masaya atılır
+  bet:     () => play(pick('chip-lay-1', 'chips-stack-1'), { vol: 0.9 }),                                     // bahis fişi masaya
+  roulette:() => play('chips-handle-1', { vol: 0.6 }),                                                          // fişler masada
+  slot:    () => play('chips-collide-1', { vol: 0.7 }),
+  shuffle: () => play('card-shuffle', { vol: 0.6 }),
+  deal:    () => play('card-slide-1', { vol: 0.8 }),                                                            // kart dağıtılır
+  card:    () => play(pick('card-place-1', 'card-place-2'), { vol: 0.85 }),                                    // kart masaya konur
+  chips:   () => { play('chips-collide-1', { vol: 0.8 }); play('chips-stack-1', { vol: 0.8, delay: 0.18 }); }, // kazanılan fişler toplanır
+  scratch: () => play('card-slide-1', { vol: 0.7, rate: 0.7 }),
 };
