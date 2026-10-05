@@ -180,7 +180,7 @@ function showAlerts(texts) {
   if (!hits.length || !$('#modal').classList.contains('hidden')) return texts;   // başka pencere açıksa bildirim olarak kalsın
   const [main, a] = hits.reduce((x, y) => y[1].rank > x[1].rank ? y : x);
   const more = texts.filter(t => t !== main && (ALERTS.some(x => x.re.test(t)) || SIDE.test(t)));
-  $('#modal-body').innerHTML = `${img(a.art, 'seized-art', (a.alt && img(a.alt, 'seized-art', '')) || `<div class="seized-art emoji">${a.emoji}</div>`)}
+  $('#modal-body').innerHTML = `${img(a.art, 'seized-art wide', (a.alt && img(a.alt, 'seized-art', '')) || `<div class="seized-art emoji">${a.emoji}</div>`)}
     <div class="logo-sm">${a.title}</div>
     <p class="small">${richText(main)}</p>
     ${more.map(t => `<p class="small">${richText(t)}</p>`).join('')}

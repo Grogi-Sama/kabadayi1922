@@ -898,3 +898,4 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.8)); transition: transform .15s; }
 .liman-btn:active .liman-img { transform: scale(.94); }
 .settings-btn .ico { width: 20px; height: 20px; vertical-align: -4px; }
+img.seized-art.wide { max-width: 100%; }   /* geniş uyarı görselleri (infaz, baskın) */
