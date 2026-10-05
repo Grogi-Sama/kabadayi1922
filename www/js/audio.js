@@ -122,8 +122,8 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
 // ─────────────── Kayıtlı sesler (Kenney "Casino Audio", CC0) ───────────────
 const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
   'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose',   // jingle: Kenney Music Jingles SAX10 / SAX07
-  'job-coins', 'job-punch', 'job-jailed', 'jail-escape',
-  'ui-click'];   // ui-click: Kenney UI Audio click3 (aile başvurusu, adam tutma)   // iş sonucu: Kenney RPG Audio + Impact Sounds
+  'job-coins', 'job-punch', 'job-jailed', 'jail-escape',   // iş sonucu: Kenney RPG Audio + Impact Sounds
+  'ui-click'];   // ui-click: Kenney UI Audio click3 (aile başvurusu, adam tutma)
 const buffers = {};
 async function loadSamples() {
   await Promise.all(SAMPLES.map(async (n) => {
