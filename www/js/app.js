@@ -161,6 +161,35 @@ function showSeized(r) {
   navigator.vibrate?.([200]);
 }
 
+// Başına gelenler (oyunda olmadığın an da olabilir): vurulma, infaz, mekâna baskın → gümrükteki gibi ayrı pencere.
+// Olay metinlerinden tanınır (002 shoot, 021 adam kaybı, 023 baskın duyuruları).
+const ALERTS = [
+  { re: /seni \d+ kurşunla indirdi/, rank: 4, art: 'results/infaz', alt: 'results/vuruldu', emoji: '⚰️', title: 'İnfaz edildin!',
+    foot: 'Hastanedesin; iyileşince sokaklara dönersin. Fedailer ve korumalar seni vurmayı zorlaştırır.' },
+  { re: /elimizden çıktı/, rank: 3, art: 'results/mekan_dustu', emoji: '🏚', title: 'Mekânımız düştü!',
+    foot: 'Mekân yeni sahibinde bir süre korunur; sonra geri almak için baskın yapabilirsiniz.' },
+  { re: /sana kurşun yağdırdı/, rank: 2, art: 'results/yaralandi', alt: 'results/vuruldu', emoji: '🩸', title: 'Saldırıya uğradın!',
+    foot: "Canın Hastane'de dolar. Boştaki adamların seni vurmayı zorlaştırır." },
+  { re: /baskın yaptı ama püskürtüldü/, rank: 1, art: 'results/baskin_puskurtuldu', emoji: '🛡', title: 'Mekânımıza baskın!',
+    foot: 'Saldırı püskürtüldü ama savunma kurşunu azaldı; mekânı yeniden tahkim et.' },
+];
+const SIDE = /Vurulduğun çatışmada \d+ adamını kaybettin/;   // vurulmayla birlikte gelen ek bilgi
+// Tanınan olayları pencerede gösterir, kalanları döndürür (toast olarak gösterilsin)
+function showAlerts(texts) {
+  const hits = texts.map(t => [t, ALERTS.find(a => a.re.test(t))]).filter(([, a]) => a);
+  if (!hits.length || !$('#modal').classList.contains('hidden')) return texts;   // başka pencere açıksa bildirim olarak kalsın
+  const [main, a] = hits.reduce((x, y) => y[1].rank > x[1].rank ? y : x);
+  const more = texts.filter(t => t !== main && (ALERTS.some(x => x.re.test(t)) || SIDE.test(t)));
+  $('#modal-body').innerHTML = `${img(a.art, 'seized-art', (a.alt && img(a.alt, 'seized-art', '')) || `<div class="seized-art emoji">${a.emoji}</div>`)}
+    <div class="logo-sm">${a.title}</div>
+    <p class="small">${richText(main)}</p>
+    ${more.map(t => `<p class="small">${richText(t)}</p>`).join('')}
+    <p class="muted small">${a.foot}</p>`;
+  $('#modal').classList.remove('hidden');
+  sfx.shot(); navigator.vibrate?.([200, 100, 200]);
+  return texts.filter(t => t !== main && !more.includes(t));
+}
+
 // Bildirimler üst üste dizilir: en yenisi altta, en fazla 3 tane; her biri kendi süresinde kaybolur, dokununca kapanır
 function toast(msg, kind, art) {
   const box = $('#toast'), t = document.createElement('div');
@@ -2200,7 +2229,9 @@ async function poll() {
       setSeen(ch, heads[ch]); try { localStorage.setItem('kb_init_' + seenKey(ch), 1); } catch {}
     }
     if (n.unread !== S.player.unread) { S.player.unread = n.unread; if (tab === 'chat' && chatCh === 'dm') refresh(); }
-    for (const e of [...n.events, ...n.family_news]) toast('📣 ' + e.text, 'good');
+    const rest = showAlerts([...n.events, ...n.family_news].map(e => e.text));
+    for (const t of rest) toast('📣 ' + t, 'good');
+    if (n.events.length + n.family_news.length > rest.length) refresh();   // can, para, mekân değişti
     if (n.events.length || n.family_news.length) sfx.notify();
     pollSince = n.now;
     updateBadges();

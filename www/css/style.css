@@ -743,7 +743,7 @@ html { touch-action: manipulation; }
 #modal-body p .ico { width: 18px; height: 18px; vertical-align: -4px; }
 /* Gümrük penceresi */
 .seized-art { display: block; width: 96px; height: 96px; object-fit: contain; margin: 0 auto 6px; font-size: 64px; text-align: center; }
-img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; border-radius: 10px; border: 2px solid #8a6a26; }
+img.seized-art[src*='results/'] { width: 100%; max-width: 280px; height: auto; border-radius: 10px; border: 2px solid #8a6a26; }
 .seized .card { margin-bottom: 6px; }
 
 /* 021: Kahvehane — adam özeti */

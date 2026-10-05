@@ -112,6 +112,10 @@ Ortak kalıp: *"Wide cinematic scene: [SAHNE]."*
 | `kacti.png` | a gangster running away down a foggy alley, police whistles far behind |
 | `vuruldu.png` | a fedora hat lying on wet cobblestones, a single rose, dramatic shadow (no blood, no body) |
 | `yaris.png` | two 1920s cars racing side by side along a coastal road, dust clouds |
+| `infaz.png` | (2026-10-05) a fedora on wet cobblestones beside an overturned chair under a lone streetlamp, scattered bullet casings, long dramatic shadow (no blood, no body) |
+| `yaralandi.png` | (2026-10-05) a wounded gangster leaning against an alley wall, hand pressed to his side, hat fallen, silhouette of a shooter running off at the end of the alley (no blood) |
+| `mekan_dustu.png` | (2026-10-05) a gazino at night with its door kicked in, broken sign lights, rival gangsters in silhouette standing in the doorway, overturned card table inside |
+| `baskin_puskurtuldu.png` | (2026-10-05) defenders behind sandbags and overturned tables in front of a gazino door, muzzle flashes, attackers retreating into the dark street |
 
 ## 4) Tek parçalar — `www/assets/ui/` · 2 adet
 | Dosya | Boyut | Sahne |

@@ -11,7 +11,7 @@ const DECOR = ['sarmasik', 'afis', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
 const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile', 'defter', 'can', 'kursun', 'banka',
   'kilit', 'kum', 'uye', 'fabrika', 'mekan', 'sohbet', 'kalkan', 'tabut', 'yuzuk', 'engel', 'bayrak', 'saygi',
   'rehber', 'magaza', 'duyuru', 'liman', 'takvim', 'oneri', 'ayarlar'];
-const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris', 'gumruk'];
+const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris', 'gumruk', 'infaz', 'yaralandi', 'mekan_dustu', 'baskin_puskurtuldu'];
 
 export const ALL = [
   ...CITIES.map(c => `bg/${c}`), ...CITIES.map(c => `harbor/${c}`), 'tex/kaldirim', 'tex/duvar', ...DECOR.map(d => `decor/${d}`), ...ICONS.map(i => `ico/${i}`), ...Array.from({ length: 16 }, (_, i) => `crests/c${i + 1}`),
