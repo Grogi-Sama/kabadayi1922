@@ -4,6 +4,8 @@ import { probeAssets, img, hasAsset, assetUrl, ico } from './assets.js';
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 import { money, moneyText, richText } from './locale.js';
+import { sfx, setAudio, audioSettings } from './audio.js';
+import { pushState, enablePush, disablePush, registerSW } from './push.js';
 
 let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1, pickedGender = null;
 // Portreler: 1–4 erkek, 5–8 kadın
@@ -90,6 +92,8 @@ async function act(name, args, opts = {}) {
   document.body.style.cursor = 'progress';
   try {
     const r = await api.rpc(name, args);
+    if (name === 'shoot' || name === 'raid_spot') sfx.shot();
+    setTimeout(() => r.ok === false || r.success === false ? sfx.fail() : /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success(), name === 'shoot' || name === 'raid_spot' ? 300 : 0);
     if (r.seized?.length) showSeized(r);
     else if (r.rounds) showBattle(r);
     else toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
@@ -120,7 +124,8 @@ function showBattle(r) {
   navigator.vibrate?.(r.success ? [40, 60, 40, 60, 120] : [200]);
 }
 
-// Onay penceresi: ask('Başlık', 'metin', 'Evet') → true/false
+// Onay penceresi: ask('Başlık', 'metin', 'Evet') → true/false (tarayıcının confirm'ü bazı telefonlarda açılmıyor)
+const askYes = (text) => ask('Emin misin?', esc(text), 'Evet');
 let askResolve = null;
 function ask(title, text, okLabel = 'Evet', art = '') {
   return new Promise(res => {
@@ -416,6 +421,7 @@ function panelHelp(id) {
 const helpBox = (id) => { const t = panelHelp(id); return t ? `<div class="help">${t}</div>` : ''; };
 
 async function openPanel(id) {
+  sfx.open();
   panel = id;
   renderSheet();          // hemen aç, veriyi sonra doldur
   await loadPanelData();
@@ -692,6 +698,33 @@ function konakSection() {
       weapon ? icon('w_' + weapon.id, WEAPON_EMOJI[weapon.id]) : icon('w_yumruk', '✊'));
   return h;
 }
+
+// ═════════════════ AYARLAR ═════════════════
+async function openSettings() {
+  const a = audioSettings(), ps = await pushState();
+  const slider = (key, on, label) => `<div class="set-row"><label class="set-check"><input type="checkbox" data-aud="${on}" ${a[on] ? 'checked' : ''}> ${label}</label>
+    <input type="range" min="0" max="100" step="5" value="${Math.round(a[key] * 100)}" data-aud="${key}"><span class="muted small" id="aud-${key}">%${Math.round(a[key] * 100)}</span></div>`;
+  $('#modal-body').innerHTML = `<div class="logo-sm">Ayarlar</div>
+    <h2>Ses</h2>${slider('music', 'musicOn', 'Müzik')}${slider('sfx', 'sfxOn', 'Efektler')}
+    <h2>Bildirimler</h2>
+    <p class="muted small">${ps.supported ? (ps.on ? 'Bu cihazda bildirimler açık: işin hazır olunca, mesaj gelince, saldırıya uğrayınca haber verilir.'
+      : ps.denied ? 'Bildirim izni tarayıcı ayarlarından kapatılmış. Açmak için tarayıcı/site ayarlarından izin ver.'
+      : 'Oyun kapalıyken de önemli gelişmelerden haberin olsun.') : ps.reason}</p>
+    ${ps.supported && !ps.denied ? (ps.on ? `<button class="btn" data-act="pushoff">Bildirimleri kapat</button>` : `<button class="btn primary" data-act="pushon">Bildirimleri aç</button>`) : ''}
+    <h2>Yasal</h2>
+    <div class="menu-list"><a class="btn" href="gizlilik.html" target="_blank">Gizlilik Politikası</a>
+      <a class="btn" href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a>
+      <a class="btn" href="kullanim.html" target="_blank">Kullanım Şartları</a></div>`;
+  $('#modal').classList.remove('hidden');
+}
+document.addEventListener('input', (e) => {
+  const k = e.target.dataset?.aud; if (!k || e.target.type !== 'range') return;
+  setAudio({ [k]: e.target.value / 100 }); $('#aud-' + k).textContent = '%' + e.target.value;
+});
+document.addEventListener('change', (e) => {
+  const k = e.target.dataset?.aud; if (!k || e.target.type !== 'checkbox') return;
+  setAudio({ [k]: e.target.checked });
+});
 
 // ═════════════════ HESAP KORUMA ═════════════════
 // Hesap şimdilik bu cihaza bağlı (anonim). E-posta bağlanınca başka cihazdan da aynı karaktere girilir.
@@ -1370,13 +1403,13 @@ function logTab() {
       <span class="muted">›</span></div>`;
 
   if (pl) {
-    h += `<h2>En Büyükler</h2><div class="board">` + pl.top.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
+    h += `<h2>En Güçlüler</h2><div class="board">` + pl.top.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
         <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
         <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))}</div></div>
         <span class="b-kills">☠ ${t.kills}</span></div>`).join('') + `</div>`;
     if (pl.rich?.length) h += `<h2>En Zenginler</h2><div class="board">` + pl.rich.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
         <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
-        <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))} · cep + banka</div></div>
+        <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))}</div></div>
         <span class="b-kills">${money(t.wealth)}</span></div>`).join('') + `</div>`;
     const fams = [...(extra.famRank || [])].sort((a, b) => b.power - a.power || b.members - a.members).slice(0, 5);
     if (fams.length) h += `<h2>En Güçlü Aileler</h2><div class="board">` + fams.map((f, i) => `<div class="b-row ${f.name === p.family ? 'me' : ''}">
@@ -1392,6 +1425,7 @@ function logTab() {
         `<div class="on-chip">${portrait(o.avatar || 1, 'avatar sm')}${nickLink(o.nick)}</div>`).join('') || '<span class="muted small">Kimse yok.</span>') + `</div>`;
   }
   h += `<h2>Olaylar</h2>` + eventsSection();
+  h += `<button class="btn settings-btn" data-act="settings">⚙ Ayarlar</button>`;
   if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
   return h;
@@ -1754,6 +1788,7 @@ document.addEventListener('click', async (e) => {
 
   const nav = e.target.closest('[data-go]');
   if (nav) {
+    if (nav.dataset.go !== tab) sfx.tab();
     tab = nav.dataset.go;
     closePanel();
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b === nav));
@@ -1767,13 +1802,14 @@ document.addEventListener('click', async (e) => {
 
   const b = e.target.closest('[data-act]');
   if (!b || b.disabled) return;
+  if (b.tagName === 'BUTTON') sfx.tap();
   const id = b.dataset.id, n = +b.dataset.n;
   switch (b.dataset.act) {
     // işler, araba, ticaret
     case 'crime':      return act('do_crime', { p_crime: id }, { art: true });
     case 'car':        return act('steal_car', {}, { art: true });
     case 'sell':       return act('sell_car', { p_car_id: +id });
-    case 'crush':      return confirm('Araba hurdaya gitsin mi?') && act('crush_car', { p_car_id: +id });
+    case 'crush':      return await askYes('Araba hurdaya gitsin mi?') && act('crush_car', { p_car_id: +id });
     case 'buy':        return act('trade', { p_good: id, p_qty: n });
     case 'sellg':      return act('trade', { p_good: id, p_qty: -n });
     case 'travel':     closePanel(); return act('travel', { p_city: id });
@@ -1785,7 +1821,8 @@ document.addEventListener('click', async (e) => {
     case 'practice':   return act('practice');
     case 'detectives': return val('f-target') && act('hire_detectives', { p_nick: val('f-target'), p_count: num('f-dets') });
     case 'shoot':
-      if (num('f-shoot-bullets') > 0 && confirm(`${val('f-shoot-target')} üzerine ${num('f-shoot-bullets')} kurşun sıkılsın mı?`)) {
+      if (num('f-shoot-bullets') < 1) return toast('Kaç kurşun sıkacağını yaz.', 'bad');
+      if (await askYes(`${val('f-shoot-target')} üzerine ${num('f-shoot-bullets')} kurşun sıkılsın mı?`)) {
         return act('shoot', { p_nick: val('f-shoot-target'), p_bullets: num('f-shoot-bullets') }, { art: true });
       }
       return;
@@ -1799,9 +1836,9 @@ document.addEventListener('click', async (e) => {
     case 'withdraw':   return num('f-bank') > 0 && act('bank_move', { p_amount: -num('f-bank') });
     case 'send':       return val('f-send-nick') && num('f-send-amt') > 0 &&
                          act('send_money', { p_nick: val('f-send-nick'), p_amount: num('f-send-amt') });
-    case 'hide':       return confirm('Sığınağa girilsin mi?') && act('enter_hideout', { p_hours: num('f-hide-h') });
+    case 'hide':       return await askYes('Sığınağa girilsin mi?') && act('enter_hideout', { p_hours: num('f-hide-h') });
     case 'leavehide':  return act('leave_hideout');
-    case 'raid':       return (num('f-raid-' + id) > 0 || extra.men?.attack > 0) && confirm('Baskın başlasın mı? Kurşunlar geri gelmez.') &&
+    case 'raid':       return (num('f-raid-' + id) > 0 || extra.men?.attack > 0) && await askYes('Baskın başlasın mı? Kurşunlar geri gelmez.') &&
                          act('raid_spot', { p_spot: +id, p_bullets: num('f-raid-' + id) }, { art: true });
     case 'post':       return act('station_men', { p_spot: +id, p_type: val('f-post-type-' + id), p_qty: num('f-post-n-' + id) });
     case 'recall':     return act('recall_men', { p_spot: +id });
@@ -1816,7 +1853,7 @@ document.addEventListener('click', async (e) => {
     case 'listcar':    return num('f-sell-cprice') > 0 &&
                          act('list_item', { p_kind: 'car', p_qty: null, p_car: num('f-sell-car'), p_price: num('f-sell-cprice') });
     case 'unlist':     return act('cancel_listing', { p_id: +id });
-    case 'buylisting': return confirm('Satın alınsın mı?') && act('buy_listing', { p_id: +id });
+    case 'buylisting': return await askYes('Satın alınsın mı?') && act('buy_listing', { p_id: +id });
     // yarış
     case 'racecreate': return num('f-race-fee') > 0 && act('create_race', { p_fee: num('f-race-fee'), p_car: num('f-race-car') });
     case 'racejoin':   return act('join_race', { p_race: +id, p_car: num('f-race-car-' + id) });
@@ -1839,13 +1876,13 @@ document.addEventListener('click', async (e) => {
     case 'cancelapp':  return act('cancel_application');
     case 'accept':     return act('answer_application', { p_nick: id, p_accept: true });
     case 'reject':     return act('answer_application', { p_nick: id, p_accept: false });
-    case 'kick':       return confirm(`${id} aileden atılsın mı?`) && act('kick_member', { p_nick: id });
+    case 'kick':       return await askYes(`${id} aileden atılsın mı?`) && act('kick_member', { p_nick: id });
     case 'famdeposit': return num('f-fam-dep') > 0 && act('family_deposit', { p_amount: num('f-fam-dep') });
     case 'fampay':     return val('f-pay-nick') && num('f-pay-amt') > 0 &&
                          act('family_pay', { p_nick: val('f-pay-nick'), p_amount: num('f-pay-amt') });
-    case 'buyfactory': return confirm('Fabrika kasadan satın alınsın mı?') && act('buy_factory');
+    case 'buyfactory': return await askYes('Fabrika kasadan satın alınsın mı?') && act('buy_factory');
     case 'facprice':   return num('f-fac-price') > 0 && act('set_factory_price', { p_price: num('f-fac-price') });
-    case 'leave':      return confirm('Emin misin?') && act('leave_family');
+    case 'leave':      return await askYes('Emin misin?') && act('leave_family');
     // sosyal
     case 'dmto':       closeModal(); return openConv(id);
     case 'openconv':   return openConv(id);
@@ -1855,7 +1892,7 @@ document.addEventListener('click', async (e) => {
       if (pts > 0) { closeModal(); return act('give_respect', { p_nick: id, p_points: pts }); }
       return;
     }
-    case 'block':      closeModal(); return confirm(`${id} engellensin mi? Mesajlarını görmezsin.`) && act('block_player', { p_nick: id });
+    case 'block':      closeModal(); return await askYes(`${id} engellensin mi? Mesajlarını görmezsin.`) && act('block_player', { p_nick: id });
     case 'unblock':    closeModal(); return act('unblock_player', { p_nick: id });
     case 'reportplayer': return openReport('player', null, id);
     case 'appeal':     return openAppeal(id);
@@ -1869,7 +1906,7 @@ document.addEventListener('click', async (e) => {
     case 'fraccept':   return act('friend_respond', { p_nick: id, p_accept: true });
     case 'frreject':   return act('friend_respond', { p_nick: id, p_accept: false });
     case 'fradd':      closeModal(); return act('friend_request', { p_nick: id });
-    case 'frremove':   closeModal(); return confirm(`${id} arkadaş listenden çıkarılsın mı?`) && act('friend_remove', { p_nick: id });
+    case 'frremove':   closeModal(); return await askYes(`${id} arkadaş listenden çıkarılsın mı?`) && act('friend_remove', { p_nick: id });
     case 'sendappeal': {
       const r = await api.rpc('submit_appeal', { p_action: +id, p_text: $('#f-appeal').value });
       toast(r.msg, r.ok ? 'good' : 'bad');
@@ -1880,6 +1917,9 @@ document.addEventListener('click', async (e) => {
     }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
     case 'shop':       return openShop();
+    case 'settings':   return openSettings();
+    case 'pushon':     { const r = await enablePush(api); toast(r.msg, r.ok ? 'good' : 'bad'); return openSettings(); }
+    case 'pushoff':    { await disablePush(api); toast('Bildirimler kapatıldı.', 'good'); return openSettings(); }
     case 'acctlink': {
       const email = val('f-acct-email');
       if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Geçerli bir e-posta yaz.', 'bad');
@@ -1923,7 +1963,7 @@ document.addEventListener('click', async (e) => {
     case 'acceptprop': closeModal(); return act('accept_proposal', { p_nick: id });
     case 'rejectprop': closeModal(); return act('reject_proposal', { p_nick: id });
     case 'cancelprop': closeModal(); return act('cancel_proposal', {});
-    case 'divorce':    return confirm('Boşanmak istediğine emin misin?') && act('divorce');
+    case 'divorce':    return await askYes('Boşanmak istediğine emin misin?') && act('divorce');
     case 'chatch':     chatCh = id; extra.chat = null; extra.conv = null; renderTab(); await loadChat(); renderTab(); scrollChat(); return;
     case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
     // kumarhane
@@ -1932,7 +1972,7 @@ document.addEventListener('click', async (e) => {
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
     case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; extra.bets = { ...extra.bets, [b.dataset.game]: id }; return;
     case 'reset':
-      if (confirm('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
+      if (await askYes('Yerel oyun verisi silinsin mi?')) { await api.reset(); location.reload(); }
   }
 });
 
@@ -1969,11 +2009,11 @@ async function playCasino(b) {
   } finally { busy = false; }
 }
 
-document.addEventListener('change', (e) => {
+document.addEventListener('change', async (e) => {
   if (e.target.id === 'f-shoot-target') { extra.shootPrev = null; $('#shoot-prev').innerHTML = shootPrevHtml(null); return loadShootPrev(e.target.value); }
   const sel = e.target.closest('[data-role]');
   if (!sel) return;
-  if (sel.value === 'don' && !confirm(`Donluk devredilsin mi? Yeni Don: ${sel.dataset.role}. Sen Sottocapo olursun.`)) return renderTab();
+  if (sel.value === 'don' && !await askYes(`Donluk devredilsin mi? Yeni Don: ${sel.dataset.role}. Sen Sottocapo olursun.`)) return renderTab();
   act('set_role', { p_nick: sel.dataset.role, p_role: sel.value });
 });
 
@@ -2051,6 +2091,11 @@ function updateBadges() {
   const nav = $('[data-go="chat"]');
   nav.dataset.badge = S.player.unread > 0 ? S.player.unread : '';
   nav.classList.toggle('has-dot', anyNew && !(S.player.unread > 0));
+  // Aile: yeni başvuru ya da aile duyurusu · İşler: ekip daveti. Sekme açılınca görüldü sayılır.
+  if (tab === 'family') { setSeen('apps', heads.apps || 0); setSeen('famnews', heads.famnews || 0); }
+  if (tab === 'crime') setSeen('crew', heads.crew || 0);
+  $('[data-go="family"]').classList.toggle('has-dot', tab !== 'family' && ['apps', 'famnews'].some(k => (heads[k] || 0) > getSeen(k)));
+  $('[data-go="crime"]').classList.toggle('has-dot', tab !== 'crime' && (heads.crew || 0) > getSeen('crew'));
   document.querySelectorAll('.chat-tabs [data-act="chatch"]').forEach(b => {
     const ch = b.dataset.id; if (ch === 'dm') return;
     const dot = b.querySelector('.new-dot'), want = chanNew(ch) && chatCh !== ch;
@@ -2064,11 +2109,12 @@ async function poll() {
     if (!n.heads) return;
     heads = n.heads;
     // ilk açılışta eski mesajlar "yeni" sayılmasın
-    for (const ch of ['global', 'city', 'family']) if (heads[ch] && !getSeen(ch) && !localStorage.getItem('kb_init_' + seenKey(ch))) {
+    for (const ch of ['global', 'city', 'family', 'famnews']) if (heads[ch] && !getSeen(ch) && !localStorage.getItem('kb_init_' + seenKey(ch))) {
       setSeen(ch, heads[ch]); try { localStorage.setItem('kb_init_' + seenKey(ch), 1); } catch {}
     }
     if (n.unread !== S.player.unread) { S.player.unread = n.unread; if (tab === 'chat' && chatCh === 'dm') refresh(); }
     for (const e of [...n.events, ...n.family_news]) toast('📣 ' + e.text, 'good');
+    if (n.events.length || n.family_news.length) sfx.notify();
     pollSince = n.now;
     updateBadges();
   } catch (e) { console.warn('poll', e); }
@@ -2100,6 +2146,7 @@ try {
   if (api.mode === 'local') Object.assign(window, { devApi: api, devRefresh: refresh });
   await refresh();
   if (S?.player) { pollSince = S.now; poll(); }   // bildirimlerin başlangıç noktası: açılış anı
+  registerSW();   // bildirimler ve Ana Ekrana ekleme için
 } catch (e) {
   console.error(e);
   $('#loading').innerHTML = `<img class="logo-img" src="assets/ui/logo.png" alt="KABADAYI">

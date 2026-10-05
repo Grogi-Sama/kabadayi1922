@@ -1,3 +1,4 @@
 node_modules/
 .env
 supabase/deploy*.sql
+supabase/.secrets/

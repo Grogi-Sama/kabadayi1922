@@ -1,0 +1,13 @@
+/* Yasal metin sayfaları: sade, okunaklı */
+:root { color-scheme: dark; }
+body { margin: 0; background: #15110d; color: #efe3c8; font: 16px/1.6 Georgia, 'Times New Roman', serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 18px 60px; }
+h1 { font-size: 26px; color: #e6c476; margin: 8px 0 4px; }
+h2 { font-size: 19px; color: #e6c476; margin: 28px 0 6px; }
+p, li { color: #e3d6bb; }
+a { color: #e6c476; }
+.meta { color: #a8967a; font-size: 14px; }
+.note { border-left: 3px solid #8a6a26; padding: 8px 12px; background: #221a12; color: #cdbb98; font-size: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+td, th { border: 1px solid #4a3a26; padding: 6px 8px; text-align: left; vertical-align: top; }
+.back { display: inline-block; margin-bottom: 10px; }

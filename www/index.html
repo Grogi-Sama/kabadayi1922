@@ -7,6 +7,11 @@
   <title>Kabadayı</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kabadayı">
   <link rel="stylesheet" href="css/style.css">
   <script src="vendor/supabase.js"></script>
 </head>
@@ -26,6 +31,8 @@
       <input id="nick" maxlength="16" placeholder="Takma adın" autocomplete="off" autocapitalize="off">
       <p class="muted small nick-rule">3-16 harf. Sadece Türkçe ya da İngilizce harfler; rakam, boşluk, emoji ve işaret yok.</p>
       <button class="btn primary">Şehre in</button>
+      <p class="muted small legal-consent">Devam ederek <a href="kullanim.html" target="_blank">Kullanım Şartları</a>'nı ve
+        <a href="gizlilik.html" target="_blank">Gizlilik Politikası</a>'nı kabul edersin. Oyun 18 yaş ve üzeri içindir.</p>
     </form>
     <p id="nick-err" class="err"></p>
     <div id="onboard-login" class="onboard-login"></div>

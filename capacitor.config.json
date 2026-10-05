@@ -1,0 +1,12 @@
+{
+  "appId": "app.kabadayi.oyun",
+  "appName": "Kabadayı 1922",
+  "webDir": "www",
+  "backgroundColor": "#15110d",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always", "backgroundColor": "#15110d" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1200, "backgroundColor": "#15110d", "showSpinner": false },
+    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+  }
+}

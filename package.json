@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs && node tests/social.test.mjs && node tests/spots.test.mjs && node tests/races.test.mjs && node tests/extras.test.mjs && node tests/admin_seasons.test.mjs && node tests/avatar.test.mjs && node tests/chat.test.mjs && node tests/roles.test.mjs && node tests/filter.test.mjs && node tests/appeals.test.mjs && node tests/events.test.mjs && node tests/community.test.mjs && node tests/trade_jobs.test.mjs && node tests/men.test.mjs && node tests/gender.test.mjs && node tests/shop.test.mjs && node tests/fixes030.test.mjs",
+    "test": "node tests/core.test.mjs && node tests/combat.test.mjs && node tests/families.test.mjs && node tests/crews.test.mjs && node tests/casino.test.mjs && node tests/social.test.mjs && node tests/spots.test.mjs && node tests/races.test.mjs && node tests/extras.test.mjs && node tests/admin_seasons.test.mjs && node tests/avatar.test.mjs && node tests/chat.test.mjs && node tests/roles.test.mjs && node tests/filter.test.mjs && node tests/appeals.test.mjs && node tests/events.test.mjs && node tests/community.test.mjs && node tests/trade_jobs.test.mjs && node tests/men.test.mjs && node tests/gender.test.mjs && node tests/shop.test.mjs && node tests/fixes030.test.mjs && node tests/push.test.mjs",
     "dev": "node dev-server.mjs"
   },
   "keywords": [],

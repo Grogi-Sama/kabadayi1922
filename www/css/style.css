@@ -851,3 +851,34 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
 .onboard-login { text-align: center; margin: 6px 0 40px; }
 .acct-card { border-color: var(--gold); }
 .acct-card .form-row { margin: 8px 0 0; }
+
+/* Ayarlar */
+.settings-btn { display: block; width: 100%; margin: 24px 0 8px; }
+.set-row { display: grid; grid-template-columns: 110px 1fr 44px; align-items: center; gap: 8px; margin: 8px 0; }
+.set-row input[type=range] { width: 100%; accent-color: var(--gold); }
+.set-check { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.set-check input { accent-color: var(--gold); width: 18px; height: 18px; }
+
+/* ─── Cihaza göre ölçek: telefon tam ekran; tablet ve bilgisayarda ortada uygulama çerçevesi, yazılar biraz büyük ─── */
+:root { --app-w: 100vw; }
+@media (min-width: 700px) {
+  :root { --app-w: 620px; }
+  html { font-size: 17px; }
+  body { background: #0d0a07 url(../assets/ui/splash.png) center / cover fixed; }
+  body::before { content: ''; position: fixed; inset: 0; background: rgba(10,7,5,.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 0; }
+  #game, #onboard, #loading, #banned { position: relative; z-index: 1; max-width: var(--app-w); margin: 0 auto; background: var(--bg);
+    box-shadow: 0 0 0 1px #4a3a26, 0 0 60px rgba(0,0,0,.8); }
+  nav { left: calc((100vw - var(--app-w)) / 2); right: auto; width: var(--app-w); }
+  .toast-stack { max-width: calc(var(--app-w) - 32px); }
+  .sheet { max-width: var(--app-w); }
+  .map { max-width: none; }
+}
+@media (min-width: 1100px) {
+  :root { --app-w: 720px; }
+  html { font-size: 18px; }
+  .jobs-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shop-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* yatay telefon / kısa ekran: menü biraz incelsin */
+@media (max-height: 500px) and (orientation: landscape) { :root { --nav-h: 52px; } }
+.legal-consent { font-size: 12px; margin-top: 8px; } .legal-consent a { color: var(--gold-hi); }
