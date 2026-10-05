@@ -273,7 +273,8 @@ function keepInputs(el, fn) {
 
 function renderTab() {
   $('main').classList.toggle('chat-mode', tab === 'chat' && chatCh !== 'dm' || (tab === 'chat' && chatCh === 'dm' && !!extra.conv));
-  keepInputs($(`section[data-tab="${tab}"]`), ({ city: cityTab, crime: crimeTab, family: familyTab, chat: chatTab, log: logTab })[tab]);
+  try { keepInputs($(`section[data-tab="${tab}"]`), ({ city: cityTab, crime: crimeTab, family: familyTab, chat: chatTab, log: logTab })[tab]); }
+  catch (e) { console.error('sekme çizimi', e); }   // sekmede bir hata açık paneli kilitlemesin
   renderSheet();
 }
 
@@ -1773,6 +1774,10 @@ function tick() {
     lastReady = ready; renderTab();
   }
   document.querySelectorAll('[data-until]').forEach(el => el.textContent = fmt(left(el.dataset.until)));
+  // Güvenlik ağı: süresi biten ama hâlâ kilitli görünen düğme kalmasın (saat farkı vb. yüzünden yeniden çizim kaçarsa)
+  const stuck = (root) => root && [...root.querySelectorAll('button[disabled] [data-until]')].some(el => !left(el.dataset.until));
+  if (stuck($('#sheet-body'))) renderSheet();
+  if (stuck($(`section[data-tab="${tab}"]`))) renderTab();
   for (const [id, at, label] of [['t-crime', crimeReadyAt(), 'İş'], ['t-car', p.car_ready_at, 'Araba'], ['t-travel', p.travel_ready_at, 'Vapur']]) {
     const s = left(at), el = $('#' + id);
     el.textContent = s ? `${label} ${fmt(s)}` : `${label} hazır`;
@@ -2220,6 +2225,7 @@ function loadProgress(f, label) {
 
 try {
   [api] = await Promise.all([createBackend(loadProgress), probeAssets()]);
+  if (api.mode === 'local') window.kbDev = api;   // sadece yerel deneme: konsoldan kbDev.sql(...) ile hızlı test
   loadProgress(1, 'Hazır');
   for (const [tab, name] of [['city', 'sehir'], ['crime', 'isler'], ['family', 'aile'], ['chat', 'sohbet'], ['log', 'defter']]) {
     const b = $(`nav [data-go="${tab}"] b`);

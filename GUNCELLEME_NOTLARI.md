@@ -10,7 +10,7 @@ Canlıda, duyurulmadı:
 - (henüz yok)
 
 Yerelde, gönderilmedi:
-- (henüz yok)
+- Kahvehanede bekleme bitince "Tut" düğmesinin açılmaması düzeltildi (sayaçlı bütün düğmeler için).
 
 ## Yayımlananlar
 
