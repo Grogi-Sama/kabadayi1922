@@ -87,12 +87,13 @@ function resultArt(r) {
 }
 
 // Sonuç sesi: yakalandıysa hücre demiri, firar ettiyse kapı, başarısızsa yumruk, başarıda para kesesi
-function resultSfx(name, r) {
+function resultSfx(name, r, args = {}) {
   if (r.jailed || /içeri alındı/.test(r.msg || '')) return sfx.jailed();
   if (name === 'self_bust' && r.ok !== false && r.success !== false) return sfx.escape();
   if (r.success === false) return sfx.fail();
   if (r.ok === false) return sfx.error();
-  if (name === 'apply_family' || name === 'hire_man') return sfx.click();
+  if (name === 'apply_family' || name === 'hire_man' || name === 'friend_request') return sfx.click();
+  if (name === 'trade') return args.p_qty > 0 ? sfx.buy() : sfx.sell();
   return /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success();
 }
 
@@ -103,7 +104,7 @@ async function act(name, args, opts = {}) {
   try {
     const r = await api.rpc(name, args);
     if (name === 'shoot' || name === 'raid_spot') sfx.shot();
-    setTimeout(() => resultSfx(name, r), name === 'shoot' || name === 'raid_spot' ? 300 : 0);
+    setTimeout(() => resultSfx(name, r, args), name === 'shoot' || name === 'raid_spot' ? 300 : 0);
     if (r.seized?.length) showSeized(r);
     else if (r.rounds) showBattle(r);
     else toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
@@ -2091,7 +2092,7 @@ document.addEventListener('submit', async (e) => {
     if (!text) return;
     const r = await api.rpc('send_message', { p_nick: extra.conv, p_text: text });
     if (!r.ok) return toast(r.msg, 'bad');
-    $('#f-dm').value = '';
+    $('#f-dm').value = ''; sfx.msg();
     extra.convMsgs = await api.rpc('get_conversation', { p_nick: extra.conv });
     renderTab(); scrollChat();
   } else if (e.target.id === 'friend-form') {
@@ -2106,7 +2107,7 @@ document.addEventListener('submit', async (e) => {
     if (!text) return;
     const r = await api.rpc('send_chat', { p_channel: chatCh, p_text: text });
     if (!r.ok) return toast(r.msg, 'bad');
-    $('#f-gchat').value = '';
+    $('#f-gchat').value = ''; sfx.msg();
     await loadChat(); renderTab(); scrollChat();
   } else if (e.target.id === 'chat-form') {
     e.preventDefault();
@@ -2114,7 +2115,7 @@ document.addEventListener('submit', async (e) => {
     if (!text) return;
     const r = await api.rpc('post_family_message', { p_text: text });
     if (!r.ok) return toast(r.msg, 'bad');
-    $('#f-chat').value = '';
+    $('#f-chat').value = ''; sfx.msg();
     await loadFamily(); renderTab(); scrollChat();
   } else if (e.target.id === 'nick-form') {
     e.preventDefault();
@@ -2126,13 +2127,22 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
+// Açık sohbetteki son mesaj (yeni mesaj sesi için)
+function lastChatMsg() {
+  const L = chatCh === 'dm' ? (extra.conv ? extra.convMsgs : null) : chatCh === 'family' ? extra.family?.messages : extra.chat;
+  const m = L?.[L.length - 1];
+  return m ? { k: `${m.id ?? ''}|${m.at}|${m.text}`, mine: m.mine ?? m.nick === S.player.nick } : null;
+}
 const scrollChat = () => { for (const c of [$('#chat'), $('#dm')]) if (c) c.scrollTop = c.scrollHeight; };
 // Sohbet sekmesi (kanal ya da özel mesaj) açıkken 10 sn'de bir tazele (yazarken bölme)
 setInterval(async () => {
   if (document.hidden || !S?.player) return;
   if (tab === 'chat') {
     if ([$('#f-chat'), $('#f-gchat'), $('#f-dm')].some(i => i && i === document.activeElement && i.value)) return;
+    const before = lastChatMsg(), ch = chatCh;
     await loadChat();
+    const after = lastChatMsg();   // açık sohbete başkasından yeni mesaj geldi: tok tık
+    if (before && after && ch === chatCh && after.k !== before.k && !after.mine) sfx.msg();
   } else return;
   renderTab(); scrollChat();
 }, 6000);
