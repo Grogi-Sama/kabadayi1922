@@ -250,7 +250,7 @@ function renderOnboard() {
     `<button type="button" data-gender="${g}" class="btn ${pickedGender === g ? 'primary' : ''}">${label}</button>`).join('');
   $('#onboard-portraits').innerHTML = pickedGender ? genderAvatars(pickedGender).map(n =>
     `<button type="button" data-pick="${n}" class="${pickedAvatar === n ? 'on' : ''}">${img(`portraits/p${n}`, '', PORTRAIT_EMOJI[n - 1])}</button>`).join('')
-    : '<p class="muted small">Önce cinsiyetini seç; portreler ona göre açılır.</p>';
+    : '<p class="muted small" style="grid-column:1/-1;text-align:center;margin:8px 0">Önce cinsiyetini seç; portreler ona göre açılır.</p>';
 }
 
 // Yeniden çizimde yazılan input değerleri kaybolmasın
