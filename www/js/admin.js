@@ -295,6 +295,7 @@ document.addEventListener('submit', async (e) => {
   render();
 });
 
+$('#back-game').href = './' + location.search;   // yerel denemede (?yerel) oyuna yerelde dön
 api = await createBackend();
 // Yetkisi olmayan hiçbir şey görmez; sahip olmayan "Yetkililer" sekmesini görmez
 try { me = await api.rpc('admin_me'); } catch { me = {}; }

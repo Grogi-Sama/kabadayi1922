@@ -1414,7 +1414,7 @@ function logTab() {
       <div class="title">Mağaza ${p.club ? '<span class="club-badge">★ Kulüp</span>' : ''}</div>
       <div class="muted small">Özel portreler, aile armaları, Kabadayı Kulübü ve hızlandırma</div></div><span class="muted">›</span></div>`;
   h += accountCard();
-  if (p.is_admin) h += `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>`;
+  if (p.is_admin) h += `<a class="admin-link" href="admin.html${location.search}">🛡 Yönetim paneli</a>`;
 
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
       <div class="d-nick">${esc(p.nick)}</div>
