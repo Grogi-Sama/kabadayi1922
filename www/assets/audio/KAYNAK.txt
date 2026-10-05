@@ -6,3 +6,4 @@ Müzik ve diğer efektler oyunun içinde üretilir (www/js/audio.js); assets/aud
 Kazanma/kaybetme: "Music Jingles", Kenney (CC0) — SAX10 (jingle-win), SAX07 (jingle-lose). Paket: art/sesler/kenney_music-jingles.zip; seçim sayfası art/sesler/dinle.html
 
 İş sonuçları: Kenney "RPG Audio" ve "Impact Sounds" (CC0) — handleCoins (job-coins), impactPunch_heavy_000 (job-punch), impactMetal_heavy_001 (job-jailed), doorClose_2 (jail-escape). Seçim sayfası art/sesler/dinle-is.html
+Tok tık (aile başvurusu, adam tutma): Kenney "UI Audio" (CC0) — click3 (ui-click). Seçim sayfası art/sesler/dinle-2.html

@@ -92,6 +92,7 @@ function resultSfx(name, r) {
   if (name === 'self_bust' && r.ok !== false && r.success !== false) return sfx.escape();
   if (r.success === false) return sfx.fail();
   if (r.ok === false) return sfx.error();
+  if (name === 'apply_family' || name === 'hire_man') return sfx.click();
   return /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success();
 }
 

@@ -122,7 +122,8 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
 // ─────────────── Kayıtlı sesler (Kenney "Casino Audio", CC0) ───────────────
 const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
   'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose',   // jingle: Kenney Music Jingles SAX10 / SAX07
-  'job-coins', 'job-punch', 'job-jailed', 'jail-escape'];   // iş sonucu: Kenney RPG Audio + Impact Sounds
+  'job-coins', 'job-punch', 'job-jailed', 'jail-escape',
+  'ui-click'];   // ui-click: Kenney UI Audio click3 (aile başvurusu, adam tutma)   // iş sonucu: Kenney RPG Audio + Impact Sounds
 const buffers = {};
 async function loadSamples() {
   await Promise.all(SAMPLES.map(async (n) => {
@@ -159,6 +160,7 @@ export const sfx = {
   error:   () => play('job-punch', { vol: 0.35, rate: 1.1 }),   // kural/para hatası: hafif
   jailed:  () => play('job-jailed', { vol: 0.9 }),
   escape:  () => play('jail-escape', { vol: 0.9 }),
+  click:   () => play('ui-click', { vol: 0.9, rate: 1 }),       // tok tık: aile başvurusu, adam tutma
   shot:    () => { noise(0.25, 0.5, 900); tone(120, 0.25, 'sine', 0.2, 50); },
   open:    () => tone(660, 0.08, 'sine', 0.07, 880),                     // panel açılışı
   notify:  () => { tone(523, 0.14, 'sine', 0.08); tone(392, 0.22, 'sine', 0.07, null, 0.12); },
