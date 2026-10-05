@@ -61,7 +61,7 @@ select 'guncelleme', 'Büyük güncelleme: adamlar, mağaza, ses ve bildirimler'
 • Baskın artık can/hasar ile tur tur savaş. Girmeden önce iki tarafın gücünü ve kazanma ihtimalini gör.
 • İnfaz ekranında hedefin gücü ve gereken kurşun aralığı.
 • Ticaret puanı: pahalı mallar (konyak, viski, halı, mücevherat, silah parçaları) ticaret puanıyla açılır.
-• Gümrüğe takılma ihtimali %8'den %5'e indi.
+• Gümrüğe takılma ihtimali düştü: artık %5 (önceden %8).
 • Konağın: adamların, arabaların, malın ve eşin tek yerde.
 • Mağaza: özel portre, aile arması, sohbet yazı tipi ve isim çerçevesi; Kabadayı Kulübü.
 • Ses ve müzik (Defter → Ayarlar), bildirimler, hesabını e-postana bağlama.
