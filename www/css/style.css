@@ -828,3 +828,19 @@ img.seized-art[src*='gumruk'] { width: 100%; max-width: 280px; height: auto; bor
 .style-prev { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; padding: 6px;
   width: 100%; border-radius: 8px; background: linear-gradient(180deg, #e8d9bb, #d9c59c); color: #2a1f14; font-size: 14px; }
 .style-prev > b:not(.nf) { color: #7a2331; }
+
+/* 030: sohbet sekmesi ekrana sabit; mesaj kutusu esner, yazma alanı hep altta */
+main.chat-mode { overflow: hidden; display: flex; flex-direction: column; }
+main.chat-mode > section[data-tab="chat"] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+main.chat-mode .chat.paper.tall, main.chat-mode #dm { flex: 1; min-height: 120px; height: auto; max-height: none; }
+main.chat-mode .form-row { flex: 0 0 auto; margin-bottom: 0; }
+/* yeni mesaj noktaları */
+.new-dot { display: inline-block; width: 8px; height: 8px; margin-left: 5px; border-radius: 50%; background: #e0453a; box-shadow: 0 0 0 2px #1b140c; vertical-align: 2px; }
+nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: calc(50% - 18px); width: 9px; height: 9px; border-radius: 50%;
+  background: #e0453a; box-shadow: 0 0 0 2px #1b140c; }
+/* baskın önizlemesi */
+.raid-prev { margin: 6px 0 8px; padding: 8px; border-radius: 10px; background: var(--panel-2); border: 1px solid #4a3a26; }
+.rp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.rp-grid > div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.rp-grid b { color: var(--gold-hi); }
+.crest.sm { width: 32px; height: 32px; }

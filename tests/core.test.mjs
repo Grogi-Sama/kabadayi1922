@@ -59,6 +59,7 @@ assert.equal(s.cars.length, cars);
 const cashBefore = s.player.cash;
 const { id: carId, value: carValue } = s.cars[0];
 assert.equal((await as(B, `select sell_car($1)`, [carId])).ok, false, 'başkasının arabasını satamaz');
+await ready(A);   // son çalma denemesi hapse soktuysa (030: hapiste satış yok)
 assert.equal((await as(A, `select sell_car($1)`, [carId])).ok, true);
 s = await as(A, `select get_state()`);
 assert.equal(s.player.cash, cashBefore + carValue);
