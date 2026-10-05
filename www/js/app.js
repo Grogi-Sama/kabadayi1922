@@ -2013,7 +2013,7 @@ async function playCasino(b) {
   if (a === 'casino') sfx.bet();
   if (g === 'zar') setTimeout(sfx.dice, 120); else if (g === 'rulet') setTimeout(sfx.roulette, 150); else if (g === 'slot') setTimeout(sfx.slot, 150);
   else if (a === 'bjstart') { sfx.bet(); sfx.shuffle(); setTimeout(sfx.deal, 700); setTimeout(sfx.deal, 950); } else if (a === 'bjhit') sfx.deal();
-  const resultDelay = { zar: 800, rulet: 2800, slot: 1500 }[g] || 0;
+  const resultDelay = { zar: 800, slot: 1500 }[g] || 0;   // rulet: sonuç sesi hemen
   try {
     const r = a === 'casino' ? await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice })
       : a === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })

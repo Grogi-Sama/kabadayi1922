@@ -4,3 +4,6 @@ supabase/deploy*.sql
 supabase/.secrets/
 art/sesler/kenney/
 art/sesler/kenney_jingles/
+art/sesler/kenney_rpg/
+art/sesler/kenney_impact/
+art/sesler/*.zip
