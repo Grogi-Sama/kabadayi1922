@@ -7,11 +7,11 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 ## Bekleyen (henüz duyurulmadı)
 
 Canlıda, duyurulmadı:
-- (henüz yok)
-
-Yerelde, gönderilmedi:
 - Kahvehanede bekleme bitince "Tut" düğmesinin açılmaması düzeltildi (sayaçlı bütün düğmeler için).
 - Vurulunca, infaz edilince ve ailenin mekânına baskın yapılınca (düşse de püskürtülse de) gümrükteki gibi ayrı uyarı penceresi çıkar.
+
+Yerelde, gönderilmedi:
+- (henüz yok)
 
 ## Yayımlananlar
 
