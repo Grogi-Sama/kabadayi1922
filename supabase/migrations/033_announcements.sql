@@ -61,11 +61,15 @@ select 'guncelleme', 'Büyük güncelleme: adamlar, mağaza, ses ve bildirimler'
 • Baskın artık can/hasar ile tur tur savaş. Girmeden önce iki tarafın gücünü ve kazanma ihtimalini gör.
 • İnfaz ekranında hedefin gücü ve gereken kurşun aralığı.
 • Ticaret puanı: pahalı mallar (konyak, viski, halı, mücevherat, silah parçaları) ticaret puanıyla açılır.
+• Gümrüğe takılma ihtimali %8'den %5'e indi.
 • Konağın: adamların, arabaların, malın ve eşin tek yerde.
 • Mağaza: özel portre, aile arması, sohbet yazı tipi ve isim çerçevesi; Kabadayı Kulübü.
 • Ses ve müzik (Defter → Ayarlar), bildirimler, hesabını e-postana bağlama.
 İyi oyunlar!', true
 where not exists (select 1 from announcements);
+
+-- Gümrüğe takılma ihtimali %8 → %5
+update game_settings set value = 0.05 where key = 'customs_chance';
 
 insert into api_rpcs values ('get_announcements()'), ('admin_announce(text, text, text, boolean, boolean)'),
   ('admin_announcement_pin(bigint)'), ('admin_announcement_delete(bigint)') on conflict do nothing;

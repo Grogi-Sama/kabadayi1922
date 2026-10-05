@@ -35,7 +35,7 @@ Sıra: `python tools/build_deploy_sql.py 030` → `supabase/deploy_030.sql` SQL 
 Hesap koruma için Supabase'de: Authentication → URL Configuration → Site URL `https://grogi-sama.github.io/kabadayi1922/www/` (+ Redirect URLs'e aynısı ve http://localhost:5180/www/). E-posta sağlayıcı açık olmalı (varsayılan). Varsayılan Supabase SMTP saatte birkaç e-posta gönderir; oyuncu artınca özel SMTP gerekir.
 
 **Bildirimler (032):** SQL'den sonra: (1) Edge Functions → yeni fonksiyon `push`, kodu `supabase/functions/push/index.ts`, "Verify JWT" kapalı; (2) fonksiyon sırları: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET` (değerler `supabase/.secrets/push.json`, repoda yok), `VAPID_SUBJECT=mailto:…`; (3) `supabase/push_setup.sql` içindeki `<CRON_SECRET>` doldurulup SQL Editor'de çalıştırılır (pg_cron + pg_net). iPhone'da web bildirimi için oyun Ana Ekrana eklenmeli.
-**Yasal metinler:** `www/gizlilik.html`, `kvkk.html`, `kullanim.html` — [VERİ SORUMLUSU ADI], [ADRES], [İLETİŞİM E-POSTASI] doldurulmalı, hukukçuya kontrol ettirilmeli.
+**Yasal metinler:** `www/gizlilik.html`, `kvkk.html`, `kullanim.html` — Omnipop Games (OMNİ MDC Teknoloji A.Ş.), Ankara adresi, info@omnipopgames.com (omnipopgames.com yasal sayfalarıyla aynı). Yayından önce hukukçu kontrolü önerilir.
 **Mağaza:** `MAGAZA.md` (Capacitor, Steam/Electron, ödeme, AdMob adımları), `capacitor.config.json` hazır.
 
 **Kurallar:** Canlıdaki migration dosyaları değiştirilmez; her değişiklik yeni dosya (032, …) ve mümkünse tekrar çalıştırılabilir (`do $$ … if not exists (pg_proc) then rename …`). Yerelde sunucuya dokunmadan deneme: http://localhost:5180/www/?yerel . Test: `npm test` (22 dosya).

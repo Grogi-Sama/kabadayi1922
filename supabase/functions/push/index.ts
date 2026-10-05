@@ -7,7 +7,7 @@ import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const env = Deno.env.toObject();
-webpush.setVapidDetails(env.VAPID_SUBJECT || 'mailto:destek@kabadayi.app', env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
+webpush.setVapidDetails(env.VAPID_SUBJECT || 'mailto:info@omnipopgames.com', env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
 const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
 Deno.serve(async (req) => {
