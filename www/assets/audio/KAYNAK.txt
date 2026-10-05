@@ -2,3 +2,5 @@ Kumarhane sesleri: "Casino Audio" (1.1), Kenney Vleugels — https://kenney.nl/a
 Lisans: Creative Commons Zero (CC0 1.0) — ticari kullanım serbest, kaynak gösterme zorunlu değil.
 Orijinal paket: art/sesler/kenney_casino-audio.zip (OGG). Buradakiler 22 kHz tek kanallı WAV'a çevrildi (iPhone uyumu için).
 Müzik ve diğer efektler oyunun içinde üretilir (www/js/audio.js); assets/audio/muzik.mp3 konursa müzik olarak o çalar.
+
+Kazanma/kaybetme: "Music Jingles", Kenney (CC0) — SAX10 (jingle-win), SAX07 (jingle-lose). Paket: art/sesler/kenney_music-jingles.zip; seçim sayfası art/sesler/dinle.html

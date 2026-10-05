@@ -2036,7 +2036,7 @@ async function playCasino(b) {
     // Sonuç belli olunca telefona kısa titreşim (destekleyen tarayıcılarda; iOS Safari desteklemez)
     if (r.ok && (a === 'casino' || (r.done && extra.bj === r))) {
       buzz(r.win > 0);
-      setTimeout(() => r.win > 0 ? (sfx.chips(), sfx.success()) : sfx.fail(), resultDelay);
+      setTimeout(() => r.win > 0 ? sfx.casinoWin() : sfx.casinoLose(), resultDelay);
     }
   } finally { busy = false; }
 }

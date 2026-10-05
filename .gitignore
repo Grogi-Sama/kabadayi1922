@@ -3,3 +3,4 @@ node_modules/
 supabase/deploy*.sql
 supabase/.secrets/
 art/sesler/kenney/
+art/sesler/kenney_jingles/

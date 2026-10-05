@@ -121,7 +121,7 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
 }
 // ─────────────── Kayıtlı sesler (Kenney "Casino Audio", CC0) ───────────────
 const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
-  'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1'];
+  'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose'];   // jingle: Kenney Music Jingles SAX10 / SAX07
 const buffers = {};
 async function loadSamples() {
   await Promise.all(SAMPLES.map(async (n) => {
@@ -163,10 +163,12 @@ export const sfx = {
   dice:    () => { play('dice-shake-1', { vol: 0.7, max: 0.55 }); play('dice-throw-1', { delay: 0.5 }); },   // sallanır, masaya atılır
   bet:     () => play(pick('chip-lay-1', 'chips-stack-1'), { vol: 0.9 }),                                     // bahis fişi masaya
   roulette:() => play('chips-handle-1', { vol: 0.6 }),                                                          // fişler masada
-  slot:    () => play('chips-collide-1', { vol: 0.7 }),
+  slot:    () => {},                                                                                     // uygun kayıt bulunamadı: sessiz
   shuffle: () => play('card-shuffle', { vol: 0.6 }),
   deal:    () => play('card-slide-1', { vol: 0.8 }),                                                            // kart dağıtılır
   card:    () => play(pick('card-place-1', 'card-place-2'), { vol: 0.85 }),                                    // kart masaya konur
   chips:   () => { play('chips-collide-1', { vol: 0.8 }); play('chips-stack-1', { vol: 0.8, delay: 0.18 }); }, // kazanılan fişler toplanır
+  casinoWin:  () => { sfx.chips(); play('jingle-win', { vol: 0.75, delay: 0.25, rate: 1 }); },
+  casinoLose: () => play('jingle-lose', { vol: 0.75, rate: 1 }),
   scratch: () => play('card-slide-1', { vol: 0.7, rate: 0.7 }),
 };
