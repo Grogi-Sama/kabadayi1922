@@ -27,13 +27,20 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 - Kullanıcı oyun geliştirmeyi yeni öğreniyor: belirsiz işlerde önce seçenek + öneri sun.
 - Görseller: tüm promptları tek seferde ver; saydamlık gerekiyorsa kullanıcıdan hazır saydam PNG iste (kendi arka plan silme hattı kurma); 3D perspektif yok.
 
-## Sıradaki adımlar
-1. **Görseller** (`ASSET_PROMPTS.md`, 60 görsel / 26 üretim): küçükler (bina, eşya, portre) 4 toplu ızgara sayfası olarak `art/sheets/` altına gelir → `python tools/slice_all.py` keser, `www/assets/` altına koyar (bina sayfası kullanıcıdan saydam gelir; betik saydamlık üretmez). Stil çapası: `bg/istanbul` + binalar sayfası + portreler sayfası → tutarlılığı kontrol et, sonra kalanı. Görsel klasöre konunca kod otomatik kullanır (`www/js/assets.js`). Harita artık ızgara: sokak sıraları `STREETS` (app.js), binalar üst üste binmez; arka plan görseli istenirse `bg/<şehir>.png` (opsiyonel). Yatay kaydırmalı panorama denendi, kullanıcı beğenmedi (panorama `art/panorama/`).
-2. **Supabase:** kurulum dosyası `python tools/build_deploy_sql.py` → `supabase/deploy.sql` (SQL Editor'e bir kez yapıştırılır). kullanıcı hesap açıp Project URL + anon key verecek → `config.js`, migration'ları çalıştır, Anonymous sign-in aç, admin UID'sini `admins`'e ekle (PLAN.md'de adımlar). `local-shim.sql` ve `local-seed.sql` canlıda ÇALIŞTIRILMAZ.
-3. Sonra: Capacitor paketleme, push bildirimleri, AdMob ödüllü reklam + sunucu doğrulaması, denge ayarları.
+## Durum (2026-10-05) — proje rafa kalkıyor
+**Canlı:** Supabase https://egabjhoezsnrwoemgrhn.supabase.co (Frankfurt, ücretsiz). 001–029 yüklü. İstemci GitHub Pages: https://grogi-sama.github.io/kabadayi1922/ (son push 029 ile uyumlu).
 
-## Canlı sunucu (2026-10-01'den beri)
-- Supabase: https://egabjhoezsnrwoemgrhn.supabase.co — 001–019 yüklü. **Eski migration dosyaları artık değiştirilmez**; her değişiklik yeni dosya (020, 021, …).
-- Güncelleme: `python tools/build_deploy_sql.py 020` → `supabase/deploy_020.sql` (020 ve sonrası) → SQL Editor'de yeni sorguya yapıştır → Run. Sonra istemci push edilir (istemci yeni SQL'e bağlı).
-- Yerelde sunucuya dokunmadan deneme: http://localhost:5180/www/?yerel
-- 020: işe özel bekleme, tecrübeyle artan şans, liman alış/satış farkı, pahalı mallar, gümrük yarısı. 021: adamlar (Kahvehane; zorba/fedai/gözcü/nişancı, eğitim, haftalık maaş, nöbet, baskın gücü/kayıpları, güç sıralaması).
+**Bekleyen (yerelde commit'li, canlıda DEĞİL):** 030 (hapiste para/mal hareketi yok, baskın önizlemesi, bildirim yoklaması) ve 031 (infaz önizlemesi, en zenginler) + bunlara bağlı istemci + hesap koruma (e-posta bağlama).
+Sıra: `python tools/build_deploy_sql.py 030` → `supabase/deploy_030.sql` SQL Editor'de bir kez → sonra `git push`. İstemciyi SQL'den önce push etme (yeni RPC'leri çağırıyor).
+Hesap koruma için Supabase'de: Authentication → URL Configuration → Site URL `https://grogi-sama.github.io/kabadayi1922/www/` (+ Redirect URLs'e aynısı ve http://localhost:5180/www/). E-posta sağlayıcı açık olmalı (varsayılan). Varsayılan Supabase SMTP saatte birkaç e-posta gönderir; oyuncu artınca özel SMTP gerekir.
+
+**Kurallar:** Canlıdaki migration dosyaları değiştirilmez; her değişiklik yeni dosya (032, …) ve mümkünse tekrar çalıştırılabilir (`do $$ … if not exists (pg_proc) then rename …`). Yerelde sunucuya dokunmadan deneme: http://localhost:5180/www/?yerel . Test: `npm test` (22 dosya).
+
+**Yapılmayanlar (gelecek iş):**
+1. Telefon uygulaması: Capacitor paketleme, Google Play / App Store hesapları, mağaza görselleri, yaş derecelendirmesi (simüle kumar → Apple 16+/18+, IARC'ta "simulated gambling" işaretlenir).
+2. Ödeme: mağaza ödemesi (Play Billing / StoreKit) + makbuzu sunucuda doğrulayıp `grant_product()` çağıran Edge Function. Şimdilik fiyat düğmeleri "yakında".
+3. Reklam: AdMob ödüllü reklam + sunucu taraflı doğrulama (SSV) → `ads_enabled = 1`. AdMob'da kumar reklam kategorisi kapatılmalı.
+4. Push bildirimleri (bekleme bitti, baskın, mesaj).
+5. Gizlilik politikası / KVKK aydınlatma metni ve kullanım şartları (mağazalar ister).
+6. Denge ayarları gerçek oyuncu verisiyle (`game_settings` tablosu; kod değiştirmeden).
+7. Kumar: oyun parası gerçek parayla satılmaz, gerçek paraya çevrilmez — bu kural korunmalı (yasal risk). Oyuncular arası gerçek para ticareti yasaklanmalı (kullanım şartlarına yaz).

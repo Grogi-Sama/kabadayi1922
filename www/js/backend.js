@@ -11,7 +11,8 @@ export async function createBackend(onProgress) {
 
 async function supabaseBackend() {
   report(0.3, 'Sunucuya bağlanılıyor…');
-  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // implicit akış: e-postadaki giriş bağlantısı başka cihazda açılsa da çalışsın
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { flowType: 'implicit' } });
   const { data: { session } } = await client.auth.getSession();
   if (!session) {
     const { error } = await client.auth.signInAnonymously();
@@ -24,13 +25,35 @@ async function supabaseBackend() {
       if (error) throw error;
       return data;
     },
+    // Hesap koruma: anonim hesabı e-postaya bağla / başka cihazdan e-postayla gir
+    async account() {
+      const { data: { user } } = await client.auth.getUser();
+      return { email: user?.email || null, anonymous: !!user?.is_anonymous };
+    },
+    async linkEmail(email) {
+      const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: returnUrl() });
+      return error ? { ok: false, msg: authMsg(error) } : { ok: true };
+    },
+    async loginEmail(email) {
+      const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: returnUrl() } });
+      return error ? { ok: false, msg: authMsg(error) } : { ok: true };
+    },
   };
+}
+const returnUrl = () => location.origin + location.pathname;
+function authMsg(e) {
+  const m = String(e?.message || e);
+  if (/rate|seconds/i.test(m)) return 'Çok sık denedin; biraz bekleyip tekrar dene.';
+  if (/registered|already/i.test(m)) return 'Bu e-posta başka bir hesaba bağlı.';
+  if (/not found|signups not allowed|Invalid login/i.test(m)) return 'Bu e-postaya bağlı bir hesap yok.';
+  if (/valid|format/i.test(m)) return 'E-posta adresi geçersiz.';
+  return 'Şu an gönderilemedi: ' + m;
 }
 
 // Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
 const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
 const MIGRATIONS = ['001_core.sql', '002_combat.sql', '003_families.sql', '004_crews.sql', '005_casino_transport.sql',
-  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql', '013_roles.sql', '014_filter.sql', '015_crests.sql', '016_lockdown.sql', '017_appeals.sql', '018_events.sql', '019_community.sql', '020_trade_jobs.sql', '021_men.sql', '022_gender_proposals.sql', '023_battle.sql', '024_spouse_konak.sql', '025_shop.sql', '026_jail_boost.sql', '027_trade_level.sql', '028_bust_xp.sql', '029_chat_style.sql', '030_raid_preview_fixes.sql'];
+  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql', '013_roles.sql', '014_filter.sql', '015_crests.sql', '016_lockdown.sql', '017_appeals.sql', '018_events.sql', '019_community.sql', '020_trade_jobs.sql', '021_men.sql', '022_gender_proposals.sql', '023_battle.sql', '024_spouse_konak.sql', '025_shop.sql', '026_jail_boost.sql', '027_trade_level.sql', '028_bust_xp.sql', '029_chat_style.sql', '030_raid_preview_fixes.sql', '031_shoot_preview_rich.sql'];
 
 const IDB_NAME = '/pglite/kabadayi-dev';
 const deleteLocalDb = () => new Promise(r => {

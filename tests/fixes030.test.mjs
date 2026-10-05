@@ -46,4 +46,16 @@ assert.ok(n.family_news.some(e => /elimizden/.test(e.text)));
 const n2 = await as(A, `select notify_poll($1)`, [n.now]);
 assert.equal(n2.events.length, 0, 'yeni olay yoksa boş');
 ok('bildirim yoklaması');
+// ─── 031: infaz önizlemesi ve en zenginler
+const C = await player('Cemal', { xp: 3000, cash: 50000, bank: 900000, city_id: 'iskenderiye' });
+await set(A, { weapon_id: 'tabanca' });
+assert.match((await as(A, `select shoot_preview('Cemal')`)).msg, /dedektif/);
+await db.query(`insert into detective_searches (player_id, target_id, ready_at, resolved, success, city_found)
+  values ($1, $2, now(), true, true, 'iskenderiye')`, [A, C]);
+const sp = await as(A, `select shoot_preview('Cemal')`);
+const need = (await db.query(`select required_bullets(t, s) n from players t, players s where t.id = $1 and s.id = $2`, [C, A])).rows[0].n;
+assert.ok(sp.low <= need && need <= sp.high, `aralık gerçek ihtiyacı kapsar: ${sp.low}-${sp.high}, ihtiyaç ${need}`);
+const rich = (await as(B, `select get_players()`)).rich;
+assert.ok(rich.every((r, i) => i === 0 || rich[i - 1].wealth >= r.wealth), 'zenginlikten sıralı'); assert.ok(rich.some(r => r.nick === 'Cemal' && r.wealth === 950000));
+ok(`infaz önizlemesi (${sp.low}-${sp.high}), en zenginler`);
 done('fixes030');

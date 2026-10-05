@@ -844,3 +844,10 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
 .rp-grid > div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 .rp-grid b { color: var(--gold-hi); }
 .crest.sm { width: 32px; height: 32px; }
+
+/* 031 */
+.big-num { font: 20px var(--display); color: var(--gold-hi); }
+.legal-note { font-size: 11px; opacity: .8; border-left: 2px solid #4a3a26; padding-left: 8px; }
+.onboard-login { text-align: center; margin: 6px 0 40px; }
+.acct-card { border-color: var(--gold); }
+.acct-card .form-row { margin: 8px 0 0; }

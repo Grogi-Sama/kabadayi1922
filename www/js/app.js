@@ -33,7 +33,8 @@ async function loadTabData() {
   const rpc = api.rpc;
   if (tab === 'city') [extra.spots, extra.events] = await Promise.all([rpc('get_spots'), rpc('get_events')]);
   else if (tab === 'log') [extra.players, extra.season, extra.penalties, extra.events] = await Promise.all([rpc('get_players'), rpc('get_season'), rpc('my_penalties'), rpc('get_events')]);
-  if (tab === 'log') [extra.friends, extra.men, extra.famRank] = await Promise.all([rpc('get_friends'), rpc('get_men'), rpc('get_families')]);
+  if (tab === 'log') [extra.friends, extra.men, extra.famRank, extra.account] = await Promise.all([rpc('get_friends'), rpc('get_men'), rpc('get_families'),
+    api.account ? api.account().catch(() => null) : null]);
   else if (tab === 'family') { await loadFamily(); extra.spots = await rpc('get_spots'); }
   else if (tab === 'crime') extra.crews = await rpc('get_crews');
   else if (tab === 'chat') await loadChat();
@@ -54,7 +55,11 @@ async function loadPanelData() {
   if (!panel) return;
   const rpc = api.rpc, kind = panel.startsWith('spot:') ? 'spot' : panel;
   if (kind === 'karakol') extra.jail = await rpc('get_jail');
-  else if (kind === 'dedektif') extra.hitlist = await rpc('get_hitlist');
+  else if (kind === 'dedektif') {
+    extra.hitlist = await rpc('get_hitlist');
+    const first = S.searches.find(s => s.resolved && s.success && s.city === S.player.city);
+    if (first) loadShootPrev(first.target);
+  }
   else if (kind === 'garaj') extra.races = await rpc('get_races');
   else if (kind === 'carsi') extra.market = await rpc('get_market');
   else if (kind === 'kahvehane' || kind === 'konak') extra.men = await rpc('get_men');
@@ -224,6 +229,7 @@ function watchScrollHint() {
 function renderOnboard() {
   watchScrollHint();
   $('#onboard-art').innerHTML = img('ui/splash', 'splash-art', '');
+  $('#onboard-login').innerHTML = api?.loginEmail ? `<button type="button" class="btn sm" data-act="acctlogin">Zaten karakterin var mı? E-postanla gir</button>` : '';
   $('#onboard-gender').innerHTML = [['e', 'Erkek'], ['k', 'Kadın']].map(([g, label]) =>
     `<button type="button" data-gender="${g}" class="btn ${pickedGender === g ? 'primary' : ''}">${label}</button>`).join('');
   $('#onboard-portraits').innerHTML = pickedGender ? genderAvatars(pickedGender).map(n =>
@@ -485,6 +491,23 @@ function gunsmithSection() {
         left(p.practice_ready_at) ? fmt(left(p.practice_ready_at)) : 'Atış yap'}</button>`);
 }
 
+// İnfaz önizlemesi: gereken kurşun aralığı ve onu belirleyenler
+function shootPrevHtml(X) {
+  if (!X) return '<p class="muted small">Hedefin gücü hesaplanıyor…</p>';
+  if (X.ok === false) return `<p class="muted small">${esc(X.msg)}</p>`;
+  const enough = X.have >= X.high, maybe = X.have >= X.low;
+  return `<div class="rp-grid">
+      <div><b>${esc(X.nick)}</b><span>${esc(rankName(X.rank))} · can ${X.health}</span>
+        <span>${X.bodyguards} koruma · adamları +%${X.men_guard}</span>${X.in_hospital ? '<span class="muted small">Şu an hastanede</span>' : ''}</div>
+      <div><b>Gereken kurşun</b><span class="big-num">${X.low.toLocaleString('tr-TR')}–${X.high.toLocaleString('tr-TR')}</span>
+        <span class="muted small">silahın ×${X.weapon_mult} · nişancılık −%${X.skill_cut}</span></div></div>
+    ${pctBar(Math.min(100, 100 * X.have / X.high), enough ? `Sende ${X.have} kurşun · yeter` : maybe ? `Sende ${X.have} kurşun · sınırda` : `Sende ${X.have} kurşun · yetmez`)}`;
+}
+async function loadShootPrev(nick) {
+  try { extra.shootPrev = await api.rpc('shoot_preview', { p_nick: nick }); } catch { return; }
+  const el = $('#shoot-prev'); if (el) el.innerHTML = shootPrevHtml(extra.shootPrev);
+}
+
 function detectiveSection() {
   const p = S.player, protectRank = S.settings.protect_rank;
   const weapon = S.weapons.find(w => w.id === p.weapon);
@@ -506,7 +529,8 @@ function detectiveSection() {
         <div class="form-row"><select id="f-shoot-target">${foundHere.map(s => `<option>${esc(s.target)}</option>`).join('')}</select>
           <input id="f-shoot-bullets" type="number" min="1" placeholder="Kurşun" inputmode="numeric">
           <button class="btn danger" data-act="shoot" ${dis(!weapon || waiting(p.kill_ready_at))}>Ateş</button></div>
-        <p class="muted small">Az kurşun sıkarsan sadece yaralarsın. Hedefin profilinde tahmini kurşun ihtiyacı yazar (korumalar hariç).</p>`
+        <div class="raid-prev" id="shoot-prev">${shootPrevHtml(extra.shootPrev)}</div>
+        <p class="muted small">Gereken kurşunun üstünde sıkarsan hedef ölür; altında kalırsan sadece yaralanır ve kurşunlar gider.</p>`
       : `<p class="muted small">Vurabilmek için dedektiflerinin hedefi <b>bulunduğun şehirde</b> bulmuş olması gerekir.</p>`) +
     hitlistSection();
 }
@@ -667,6 +691,20 @@ function konakSection() {
   h += `<h2>Silahlık</h2>` + card(weapon ? esc(weapon.name) : 'Silahın yok', `${p.bullets} kurşun · ${p.bodyguards}/5 koruma`, '',
       weapon ? icon('w_' + weapon.id, WEAPON_EMOJI[weapon.id]) : icon('w_yumruk', '✊'));
   return h;
+}
+
+// ═════════════════ HESAP KORUMA ═════════════════
+// Hesap şimdilik bu cihaza bağlı (anonim). E-posta bağlanınca başka cihazdan da aynı karaktere girilir.
+function accountCard() {
+  const A = extra.account;
+  if (!api.account || !A) return '';
+  if (A.email && !A.anonymous) return `<div class="card"><span class="icon emoji">🔐</span><div class="grow"><div class="title">Hesabın korunuyor</div>
+      <div class="muted small">${esc(A.email)} adresine bağlı. Başka cihazdan girişte bu e-postayı kullan.</div></div></div>`;
+  return `<div class="card col acct-card"><div class="title">🔐 Hesabını koru</div>
+    <div class="muted small">Karakterin şu an sadece bu cihazda. Tarayıcı verisi silinirse ya da telefon değişirse kaybolur.
+      E-postanı bağla; başka cihazdan da aynı karaktere girebilirsin.${A.email ? ` <b>${esc(A.email)}</b> adresine onay bağlantısı gönderildi, mailine bak.` : ''}</div>
+    <div class="form-row"><input id="f-acct-email" type="email" placeholder="E-posta adresin" autocomplete="email" autocapitalize="off">
+      <button class="btn primary" data-act="acctlink">Bağla</button></div></div>`;
 }
 
 // ═════════════════ MAĞAZA ═════════════════
@@ -874,6 +912,7 @@ function casinoSection() {
     <button class="bet-chip max" data-act="betset" data-game="${g}" data-id="${max}"><span>Max</span></button></div>`;
   return `<div class="casino-hero">${img('ui/kumar_bant', '', '')}<div class="ch-title">Kumarhane</div></div>
     <p class="muted small">Oyun parasıyla oynanır. Rütbene göre en yüksek bahis: <b>${money(max)}</b>. Kasa her zaman biraz önde.</p>
+    <p class="muted small legal-note">Bu bir oyundur: oyun parasının gerçek bir değeri yoktur, gerçek parayla satın alınamaz ve gerçek paraya ya da ödüle çevrilemez.</p>
     <div class="games">
       <div class="game"><div class="g-head">Zar</div>
         <div class="dice">${die(c?.game === 'zar' ? c.d1 : 6, just && c.game === 'zar')}${die(c?.game === 'zar' ? c.d2 : 1, just && c.game === 'zar')}</div>
@@ -1308,6 +1347,7 @@ function logTab() {
   h += `<div class="card clickable guide-link shop-link" data-act="shop"><span class="icon emoji">🛍</span><div class="grow">
       <div class="title">Mağaza ${p.club ? '<span class="club-badge">★ Kulüp</span>' : ''}</div>
       <div class="muted small">Özel portreler, aile armaları, Kabadayı Kulübü ve hızlandırma</div></div><span class="muted">›</span></div>`;
+  h += accountCard();
   if (p.is_admin) h += `<a class="admin-link" href="admin.html">🛡 Yönetim paneli</a>`;
 
   h += `<div class="card dossier">${portrait(p.avatar, 'avatar lg')}<div class="grow">
@@ -1334,6 +1374,10 @@ function logTab() {
         <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
         <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))}</div></div>
         <span class="b-kills">☠ ${t.kills}</span></div>`).join('') + `</div>`;
+    if (pl.rich?.length) h += `<h2>En Zenginler</h2><div class="board">` + pl.rich.map((t, i) => `<div class="b-row ${t.nick === p.nick ? 'me' : ''}">
+        <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${portrait(t.avatar || 1, 'avatar sm')}
+        <div class="grow">${nickLink(t.nick)}<div class="muted small">${esc(rankName(t.rank))} · cep + banka</div></div>
+        <span class="b-kills">${money(t.wealth)}</span></div>`).join('') + `</div>`;
     const fams = [...(extra.famRank || [])].sort((a, b) => b.power - a.power || b.members - a.members).slice(0, 5);
     if (fams.length) h += `<h2>En Güçlü Aileler</h2><div class="board">` + fams.map((f, i) => `<div class="b-row ${f.name === p.family ? 'me' : ''}">
         <span class="b-place ${MEDAL_CLS[i] || ''}">${i + 1}</span>${crest(f.name, 'sm', f.crest)}
@@ -1836,6 +1880,21 @@ document.addEventListener('click', async (e) => {
     }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
     case 'shop':       return openShop();
+    case 'acctlink': {
+      const email = val('f-acct-email');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Geçerli bir e-posta yaz.', 'bad');
+      const r = await api.linkEmail(email);
+      if (!r.ok) return toast(r.msg, 'bad');
+      toast('E-postana bir onay bağlantısı gönderdik. Tıklayınca hesabın e-postana bağlanır.', 'good');
+      extra.account = await api.account(); return renderTab();
+    }
+    case 'acctlogin': {
+      const email = (prompt('Hesabına bağlı e-posta adresin:') || '').trim();
+      if (!email) return;
+      const r = await api.loginEmail(email);
+      $('#nick-err').textContent = r.ok ? 'E-postana bir giriş bağlantısı gönderdik. Bu cihazda açarsan karakterinle oyuna girersin.' : r.msg;
+      return;
+    }
     case 'boost':      return openBoost(id);
     case 'useboost':   closeModal(); return act('use_boost', { p_target: b.dataset.target, p_via: id });
     case 'clubgift':   return (await ask('Kulüp hediyesi', `<b>${esc(b.dataset.name)}</b> bu ayın hediyesi olarak senin olsun mu? Ayda bir hediye seçebilirsin.`, 'Al'))
@@ -1911,6 +1970,7 @@ async function playCasino(b) {
 }
 
 document.addEventListener('change', (e) => {
+  if (e.target.id === 'f-shoot-target') { extra.shootPrev = null; $('#shoot-prev').innerHTML = shootPrevHtml(null); return loadShootPrev(e.target.value); }
   const sel = e.target.closest('[data-role]');
   if (!sel) return;
   if (sel.value === 'don' && !confirm(`Donluk devredilsin mi? Yeni Don: ${sel.dataset.role}. Sen Sottocapo olursun.`)) return renderTab();
