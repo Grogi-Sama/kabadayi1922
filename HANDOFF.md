@@ -30,7 +30,7 @@ Mobil metin tabanlı mafya MMO, Barafranca Omerta'dan esinlenme (isim/metin/gör
 ## Durum (2026-10-05) — proje rafa kalkıyor
 **Canlı:** Supabase https://egabjhoezsnrwoemgrhn.supabase.co (Frankfurt, ücretsiz). 001–029 yüklü. İstemci GitHub Pages: https://grogi-sama.github.io/kabadayi1922/ (son push 029 ile uyumlu).
 
-**Bekleyen (yerelde commit'li, canlıda DEĞİL):** 030 (hapiste para/mal hareketi yok, baskın önizlemesi, bildirim yoklaması) ve 031 (infaz önizlemesi, en zenginler) + bunlara bağlı istemci + hesap koruma (e-posta bağlama).
+**Bekleyen (yerelde commit'li, canlıda DEĞİL):** 030–033 (033: Duyurular — Yönetim paneli → Duyurular sekmesinden yazılır, oyuncular Defter → Duyurular'da görür); 030 (hapiste para/mal hareketi yok, baskın önizlemesi, bildirim yoklaması) ve 031 (infaz önizlemesi, en zenginler) + bunlara bağlı istemci + hesap koruma (e-posta bağlama).
 Sıra: `python tools/build_deploy_sql.py 030` → `supabase/deploy_030.sql` SQL Editor'de bir kez → sonra `git push`. İstemciyi SQL'den önce push etme (yeni RPC'leri çağırıyor).
 Hesap koruma için Supabase'de: Authentication → URL Configuration → Site URL `https://grogi-sama.github.io/kabadayi1922/www/` (+ Redirect URLs'e aynısı ve http://localhost:5180/www/). E-posta sağlayıcı açık olmalı (varsayılan). Varsayılan Supabase SMTP saatte birkaç e-posta gönderir; oyuncu artınca özel SMTP gerekir.
 

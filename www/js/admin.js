@@ -184,9 +184,28 @@ async function suggestions() {
       : '<p class="muted">Bu listede öneri yok.</p>');
 }
 
+// Duyurular (sadece Admin): oyuncular Defter → Duyurular'da görür
+const ANN = { guncelleme: 'Güncelleme', bakim: 'Planlı bakım', etkinlik: 'Etkinlik', duyuru: 'Duyuru' };
+async function announcements() {
+  const list = await api.rpc('get_announcements');
+  return `<h2>Yeni duyuru</h2><form id="ann-form" class="report">
+      <div class="actions"><select id="ann-kind">${Object.entries(ANN).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <input id="ann-title" maxlength="80" placeholder="Başlık"></div>
+      <textarea id="ann-body" rows="6" maxlength="3000" placeholder="Metin (satır atlayabilirsin)"></textarea>
+      <div class="actions"><label><input type="checkbox" id="ann-pin"> Başa sabitle</label>
+        <label><input type="checkbox" id="ann-notify"> Bildirim gönder</label>
+        <button class="btn primary">Yayımla</button></div>
+      <p class="meta">Bildirim, bildirimleri açık ve o an oyunda olmayan oyunculara gider.</p></form>
+    <h2>Yayımlananlar</h2>` + (list.length ? list.map(x => `<div class="report">
+      <div class="meta">${ANN[x.kind]} · ${when(x.at)}${x.pinned ? ' · 📌 sabit' : ''}</div><b>${esc(x.title)}</b>
+      <div class="quote" style="white-space:pre-line">${esc(x.body)}</div>
+      <div class="actions"><button class="btn sm" data-a="ann-pin" data-id="${x.id}">${x.pinned ? 'Sabitlemeyi kaldır' : 'Başa sabitle'}</button>
+        <button class="btn sm danger" data-a="ann-del" data-id="${x.id}">Sil</button></div></div>`).join('') : '<p class="muted">Henüz duyuru yok.</p>');
+}
+
 async function render() {
   try {
-    $('#view').innerHTML = await ({ overview, reports, player, log, team, appeals, suggestions })[view]();
+    $('#view').innerHTML = await ({ overview, reports, player, log, team, appeals, suggestions, announcements })[view]();
     if (view !== 'overview') { const o = await api.rpc('admin_overview'); showCount(o.open_reports, o.open_appeals); }
   } catch (e) {
     console.error(e);
@@ -229,6 +248,11 @@ document.addEventListener('click', async (e) => {
     const accept = a === 'appeal-accept';
     if (accept && !confirm('Ceza kaldırılsın mı?')) return;
     await call('admin_resolve_appeal', { p_id: +b.dataset.id, p_accept: accept, p_response: $(`#resp-${b.dataset.id}`)?.value || null });
+  } else if (a === 'ann-pin') {
+    await call('admin_announcement_pin', { p_id: +b.dataset.id });
+  } else if (a === 'ann-del') {
+    if (!confirm('Duyuru silinsin mi?')) return;
+    await call('admin_announcement_delete', { p_id: +b.dataset.id });
   } else if (a === 'sug') {
     await call('admin_suggestion_set', { p_id: +b.dataset.id, p_status: b.dataset.st, p_note: $(`#sn-${b.dataset.id}`)?.value || null });
   } else if (a === 'warn-staff') {
@@ -251,6 +275,13 @@ document.addEventListener('click', async (e) => {
 });
 
 document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'ann-form') {
+    e.preventDefault();
+    const r = await call('admin_announce', { p_kind: $('#ann-kind').value, p_title: $('#ann-title').value, p_body: $('#ann-body').value,
+      p_pinned: $('#ann-pin').checked, p_notify: $('#ann-notify').checked });
+    if (r?.ok) render();
+    return;
+  }
   if (e.target.id === 'grant-form') {
     e.preventDefault();
     const nick = $('#grant-nick').value.trim();
@@ -273,7 +304,7 @@ if (!me.role) {
 } else {
   $('#admin-who').textContent = `${me.nick} · ${ROLE[me.role]}`;
   if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend',
-    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="suggestions">Öneriler</button><button data-view="team">Yetkililer</button>');
+    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="suggestions">Öneriler</button><button data-view="announcements">Duyurular</button><button data-view="team">Yetkililer</button>');
   else if (me.role === 'owner') $('#view').insertAdjacentHTML('beforebegin',
     '<p class="meta" style="padding:0 16px">Admin araçları (itirazlar, yetkililer, kalıcı ban, sezon) sadece kendi bilgisayarından açılır.</p>');
   render();

@@ -206,7 +206,9 @@ begin
       'famnews', case when p.family_id is not null then
         (select max(id) from family_messages where family_id = p.family_id and player_id is null) end,
       'crew', (select max(m.crew_id) from crew_members m join crews c on c.id = m.crew_id
-               where m.player_id = p.id and m.accepted is null and c.status = 'forming' and c.leader_id <> p.id)),
+               where m.player_id = p.id and m.accepted is null and c.status = 'forming' and c.leader_id <> p.id),
+      -- Defter: yeni duyuru (033'teki tablo; fonksiyon çalışırken var)
+      'ann', (select max(id) from announcements)),
     'unread', (select count(*) from messages where to_id = p.id and read_at is null),
     'events', (select coalesce(jsonb_agg(jsonb_build_object('text', e.text, 'at', e.created_at) order by e.id), '[]')
                from (select * from events where player_id = p.id and created_at > p_since order by id desc limit 5) e),

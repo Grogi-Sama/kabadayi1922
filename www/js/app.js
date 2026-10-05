@@ -699,6 +699,19 @@ function konakSection() {
   return h;
 }
 
+// ═════════════════ DUYURULAR ═════════════════
+const ANN_KIND = { guncelleme: ['Güncelleme', 'k-upd'], bakim: ['Planlı bakım', 'k-mnt'], etkinlik: ['Etkinlik', 'k-evt'], duyuru: ['Duyuru', 'k-ann'] };
+function annView() {
+  let h = banner('ui/defter_bant', 'Duyurular', 'Güncellemeler, bakımlar ve haberler') +
+    `<p><button class="btn sm" data-act="logmain">← Defter</button></p>`;
+  if (!extra.ann) return h + '<p class="muted">Yükleniyor…</p>';
+  if (!extra.ann.length) return h + '<p class="muted">Henüz duyuru yok.</p>';
+  return h + extra.ann.map(a => `<article class="ann ${a.pinned ? 'pinned' : ''}">
+      <div class="ann-head"><span class="ann-kind ${ANN_KIND[a.kind][1]}">${ANN_KIND[a.kind][0]}</span>
+        ${a.pinned ? '<span class="muted small">📌 sabit</span>' : ''}<span class="muted small ann-date">${new Date(a.at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+      <h3>${esc(a.title)}</h3><div class="ann-body">${esc(a.body)}</div></article>`).join('');
+}
+
 // ═════════════════ AYARLAR ═════════════════
 async function openSettings() {
   const a = audioSettings(), ps = await pushState();
@@ -1372,6 +1385,7 @@ function logTab() {
   if (logView === 'guide') return guideView();
   if (logView === 'events') return eventsView();
   if (logView === 'shop') return shopView();
+  if (logView === 'ann') return annView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
   h += `<div class="card clickable guide-link" data-act="guide"><span class="icon emoji">📖</span><div class="grow">
@@ -1425,6 +1439,10 @@ function logTab() {
         `<div class="on-chip">${portrait(o.avatar || 1, 'avatar sm')}${nickLink(o.nick)}</div>`).join('') || '<span class="muted small">Kimse yok.</span>') + `</div>`;
   }
   h += `<h2>Olaylar</h2>` + eventsSection();
+  const annNew = (heads.ann || 0) > getSeen('ann');
+  h += `<div class="card clickable guide-link ann-link" data-act="ann"><span class="icon emoji">📢</span><div class="grow">
+      <div class="title">Duyurular ${annNew ? '<span class="new-dot"></span>' : ''}</div>
+      <div class="muted small">Güncellemeler, planlı bakımlar, etkinlikler ve oyunla ilgili haberler</div></div><span class="muted">›</span></div>`;
   h += `<button class="btn settings-btn" data-act="settings">⚙ Ayarlar</button>`;
   if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
@@ -1918,6 +1936,9 @@ document.addEventListener('click', async (e) => {
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
     case 'shop':       return openShop();
     case 'settings':   return openSettings();
+    case 'ann':        logView = 'ann'; extra.ann = null; renderTab(); $('main').scrollTop = 0;
+                       extra.ann = await api.rpc('get_announcements');
+                       setSeen('ann', Math.max(heads.ann || 0, ...extra.ann.map(a => a.id), 0)); updateBadges(); return renderTab();
     case 'pushon':     { const r = await enablePush(api); toast(r.msg, r.ok ? 'good' : 'bad'); return openSettings(); }
     case 'pushoff':    { await disablePush(api); toast('Bildirimler kapatıldı.', 'good'); return openSettings(); }
     case 'acctlink': {
@@ -2055,6 +2076,7 @@ document.addEventListener('submit', async (e) => {
     const r = await api.rpc('create_character', { p_nick: $('#nick').value.trim(), p_gender: pickedGender, p_avatar: pickedAvatar });
     if (!r.ok) { $('#nick-err').textContent = r.msg; return; }
     await refresh();
+    pollSince = S.now; poll();   // yeni karakter: duyuru ve bildirimler hemen
   }
 });
 
@@ -2096,6 +2118,7 @@ function updateBadges() {
   if (tab === 'crime') setSeen('crew', heads.crew || 0);
   $('[data-go="family"]').classList.toggle('has-dot', tab !== 'family' && ['apps', 'famnews'].some(k => (heads[k] || 0) > getSeen(k)));
   $('[data-go="crime"]').classList.toggle('has-dot', tab !== 'crime' && (heads.crew || 0) > getSeen('crew'));
+  $('[data-go="log"]').classList.toggle('has-dot', !(tab === 'log' && logView === 'ann') && (heads.ann || 0) > getSeen('ann'));
   document.querySelectorAll('.chat-tabs [data-act="chatch"]').forEach(b => {
     const ch = b.dataset.id; if (ch === 'dm') return;
     const dot = b.querySelector('.new-dot'), want = chanNew(ch) && chatCh !== ch;

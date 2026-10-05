@@ -882,3 +882,13 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
 /* yatay telefon / kısa ekran: menü biraz incelsin */
 @media (max-height: 500px) and (orientation: landscape) { :root { --nav-h: 52px; } }
 .legal-consent { font-size: 12px; margin-top: 8px; } .legal-consent a { color: var(--gold-hi); }
+
+/* 033: duyurular */
+.ann { margin: 0 0 10px; padding: 12px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid #4a3a26; }
+.ann.pinned { border-color: var(--gold); }
+.ann h3 { margin: 6px 0 4px; font: 18px var(--display); color: var(--gold-hi); letter-spacing: .5px; }
+.ann-head { display: flex; align-items: center; gap: 8px; }
+.ann-date { margin-left: auto; }
+.ann-body { white-space: pre-line; font-size: 14px; line-height: 1.5; color: var(--paper); }
+.ann-kind { padding: 1px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #1b140c; }
+.k-upd { background: #9fd49a; } .k-mnt { background: #e0a35a; } .k-evt { background: #8fc6e0; } .k-ann { background: var(--gold-hi); }
