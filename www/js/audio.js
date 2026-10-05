@@ -118,13 +118,36 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
   s.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; s.connect(f); f.connect(g); g.connect(sfxBus);
   g.gain.value = vol; s.start(t);
 }
+// Karanlık "kontrbas + tok tel" akoru: başarı ve başarısızlık için (mafya havası: minör, kalın, kısa)
+function stab(freqs, dur, vol = 0.14, cutoff = 900, delayS = 0) {
+  if (!ctx || !cfg.sfxOn) return;
+  const t = ctx.currentTime + delayS, f = ctx.createBiquadFilter(), g = ctx.createGain();
+  f.type = 'lowpass'; f.frequency.setValueAtTime(cutoff, t); f.frequency.exponentialRampToValueAtTime(Math.max(120, cutoff / 4), t + dur);
+  f.connect(g); g.connect(sfxBus); env(g, t, 0.01, vol, dur);
+  freqs.forEach((fr) => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.detune.value = (Math.random() - .5) * 10;
+    o.connect(f); o.start(t); o.stop(t + dur + 0.05); });
+}
+function clicks(n, spacingStart, spacingEnd, vol, freq, delayS = 0) {   // ard arda tıkırtılar (yavaşlayarak)
+  let t = delayS;
+  for (let i = 0; i < n; i++) { noise(0.025, vol, freq + Math.random() * 300, t); t += spacingStart + (spacingEnd - spacingStart) * (i / n); }
+}
+
 export const sfx = {
   tab:     () => tone(1400, 0.035, 'sine', 0.06),                        // sekme geçişi: çok hafif tık
   tap:     () => { tone(320, 0.06, 'triangle', 0.12, 220); },            // düğme: tahta "tok"
-  success: () => { tone(587, 0.18, 'triangle', 0.18); tone(880, 0.3, 'triangle', 0.16, null, 0.09); },
-  fail:    () => { tone(180, 0.28, 'sawtooth', 0.12, 90); },
-  coin:    () => { tone(1975, 0.12, 'square', 0.05); tone(2637, 0.2, 'square', 0.05, null, 0.07); },
+  // başarı: D minör, kalın; sonunda boğuk bas — "iş tamam, ses çıkarma"
+  success: () => { stab([73.4, 110, 146.8, 174.6], 0.9, 0.12, 1400); tone(55, 0.6, 'sine', 0.22, 45); },
+  // başarısızlık: tritonlu (Si bemol – Mi) karanlık çarpışma, aşağı kayan bas
+  fail:    () => { stab([58.3, 82.4, 116.5], 1.1, 0.13, 700); tone(70, 0.9, 'sine', 0.2, 35); noise(0.3, 0.12, 300); },
+  coin:    () => { tone(1318, 0.1, 'triangle', 0.06); tone(988, 0.25, 'triangle', 0.06, null, 0.06); stab([73.4, 110], 0.5, 0.06, 900, 0.05); },
   shot:    () => { noise(0.25, 0.5, 900); tone(120, 0.25, 'sine', 0.2, 50); },
   open:    () => tone(660, 0.08, 'sine', 0.07, 880),                     // panel açılışı
-  notify:  () => { tone(1046, 0.12, 'sine', 0.08); tone(1318, 0.18, 'sine', 0.07, null, 0.1); },
+  notify:  () => { tone(523, 0.14, 'sine', 0.08); tone(392, 0.22, 'sine', 0.07, null, 0.12); },
+  // ── Kumarhane
+  dice:    () => { clicks(9, 0.04, 0.11, 0.35, 2600); noise(0.06, 0.4, 1800, 0.62); },          // zar sallanır, masaya düşer
+  roulette:() => { clicks(30, 0.035, 0.16, 0.18, 3200); noise(0.05, 0.3, 2400, 2.6); },          // top döner, yavaşlar, cebe düşer
+  slot:    () => { noise(0.9, 0.12, 500); [0.9, 1.1, 1.3].forEach(d => { noise(0.05, 0.45, 1500, d); tone(180, 0.08, 'square', 0.06, 120, d); }); },
+  card:    () => { noise(0.09, 0.3, 4200); tone(900, 0.04, 'triangle', 0.04, 500, 0.03); },     // kart masaya kayar
+  chips:   () => { [0, 0.05, 0.09].forEach(d => tone(2400 + Math.random() * 600, 0.05, 'triangle', 0.06, null, d)); },
+  scratch: () => { noise(0.5, 0.2, 3500); },
 };

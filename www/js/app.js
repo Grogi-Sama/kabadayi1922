@@ -171,6 +171,8 @@ const icon = (name, emoji) => img(`items/${name}`, 'icon', `<span class="icon em
 const WEAPON_EMOJI = { tabanca: '🔫', pompali: '🔫', thompson: '🔫' };
 const CAR_EMOJI = { kamyonet: '🛻', taksi: '🚕', aile: '🚗', spor: '🏎', sedan: '🚘', limuzin: '🚙' };
 const GOOD_EMOJI = { kahve: '☕', tutun: '🍂', sarap: '🍷', raki: '🥛', konyak: '🥃', viski: '🛢', hali: '🧶', mucevher: '💎', silah_parca: '⚙️' };
+// Defter kartlarının simgesi: görsel varsa o, yoksa emoji
+const uiIcon = (name, emoji) => img('ico/' + name, 'icon', `<span class="icon emoji">${emoji}</span>`);
 // Satır içi küçük görsel (yoksa emoji): profil, sayaçlar
 const aic = (path, emoji) => img(path, 'ico', emoji);
 // İşlerin her birinin kendi beklemesi var (020); üstteki "İş" çipi: açık işlerden en erken hazır olan
@@ -352,7 +354,7 @@ function cityTab() {
   return `<div class="map" style="${tex}">${img(`bg/${p.city}`, 'bgimg', '')}
     <div class="sky">${img(`harbor/${p.city}`, 'harbor', '<div class="ship">⛴</div>')}
       <div class="city-title">${esc(cityName(p.city).toLocaleUpperCase('tr-TR'))}<small>1922</small></div>
-      <div class="hotspot" data-open="liman"><div class="dot">⚓</div>Liman</div>
+      <div class="hotspot liman-btn" data-open="liman">${hasAsset('ico/liman') ? img('ico/liman', 'liman-img', '') : '<div class="dot">⚓</div>'}Liman</div>
       ${eventStrip()}
     </div>
     <div class="town">${town}</div></div>`;
@@ -1218,7 +1220,7 @@ function familyTab() {
   h += `<div class="card clickable chat-link" data-act="gochat"><span class="icon emoji">${ico('sohbet', '💬')}</span><div class="grow">
       <div class="title">Aile sohbeti</div><div class="muted small ellipsis">${last ? `${esc(last.nick)}: ${esc(last.text)}` : 'Henüz mesaj yok.'}</div></div>
       <span class="muted">›</span></div>
-    <div class="card clickable guide-link" data-act="evcal"><span class="icon emoji">📅</span><div class="grow">
+    <div class="card clickable guide-link" data-act="evcal">${uiIcon('takvim', '📅')}<div class="grow">
       <div class="title">Etkinlik takvimi</div><div class="muted small">${(extra.events || []).filter(evActive).map(e => EVENTS[e.kind].name).join(', ') || 'Kıtlık, altın saat, baskın gecesi ve sürprizler'}</div></div>
       <span class="muted">›</span></div>`;
 
@@ -1388,10 +1390,10 @@ function logTab() {
   if (logView === 'ann') return annView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
-  h += `<div class="card clickable guide-link" data-act="guide"><span class="icon emoji">📖</span><div class="grow">
+  h += `<div class="card clickable guide-link" data-act="guide">${uiIcon('rehber', '📖')}<div class="grow">
       <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
       <span class="muted">›</span></div>`;
-  h += `<div class="card clickable guide-link shop-link" data-act="shop"><span class="icon emoji">🛍</span><div class="grow">
+  h += `<div class="card clickable guide-link shop-link" data-act="shop">${uiIcon('magaza', '🛍')}<div class="grow">
       <div class="title">Mağaza ${p.club ? '<span class="club-badge">★ Kulüp</span>' : ''}</div>
       <div class="muted small">Özel portreler, aile armaları, Kabadayı Kulübü ve hızlandırma</div></div><span class="muted">›</span></div>`;
   h += accountCard();
@@ -1412,7 +1414,7 @@ function logTab() {
      <button class="btn sm" data-act="rejectprop" data-id="${esc(n)}">Reddet</button></div>`, aic('ico/yuzuk', '💍'))).join('');
   if (p.proposal_to) h += card(`Teklifin: ${nickLink(p.proposal_to)}`, 'Cevap bekleniyor.', `<button class="btn sm" data-act="cancelprop">Geri çek</button>`, aic('ico/yuzuk', '💍'));
   h += friendsSection();
-  h += `<div class="card clickable" data-act="suggest"><span class="icon emoji">💡</span><div class="grow">
+  h += `<div class="card clickable" data-act="suggest">${uiIcon('oneri', '💡')}<div class="grow">
       <div class="title">Öneri kutusu</div><div class="muted small">Yeni özellik, etkinlik, mod ya da değişiklik fikrini yönetime gönder</div></div>
       <span class="muted">›</span></div>`;
 
@@ -1440,10 +1442,10 @@ function logTab() {
   }
   h += `<h2>Olaylar</h2>` + eventsSection();
   const annNew = (heads.ann || 0) > getSeen('ann');
-  h += `<div class="card clickable guide-link ann-link" data-act="ann"><span class="icon emoji">📢</span><div class="grow">
+  h += `<div class="card clickable guide-link ann-link" data-act="ann">${uiIcon('duyuru', '📢')}<div class="grow">
       <div class="title">Duyurular ${annNew ? '<span class="new-dot"></span>' : ''}</div>
       <div class="muted small">Güncellemeler, planlı bakımlar, etkinlikler ve oyunla ilgili haberler</div></div><span class="muted">›</span></div>`;
-  h += `<button class="btn settings-btn" data-act="settings">⚙ Ayarlar</button>`;
+  h += `<button class="btn settings-btn" data-act="settings">${aic('ico/ayarlar', '⚙')} Ayarlar</button>`;
   if (api.mode === 'local') h += `<p class="muted small" style="margin-top:24px">Yerel geliştirme modu.
       <button class="btn sm" data-act="reset">Yerel veriyi sıfırla</button></p>`;
   return h;
@@ -1989,7 +1991,7 @@ document.addEventListener('click', async (e) => {
     case 'gochat':     chatCh = 'family'; return $('[data-go="chat"]').click();
     // kumarhane
     case 'lottery':    return act('buy_lottery', { p_qty: num('f-lot-n') });
-    case 'scratch':    return act('scratch_card');
+    case 'scratch':    sfx.scratch(); return act('scratch_card');
     case 'casino': case 'bjstart': case 'bjhit': case 'bjstand': return playCasino(b);
     case 'betset':     if ($('#f-bet-' + b.dataset.game)) $('#f-bet-' + b.dataset.game).value = id; extra.bets = { ...extra.bets, [b.dataset.game]: id }; return;
     case 'reset':
@@ -2006,6 +2008,11 @@ async function playCasino(b) {
   let choice = b.dataset.choice || null;
   if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
   busy = true;
+  // Oyunun sesi hemen; sonuç sesi animasyon bitince
+  const g = a === 'casino' ? b.dataset.game : 'bj';
+  if (g === 'zar') sfx.dice(); else if (g === 'rulet') sfx.roulette(); else if (g === 'slot') sfx.slot();
+  else if (a === 'bjstart') { sfx.chips(); setTimeout(sfx.card, 150); setTimeout(sfx.card, 400); } else if (a === 'bjhit') sfx.card();
+  const resultDelay = { zar: 800, rulet: 2800, slot: 1500 }[g] || 0;
   try {
     const r = a === 'casino' ? await api.rpc('play_casino', { p_game: b.dataset.game, p_bet: bet, p_choice: choice })
       : a === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })
@@ -2023,10 +2030,13 @@ async function playCasino(b) {
     while (extra.bj === r && r.done && extra.bjReveal != null && extra.bjReveal < cards(r.dealer).length) {
       await new Promise(res => setTimeout(res, 2000));   // her kart arası 2 sn: gerilim
       if (extra.bj !== r) break;
-      extra.bjReveal++; render();
+      extra.bjReveal++; render(); sfx.card();
     }
     // Sonuç belli olunca telefona kısa titreşim (destekleyen tarayıcılarda; iOS Safari desteklemez)
-    if (r.ok && (a === 'casino' || (r.done && extra.bj === r))) buzz(r.win > 0);
+    if (r.ok && (a === 'casino' || (r.done && extra.bj === r))) {
+      buzz(r.win > 0);
+      setTimeout(() => r.win > 0 ? (sfx.chips(), sfx.success()) : sfx.fail(), resultDelay);
+    }
   } finally { busy = false; }
 }
 

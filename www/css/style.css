@@ -892,3 +892,9 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
 .ann-body { white-space: pre-line; font-size: 14px; line-height: 1.5; color: var(--paper); }
 .ann-kind { padding: 1px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #1b140c; }
 .k-upd { background: #9fd49a; } .k-mnt { background: #e0a35a; } .k-evt { background: #8fc6e0; } .k-ann { background: var(--gold-hi); }
+
+/* Liman düğmesi: görsel gelince yuvarlak altın çerçeveli rozet */
+.liman-btn .liman-img { display: block; width: 58px; height: 58px; object-fit: contain; margin: 0 auto 1px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.8)); transition: transform .15s; }
+.liman-btn:active .liman-img { transform: scale(.94); }
+.settings-btn .ico { width: 20px; height: 20px; vertical-align: -4px; }
