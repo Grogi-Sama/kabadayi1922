@@ -11,8 +11,8 @@ const ACTION = { warn: 'Uyarı', mute: 'Susturma', unmute: 'Susturma kaldırıld
   grant: 'Moderatör yapıldı', revoke: 'Moderatörlük alındı', season: 'Sezon',
   appeal_accept: 'İtiraz kabul', appeal_reject: 'İtiraz ret', staff_warn: 'Yetkili uyarıldı' };
 const ROLE = { owner: 'Admin', moderator: 'Moderatör' };
-// Admin araçları (yetkililer, itirazlar, kalıcı ban, sezon) sadece adminin kendi bilgisayarından (localhost) açılır.
-// Asıl güvenlik sunucuda: bu işlemler admin hesabı dışında her yerden reddedilir. Bu ek bir katmandır.
+// Öneriler ve Duyurular sahip hesabına her yerden açılır. Ağır araçlar (yetkililer, itirazlar, kalıcı ban, sezon)
+// sadece adminin kendi bilgisayarından (localhost). Asıl güvenlik sunucuda (require_owner); bu ek bir katmandır.
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 
 // me.role: 'owner' | 'moderator' — sadece görünüm için; asıl kontrol sunucuda her çağrıda yapılır
@@ -304,10 +304,12 @@ if (!me.role) {
   $('#view').innerHTML = `<p class="err">Bu sayfayı görme yetkin yok.</p>`;
 } else {
   $('#admin-who').textContent = `${me.nick} · ${ROLE[me.role]}`;
+  if (me.role === 'owner') $('.admin-nav').insertAdjacentHTML('beforeend',
+    '<button data-view="suggestions">Öneriler</button><button data-view="announcements">Duyurular</button>');
   if (isOwner()) $('.admin-nav').insertAdjacentHTML('beforeend',
-    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="suggestions">Öneriler</button><button data-view="announcements">Duyurular</button><button data-view="team">Yetkililer</button>');
+    '<button data-view="appeals">İtirazlar <span id="appeal-count" class="pill hidden"></span></button><button data-view="team">Yetkililer</button>');
   else if (me.role === 'owner') $('#view').insertAdjacentHTML('beforebegin',
-    '<p class="meta" style="padding:0 16px">Admin araçları (itirazlar, yetkililer, kalıcı ban, sezon) sadece kendi bilgisayarından açılır.</p>');
+    '<p class="meta" style="padding:0 16px">İtirazlar, yetkililer, kalıcı ban ve sezon araçları sadece kendi bilgisayarından açılır.</p>');
   render();
 }
 setInterval(() => { if (me.role && view === 'overview' && !document.hidden) render(); }, 30000);
