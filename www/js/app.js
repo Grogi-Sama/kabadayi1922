@@ -2010,13 +2010,19 @@ document.addEventListener('click', async (e) => {
 
 // Kumarhane: sonucu panelde gösterir, bahis kutusu dolu kalır (aynı bahisle tekrar oynansın)
 const buzz = (win) => { try { navigator.vibrate?.(win ? [40, 60, 40, 60, 120] : [180]); } catch {} };
+// Zar/rulet/slot: oyun (animasyon) bitmeden yeni oyun başlamaz; sonra en az 1 sn ara (sunucu beklemesi 1 sn)
+let casinoLockUntil = 0;
+const CASINO_ANIM = { zar: 1000, rulet: 1500, slot: 1500 };
+
 async function playCasino(b) {
   if (busy) return;
+  if (b.dataset.act === 'casino' && Date.now() < casinoLockUntil) return;   // süren oyun var: tıklama yok sayılır
   const a = b.dataset.act, game = a === 'bjstart' ? 'bj' : b.dataset.game, bet = num('f-bet-' + game);
   if ((a === 'casino' || a === 'bjstart') && bet < 10) return toast(`Önce bu oyunun bahsini yaz (en az ${moneyText(10)}).`, 'bad');
   let choice = b.dataset.choice || null;
   if (choice === 'num') { if (val('f-rulet-n') === '') return toast('0-36 arası bir sayı yaz.', 'bad'); choice = String(num('f-rulet-n')); }
   busy = true;
+  if (a === 'casino') casinoLockUntil = Infinity;
   // Oyunun sesi hemen; sonuç sesi animasyon bitince
   const g = a === 'casino' ? b.dataset.game : 'bj';
   if (a === 'casino') sfx.bet();
@@ -2028,7 +2034,7 @@ async function playCasino(b) {
       : a === 'bjstart' ? await api.rpc('bj_start', { p_bet: bet })
       : await api.rpc(a === 'bjhit' ? 'bj_hit' : 'bj_stand');
     if (game && bet) extra.bets = { ...extra.bets, [game]: bet };   // aynı bahisle tekrar oynanabilsin
-    if (!r.ok) toast(r.msg, 'bad');
+    if (!r.ok) { if (!/karıştırıyor/.test(r.msg || '')) toast(r.msg, 'bad'); }   // bekleme mesajı gösterilmez
     else if (a === 'casino') extra.casino = r;
     else {
       if (a === 'bjstart') extra.bjSeen = { d: 0, p: 0 };
@@ -2036,6 +2042,7 @@ async function playCasino(b) {
       extra.bjReveal = r.done ? 1 : null;
     }
     S = await api.rpc('get_state'); render();
+    if (a === 'casino') casinoLockUntil = Date.now() + (r.ok ? Math.max(1000, CASINO_ANIM[g] || 0) : 1000);   // animasyon bitene kadar
     // Krupiye: gizli kartı çevirir, sonra gerekirse tek tek çeker
     while (extra.bj === r && r.done && extra.bjReveal != null && extra.bjReveal < cards(r.dealer).length) {
       await new Promise(res => setTimeout(res, 2000));   // her kart arası 2 sn: gerilim
@@ -2047,7 +2054,7 @@ async function playCasino(b) {
       buzz(r.win > 0);
       setTimeout(() => r.win > 0 ? sfx.casinoWin() : sfx.casinoLose(), resultDelay);
     }
-  } finally { busy = false; }
+  } finally { busy = false; if (casinoLockUntil === Infinity) casinoLockUntil = Date.now() + 1000; }
 }
 
 document.addEventListener('change', async (e) => {

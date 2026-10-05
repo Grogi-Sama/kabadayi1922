@@ -71,6 +71,9 @@ where not exists (select 1 from announcements);
 -- Gümrüğe takılma ihtimali %8 → %5
 update game_settings set value = 0.05 where key = 'customs_chance';
 
+-- Kumarhane (zar, rulet, slot, kazı kazan) arası bekleme 3 sn → 1 sn
+update game_settings set value = 1 where key = 'casino_cooldown_s';
+
 insert into api_rpcs values ('get_announcements()'), ('admin_announce(text, text, text, boolean, boolean)'),
   ('admin_announcement_pin(bigint)'), ('admin_announcement_delete(bigint)') on conflict do nothing;
 select apply_grants();
