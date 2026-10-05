@@ -726,6 +726,7 @@ function annView() {
 // ═════════════════ AYARLAR ═════════════════
 async function openSettings() {
   const a = audioSettings(), ps = await pushState();
+  extra.account = api.account ? await api.account().catch(() => null) : null;
   const slider = (key, on, label) => `<div class="set-row"><label class="set-check"><input type="checkbox" data-aud="${on}" ${a[on] ? 'checked' : ''}> ${label}</label>
     <input type="range" min="0" max="100" step="5" value="${Math.round(a[key] * 100)}" data-aud="${key}"><span class="muted small" id="aud-${key}">%${Math.round(a[key] * 100)}</span></div>`;
   $('#modal-body').innerHTML = `<div class="logo-sm">Ayarlar</div>
@@ -735,6 +736,10 @@ async function openSettings() {
       : ps.denied ? 'Bildirim izni tarayıcı ayarlarından kapatılmış. Açmak için tarayıcı/site ayarlarından izin ver.'
       : 'Oyun kapalıyken de önemli gelişmelerden haberin olsun.') : ps.reason}</p>
     ${ps.supported && !ps.denied ? (ps.on ? `<button class="btn" data-act="pushoff">Bildirimleri kapat</button>` : `<button class="btn primary" data-act="pushon">Bildirimleri aç</button>`) : ''}
+    <h2>Hesap</h2>${accountCard()}
+    <div class="card col"><div class="title">Başka cihazda karakterin mi var?</div>
+      <div class="muted small">E-postasını bağladığın karakterle bu cihazda oynamak için e-postanla gir.</div>
+      <button class="btn" data-act="acctlogin">E-postayla gir</button></div>
     <h2>Yasal</h2>
     <div class="menu-list"><a class="btn" href="gizlilik.html" target="_blank">Gizlilik Politikası</a>
       <a class="btn" href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a>
@@ -1958,14 +1963,27 @@ document.addEventListener('click', async (e) => {
       const r = await api.linkEmail(email);
       if (!r.ok) return toast(r.msg, 'bad');
       toast('E-postana bir onay bağlantısı gönderdik. Tıklayınca hesabın e-postana bağlanır.', 'good');
-      extra.account = await api.account(); return renderTab();
+      extra.account = await api.account();
+      return $('#modal').classList.contains('hidden') ? renderTab() : openSettings();
     }
     case 'acctlogin': {
-      const email = (prompt('Hesabına bağlı e-posta adresin:') || '').trim();
-      if (!email) return;
+      const A = api.account ? await api.account().catch(() => null) : null;
+      const risk = S?.player && A && (A.anonymous || !A.email);   // bu cihazdaki karakter korunmuyor
+      $('#modal-body').innerHTML = `<div class="logo-sm">E-postayla gir</div>
+        <p class="small">Karakterine bağladığın e-postayı yaz. Sana bir giriş bağlantısı gönderelim; bu cihazda açınca o karakterle oyuna girersin.</p>
+        ${risk ? `<p class="small" style="color:#f3c2bb">Dikkat: bu cihazdaki karakterin <b>${esc(S.player.nick)}</b> bir e-postaya bağlı değil. Başka hesaba geçersen ona bir daha giremezsin. Önce Ayarlar'dan onu da bağlayabilirsin.</p>` : ''}
+        <div class="form-row"><input id="f-login-email" type="email" placeholder="E-posta adresin" autocomplete="email" autocapitalize="off">
+          <button class="btn primary" data-act="acctloginsend">Gönder</button></div>
+        <p class="muted small" id="login-msg"></p>`;
+      $('#modal').classList.remove('hidden');
+      return $('#f-login-email').focus();
+    }
+    case 'acctloginsend': {
+      const email = val('f-login-email');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Geçerli bir e-posta yaz.', 'bad');
       const r = await api.loginEmail(email);
-      $('#nick-err').textContent = r.ok ? 'E-postana bir giriş bağlantısı gönderdik. Bu cihazda açarsan karakterinle oyuna girersin.' : r.msg;
-      return;
+      $('#login-msg').textContent = r.ok ? 'E-postana bir giriş bağlantısı gönderdik. Bağlantıyı bu cihazda aç.' : r.msg;
+      return r.ok ? toast('Giriş bağlantısı gönderildi.', 'good') : toast(r.msg, 'bad');
     }
     case 'boost':      return openBoost(id);
     case 'useboost':   closeModal(); return act('use_boost', { p_target: b.dataset.target, p_via: id });

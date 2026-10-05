@@ -104,6 +104,10 @@ async function localBackend() {
       const sql = `select ${name}(${keys.map((k, i) => `${k} => $${i + 1}`).join(', ')}) r`;
       return (await db.query(sql, keys.map(k => args[k]))).rows[0].r;
     },
+    // Yerel denemede e-posta yok: arayüz görünsün, gönderim yapılmasın
+    account: async () => ({ email: null, anonymous: true }),
+    linkEmail: async () => ({ ok: false, msg: 'Yerel deneme modunda e-posta gönderilmez; canlı oyunda çalışır.' }),
+    loginEmail: async () => ({ ok: false, msg: 'Yerel deneme modunda e-posta gönderilmez; canlı oyunda çalışır.' }),
     // Sadece geliştirme: konsoldan ham SQL (ör. hızlı test için rütbe/para ayarlamak)
     sql: (q, params) => db.query(q, params),
     async reset() {
