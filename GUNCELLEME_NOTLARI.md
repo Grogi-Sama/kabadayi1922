@@ -17,7 +17,7 @@ Canlıda (2026-10-05 gönderimi), ilk duyuruda yazmayanlar:
 - Karakter açma ekranında küçük düzeltme.
 
 Yerelde, gönderilmedi:
-- (henüz yok)
+- Vapurla sefere çıkınca buhar düdüğü çalar.
 
 ## Yayımlananlar
 

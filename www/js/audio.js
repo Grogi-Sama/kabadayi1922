@@ -123,7 +123,7 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
 const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
   'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose',   // jingle: Kenney Music Jingles SAX10 / SAX07
   'job-coins', 'job-punch', 'job-jailed', 'jail-escape',   // iş sonucu: Kenney RPG Audio + Impact Sounds
-  'ui-click', 'coin-buy', 'coin-sell'];   // ui-click: Kenney UI Audio click3 · coin: OpenGameArt StarNinjas coin.5 (alış) / coin.1 (satış)
+  'ui-click', 'coin-buy', 'coin-sell', 'voyage'];   // ui-click: Kenney UI Audio click3 · coin: OpenGameArt StarNinjas coin.5 (alış) / coin.1 (satış) · voyage: OpenGameArt steam whistle
 const buffers = {};
 async function loadSamples() {
   await Promise.all(SAMPLES.map(async (n) => {
@@ -163,6 +163,7 @@ export const sfx = {
   click:   () => play('ui-click', { vol: 0.9, rate: 1 }),       // tok tık: aile başvurusu, adam tutma, arkadaşlık isteği
   buy:     () => play('coin-buy', { vol: 0.85 }),                // limanda mal alımı
   sell:    () => play('coin-sell', { vol: 0.85 }),               // limanda mal satışı
+  voyage:  () => play('voyage', { vol: 0.8, rate: 1 }),          // vapurla sefere çıkış: buhar düdüğü
   msg:     () => tone(760, 0.05, 'sine', 0.09, 560),             // sohbet: gönderilen/gelen mesaj (sekme sesinden tok)
   shot:    () => { noise(0.25, 0.5, 900); tone(120, 0.25, 'sine', 0.2, 50); },
   open:    () => tone(660, 0.08, 'sine', 0.07, 880),                     // panel açılışı

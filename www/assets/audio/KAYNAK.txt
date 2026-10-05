@@ -8,3 +8,4 @@ Kazanma/kaybetme: "Music Jingles", Kenney (CC0) — SAX10 (jingle-win), SAX07 (j
 İş sonuçları: Kenney "RPG Audio" ve "Impact Sounds" (CC0) — handleCoins (job-coins), impactPunch_heavy_000 (job-punch), impactMetal_heavy_001 (job-jailed), doorClose_2 (jail-escape). Seçim sayfası art/sesler/dinle-is.html
 Tok tık (aile başvurusu, adam tutma): Kenney "UI Audio" (CC0) — click3 (ui-click). Seçim sayfası art/sesler/dinle-2.html
 Liman alış/satış: OpenGameArt "12 Coin Sound Effects" (StarNinjas, CC0) — coin.5 (coin-buy), coin.1 (coin-sell). Seçim sayfası art/sesler/dinle-3.html
+Vapur seferi: OpenGameArt "Steam whistle" (CC0) — steam_whistle.wav, 2.3 sn, sonu kısılarak (voyage). Seçim sayfası art/sesler/dinle-4.html

@@ -94,6 +94,7 @@ function resultSfx(name, r, args = {}) {
   if (r.ok === false) return sfx.error();
   if (name === 'apply_family' || name === 'hire_man' || name === 'friend_request') return sfx.click();
   if (name === 'trade') return args.p_qty > 0 ? sfx.buy() : sfx.sell();
+  if (name === 'travel') return sfx.voyage();
   return /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success();
 }
 
