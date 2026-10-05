@@ -121,7 +121,8 @@ function noise(dur, vol = 0.3, freq = 1200, delayS = 0) {
 }
 // ─────────────── Kayıtlı sesler (Kenney "Casino Audio", CC0) ───────────────
 const SAMPLES = ['dice-shake-1', 'dice-throw-1', 'card-shuffle', 'card-slide-1', 'card-place-1', 'card-place-2',
-  'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose'];   // jingle: Kenney Music Jingles SAX10 / SAX07
+  'chip-lay-1', 'chips-stack-1', 'chips-collide-1', 'chips-handle-1', 'jingle-win', 'jingle-lose',   // jingle: Kenney Music Jingles SAX10 / SAX07
+  'job-coins', 'job-punch', 'job-jailed', 'jail-escape'];   // iş sonucu: Kenney RPG Audio + Impact Sounds
 const buffers = {};
 async function loadSamples() {
   await Promise.all(SAMPLES.map(async (n) => {
@@ -151,11 +152,13 @@ function stab(freqs, dur, vol = 0.14, cutoff = 900, delayS = 0) {
 export const sfx = {
   tab:     () => tone(1400, 0.035, 'sine', 0.06),                        // sekme geçişi: çok hafif tık
   tap:     () => { tone(320, 0.06, 'triangle', 0.12, 220); },            // düğme: tahta "tok"
-  // başarı: D minör, kalın; sonunda boğuk bas — "iş tamam, ses çıkarma"
-  success: () => { stab([73.4, 110, 146.8, 174.6], 0.9, 0.12, 1400); tone(55, 0.6, 'sine', 0.22, 45); },
-  // başarısızlık: tritonlu (Si bemol – Mi) karanlık çarpışma, aşağı kayan bas
-  fail:    () => { stab([58.3, 82.4, 116.5], 1.1, 0.13, 700); tone(70, 0.9, 'sine', 0.2, 35); noise(0.3, 0.12, 300); },
-  coin:    () => { tone(1318, 0.1, 'triangle', 0.06); tone(988, 0.25, 'triangle', 0.06, null, 0.06); stab([73.4, 110], 0.5, 0.06, 900, 0.05); },
+  // iş sonucu (gerçek kayıtlar): para kesesi, yumruk, hücre demiri, kaçarken çarpan kapı
+  success: () => play('job-coins', { vol: 0.8 }),
+  coin:    () => play('job-coins', { vol: 0.9 }),
+  fail:    () => play('job-punch', { vol: 0.75 }),
+  error:   () => play('job-punch', { vol: 0.35, rate: 1.1 }),   // kural/para hatası: hafif
+  jailed:  () => play('job-jailed', { vol: 0.9 }),
+  escape:  () => play('jail-escape', { vol: 0.9 }),
   shot:    () => { noise(0.25, 0.5, 900); tone(120, 0.25, 'sine', 0.2, 50); },
   open:    () => tone(660, 0.08, 'sine', 0.07, 880),                     // panel açılışı
   notify:  () => { tone(523, 0.14, 'sine', 0.08); tone(392, 0.22, 'sine', 0.07, null, 0.12); },

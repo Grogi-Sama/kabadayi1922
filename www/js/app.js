@@ -86,6 +86,15 @@ function resultArt(r) {
   return null;
 }
 
+// Sonuç sesi: yakalandıysa hücre demiri, firar ettiyse kapı, başarısızsa yumruk, başarıda para kesesi
+function resultSfx(name, r) {
+  if (r.jailed || /içeri alındı/.test(r.msg || '')) return sfx.jailed();
+  if (name === 'self_bust' && r.ok !== false && r.success !== false) return sfx.escape();
+  if (r.success === false) return sfx.fail();
+  if (r.ok === false) return sfx.error();
+  return /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success();
+}
+
 async function act(name, args, opts = {}) {
   if (busy) return;
   busy = true;
@@ -93,7 +102,7 @@ async function act(name, args, opts = {}) {
   try {
     const r = await api.rpc(name, args);
     if (name === 'shoot' || name === 'raid_spot') sfx.shot();
-    setTimeout(() => r.ok === false || r.success === false ? sfx.fail() : /\$\d/.test(r.msg || '') ? sfx.coin() : sfx.success(), name === 'shoot' || name === 'raid_spot' ? 300 : 0);
+    setTimeout(() => resultSfx(name, r), name === 'shoot' || name === 'raid_spot' ? 300 : 0);
     if (r.seized?.length) showSeized(r);
     else if (r.rounds) showBattle(r);
     else toast(r.msg, r.ok === false || r.success === false ? 'bad' : 'good', opts.art ? (opts.art === true ? resultArt(r) : opts.art) : null);
