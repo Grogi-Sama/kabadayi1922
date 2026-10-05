@@ -1,9 +1,9 @@
 // Ses ve müzik. Dosya gerektirmez: müzik ve efektler tarayıcının ses motoruyla (WebAudio) oyun içinde üretilir.
-// assets/audio/muzik.mp3 varsa müzik olarak o çalınır. Ayarlar cihazda saklanır; ilk açılışta müzik %20.
+// assets/audio/muzik.mp3 varsa müzik olarak o çalınır. Ayarlar cihazda saklanır; ilk açılışta müzik %5.
 // Tarayıcılar sesi ilk dokunuştan önce başlatmaya izin vermez: ses motoru ilk dokunuşta açılır.
 
 const KEY = 'kb_audio';
-const DEFAULTS = { music: 0.2, sfx: 0.6, musicOn: true, sfxOn: true };
+const DEFAULTS = { music: 0.05, sfx: 0.6, musicOn: true, sfxOn: true };
 let cfg = { ...DEFAULTS };
 try { cfg = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch {} };
