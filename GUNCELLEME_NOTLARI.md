@@ -15,9 +15,10 @@ Canlıda (2026-10-05 gönderimi), ilk duyuruda yazmayanlar:
 - Ayarlar → Hesap: e-postanı bağla ya da başka cihazdaki karakterine e-postayla gir.
 - Müzik artık %5 ile başlar (Ayarlar'dan açılabilir).
 - Karakter açma ekranında küçük düzeltme.
+- Vapurla sefere çıkınca buhar düdüğü çalar.
 
 Yerelde, gönderilmedi:
-- Vapurla sefere çıkınca buhar düdüğü çalar.
+- (henüz yok)
 
 ## Yayımlananlar
 
