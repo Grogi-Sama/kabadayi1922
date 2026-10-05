@@ -53,7 +53,7 @@ function authMsg(e) {
 // Geliştirme modu: PGlite (tarayıcıda gerçek Postgres) + aynı migration dosyaları.
 const LOCAL_UID = '00000000-0000-0000-0000-000000000001';
 const MIGRATIONS = ['001_core.sql', '002_combat.sql', '003_families.sql', '004_crews.sql', '005_casino_transport.sql',
-  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql', '013_roles.sql', '014_filter.sql', '015_crests.sql', '016_lockdown.sql', '017_appeals.sql', '018_events.sql', '019_community.sql', '020_trade_jobs.sql', '021_men.sql', '022_gender_proposals.sql', '023_battle.sql', '024_spouse_konak.sql', '025_shop.sql', '026_jail_boost.sql', '027_trade_level.sql', '028_bust_xp.sql', '029_chat_style.sql', '030_raid_preview_fixes.sql', '031_shoot_preview_rich.sql', '032_push.sql', '033_announcements.sql'];
+  '006_social.sql', '007_spots.sql', '008_bigjobs_races.sql', '009_extras.sql', '010_admin_seasons.sql', '011_avatar.sql', '012_chat.sql', '013_roles.sql', '014_filter.sql', '015_crests.sql', '016_lockdown.sql', '017_appeals.sql', '018_events.sql', '019_community.sql', '020_trade_jobs.sql', '021_men.sql', '022_gender_proposals.sql', '023_battle.sql', '024_spouse_konak.sql', '025_shop.sql', '026_jail_boost.sql', '027_trade_level.sql', '028_bust_xp.sql', '029_chat_style.sql', '030_raid_preview_fixes.sql', '031_shoot_preview_rich.sql', '032_push.sql', '033_announcements.sql', '034_update_note_sounds.sql'];
 
 const IDB_NAME = '/pglite/kabadayi-dev';
 const deleteLocalDb = () => new Promise(r => {
