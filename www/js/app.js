@@ -112,7 +112,7 @@ async function act(name, args, opts = {}) {
     // başarılı işlemden sonra tutar/isim kutuları boşalsın (seçim kutuları kalsın)
     if (r.ok !== false) document.querySelectorAll(`section[data-tab="${tab}"] input, #sheet-body input`).forEach(i => i.value = '');
     await refresh();
-    pollSince = S.now;   // kendi işlemimizin olayları üstten tekrar bildirilmesin
+    setSince(S.now);   // kendi işlemimizin olayları üstten tekrar bildirilmesin
   } catch (e) {
     console.error(e);
     if (/BANNED/.test(e.message)) await refresh();
@@ -175,13 +175,13 @@ const ALERTS = [
 ];
 const SIDE = /Vurulduğun çatışmada \d+ adamını kaybettin/;   // vurulmayla birlikte gelen ek bilgi
 // Tanınan olayları pencerede gösterir, kalanları döndürür (toast olarak gösterilsin)
-function showAlerts(texts) {
+function showAlerts(texts, away = false) {
   const hits = texts.map(t => [t, ALERTS.find(a => a.re.test(t))]).filter(([, a]) => a);
   if (!hits.length || !$('#modal').classList.contains('hidden')) return texts;   // başka pencere açıksa bildirim olarak kalsın
   const [main, a] = hits.reduce((x, y) => y[1].rank > x[1].rank ? y : x);
   const more = texts.filter(t => t !== main && (ALERTS.some(x => x.re.test(t)) || SIDE.test(t)));
   $('#modal-body').innerHTML = `${img(a.art, 'seized-art wide', (a.alt && img(a.alt, 'seized-art', '')) || `<div class="seized-art emoji">${a.emoji}</div>`)}
-    <div class="logo-sm">${a.title}</div>
+    ${away ? '<p class="muted small">Sen yokken</p>' : ''}<div class="logo-sm">${a.title}</div>
     <p class="small">${richText(main)}</p>
     ${more.map(t => `<p class="small">${richText(t)}</p>`).join('')}
     <p class="muted small">${a.foot}</p>`;
@@ -2160,7 +2160,7 @@ document.addEventListener('submit', async (e) => {
     const r = await api.rpc('create_character', { p_nick: $('#nick').value.trim(), p_gender: pickedGender, p_avatar: pickedAvatar });
     if (!r.ok) { $('#nick-err').textContent = r.msg; return; }
     await refresh();
-    pollSince = S.now; poll();   // yeni karakter: duyuru ve bildirimler hemen
+    setSince(S.now); poll();   // yeni karakter: duyuru ve bildirimler hemen
   }
 });
 
@@ -2192,7 +2192,17 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && ap
 const seenKey = (ch) => 'kb_seen_' + (ch === 'city' ? 'city:' + S.player.city : ch);
 const getSeen = (ch) => { try { return +localStorage.getItem(seenKey(ch)) || 0; } catch { return 0; } };
 const setSeen = (ch, id) => { try { if (id > getSeen(ch)) localStorage.setItem(seenKey(ch), id); } catch {} };
-let heads = {}, pollSince = null, lastHour = null;
+let heads = {}, pollSince = null, lastHour = null, catchUp = false;
+// Son bakılan an cihazda saklanır: oyunu açınca "sen yokken" olanlar (vurulma, baskın…) pencerede gösterilir
+const sinceKey = () => 'kb_since:' + S.player.nick;
+function setSince(t) { pollSince = t; try { localStorage.setItem(sinceKey(), t); } catch {} }
+function startSince() {
+  let t = null; try { t = localStorage.getItem(sinceKey()); } catch {}
+  const now = new Date(S.now).getTime(), day = 86400000;
+  // ilk kez (kayıt yoksa) son 24 saate bak; çok eskiyse en fazla 3 gün geriye
+  const from = t ? Math.max(new Date(t).getTime(), now - 3 * day) : now - day;
+  pollSince = new Date(from).toISOString(); catchUp = true;
+}
 const chanNew = (ch) => (heads[ch] || 0) > getSeen(ch);
 function markSeen() {
   if (tab !== 'chat' || chatCh === 'dm') return;
@@ -2229,11 +2239,12 @@ async function poll() {
       setSeen(ch, heads[ch]); try { localStorage.setItem('kb_init_' + seenKey(ch), 1); } catch {}
     }
     if (n.unread !== S.player.unread) { S.player.unread = n.unread; if (tab === 'chat' && chatCh === 'dm') refresh(); }
-    const rest = showAlerts([...n.events, ...n.family_news].map(e => e.text));
-    for (const t of rest) toast('📣 ' + t, 'good');
+    const was = catchUp; catchUp = false;
+    const rest = showAlerts([...n.events, ...n.family_news].map(e => e.text), was);
+    if (!was) for (const t of rest) toast('📣 ' + t, 'good');   // açılışta eski olaylar bildirim yağdırmasın (Defter'de duruyor)
     if (n.events.length + n.family_news.length > rest.length) refresh();   // can, para, mekân değişti
-    if (n.events.length || n.family_news.length) sfx.notify();
-    pollSince = n.now;
+    if (!was && (n.events.length || n.family_news.length)) sfx.notify();
+    setSince(n.now);
     updateBadges();
   } catch (e) { console.warn('poll', e); }
 }
@@ -2264,7 +2275,7 @@ try {
   }
   if (api.mode === 'local') Object.assign(window, { devApi: api, devRefresh: refresh });
   await refresh();
-  if (S?.player) { pollSince = S.now; poll(); }   // bildirimlerin başlangıç noktası: açılış anı
+  if (S?.player) { startSince(); poll(); }   // bildirimlerin başlangıç noktası: son bakılan an (sen yokken olanlar)
   registerSW();   // bildirimler ve Ana Ekrana ekleme için
 } catch (e) {
   console.error(e);

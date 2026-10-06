@@ -9,6 +9,7 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 Canlıda, duyurulmadı:
 - Kahvehanede bekleme bitince "Tut" düğmesinin açılmaması düzeltildi (sayaçlı bütün düğmeler için).
 - Vurulunca, infaz edilince ve ailenin mekânına baskın yapılınca (düşse de püskürtülse de) gümrükteki gibi ayrı uyarı penceresi çıkar.
+- Oyunu açınca, sen yokken vurulduysan ya da mekânına baskın olduysa "Sen yokken" penceresinde görürsün.
 
 Yerelde, gönderilmedi:
 - (henüz yok)
