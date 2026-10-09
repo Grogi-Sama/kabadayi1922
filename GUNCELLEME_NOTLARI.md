@@ -12,7 +12,7 @@ Canlıda, duyurulmadı:
 - Oyunu açınca, sen yokken vurulduysan ya da mekânına baskın olduysa "Sen yokken" penceresinde görürsün.
 
 Yerelde, gönderilmedi:
-- (henüz yok)
+- Ailenin olmayan mekânlarda nöbette kalan adamlar eve döner; mekân el değiştirince ya da aileden ayrılınca nöbetçiler otomatik geri gelir.
 
 ## Yayımlananlar
 
