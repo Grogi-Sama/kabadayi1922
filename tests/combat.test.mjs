@@ -78,7 +78,8 @@ assert.equal((await as(A, `select shoot('Bora', 100)`)).success, false);
 ok('öldürme: %25 para, %50 kurşun kaybı, hastane, hastanede dokunulmazlık');
 
 // ─── Öldürme ödülü: aynı hedeften 24 saatte bir kez; üst sınır rütbe × 20.000
-await db.exec(`update players set hospital_until = now() where nick = 'Bora'`);
+// 036: taburcu dokunulmazlığı ve "aynı katil 12 saat" kuralı geçmiş gibi (bu bölüm ödül kuralını dener)
+await db.exec(`update players set hospital_until = now() - interval '1 hour' where nick = 'Bora'; delete from kill_log`);
 await set(B, { cash: 40000 }); await set(A, { bullets: 10000 }); await ready(A);
 await db.query(`update detective_searches set ready_at = now() where player_id = $1`, [A]);
 const before2 = Number((await get(A)).cash);
@@ -94,7 +95,9 @@ ok('öldürme ödülü: %10, rütbe × 20.000 sınırı, aynı hedeften 24 saatt
 
 // hedef şehir değiştirdiyse iz soğur, kurşun gitmez
 await ready(A); await ready(B);
-await set(B, { city_id: 'izmir' });
+// 036: taburcu dokunulmazlığı ve "aynı katil 12 saat" kuralı bu senaryonun dışında kalsın
+await set(B, { city_id: 'izmir', hospital_until: new Date(Date.now() - 3600e3).toISOString() });
+await db.exec(`delete from kill_log`);
 const bulletsA = (await get(A)).bullets;
 const r3 = await as(A, `select shoot('Bora', 100)`);
 assert.equal(r3.success, false);

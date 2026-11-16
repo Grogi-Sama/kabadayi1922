@@ -13,6 +13,12 @@ Canlıda, duyurulmadı:
 
 Yerelde, gönderilmedi:
 - Ailenin olmayan mekânlarda nöbette kalan adamlar eve döner; mekân el değiştirince ya da aileden ayrılınca nöbetçiler otomatik geri gelir.
+- (036, öneriler turu) Hapisteki oyuncu artık vurulamaz.
+- (036) Hastaneden çıkan oyuncu 30 dakika dokunulmaz; bir oyuncuyu öldüren, aynı kişiyi 12 saat boyunca yeniden vuramaz (başkaları vurabilir).
+- (036) Banka faizi: bankadaki paraya her gün %1 faiz eklenir (günde en fazla $50.000; oyuna girmesen de en fazla 7 günlük birikir).
+- (036) Kurşun fabrikaları artık baskınla el değiştirir: sahip aile tahkim eder ve nöbetçi bırakır; sahipsiz fabrika yine satın alınır.
+- (036) Sarhoş serseri çeteleri birkaç saatte bir sahipli mekân ve fabrikalara saldırır: savunma yeterse püskürtülür, yetmezse bir saatlik haraç (fabrikada depodaki kurşunların yarısı) yağmalanır, hiç korunmayan yer elden çıkar. Güncellemeden sonra ilk 24 saat saldırı yok (tahkim süresi).
+- (036) Öneri kutusu: yönetimin cevabı artık önerinin kendisi ve notuyla birlikte Olaylar'a düşer (okundu, plana alındı, eklendi ya da şimdilik değil).
 
 ## Yayımlananlar
 

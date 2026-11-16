@@ -65,6 +65,11 @@ async function loadPanelData() {
   else if (kind === 'garaj') extra.races = await rpc('get_races');
   else if (kind === 'carsi') extra.market = await rpc('get_market');
   else if (kind === 'kahvehane' || kind === 'konak') extra.men = await rpc('get_men');
+  else if (kind === 'fabrika') {
+    [extra.spots, extra.men] = await Promise.all([rpc('get_spots'), rpc('get_men')]);
+    const fs = factorySpot();
+    if (fs?.owner && !fs.mine && S.player.family_role) loadRaidPrev(fs.id, num('f-raid-' + fs.id));
+  }
   else if (kind === 'spot') {
     [extra.spots, extra.lottery, extra.bj, extra.men] = await Promise.all([rpc('get_spots'), rpc('get_lottery'), rpc('bj_current'), rpc('get_men')]);
     const id = +panel.split(':')[1], sp = extra.spots.spots.find(x => x.id === id);
@@ -322,7 +327,10 @@ const BUILDINGS = {
   konak:    { name: 'Konağın',          emoji: '🏛' },
   carsi:    { name: 'Çarşı',            emoji: '🛍' },
 };
-const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦' };
+const SPOT_EMOJI = { gazino: '🎰', meyhane: '🍷', kahvehane: '☕', antrepo: '📦', fabrika: '🏭' };
+// 036: her şehrin kurşun fabrikası baskın/tahkim/nöbet için bir mekân satırıyla eşli; mekân listelerine karışmaz
+const townSpots = () => (extra.spots?.spots || []).filter(s => s.kind !== 'fabrika');
+const factorySpot = () => (extra.spots?.spots || []).find(s => s.kind === 'fabrika' && s.city === S.player.city);
 const SPOT_ORDER = ['gazino', 'meyhane', 'kahvehane', 'antrepo'];
 const HOTSPOTS = {
   liman:   { name: 'Liman',   emoji: '⚓' },
@@ -361,7 +369,7 @@ function buildingHtml(id, asset, emoji, name, tagHtml = '') {
 
 function cityTab() {
   const p = S.player, jailed = left(p.jail_until) > 0;
-  const spots = (extra.spots?.spots || []).filter(s => s.city === p.city)
+  const spots = townSpots().filter(s => s.city === p.city)
     .sort((x, y) => SPOT_ORDER.indexOf(x.kind) - SPOT_ORDER.indexOf(y.kind));
   let si = 0, town = '';
   const shift = Math.max(0, CITY_ORDER.indexOf(p.city));   // şehirden şehre süs düzeni değişsin
@@ -384,7 +392,7 @@ function cityTab() {
         if (slot === 'garaj' && !waiting(p.car_ready_at)) tag = '<span class="tag ok">Hazır</span>';
         if (slot === 'karakol' && jailed) tag = '<span class="tag">İçeridesin</span>';
         if (slot === 'hastane' && p.health < 100) tag = `<span class="tag">❤ ${p.health}</span>`;
-        if (slot === 'fabrika') tag = `<span class="tag mine">${money(S.factory.price)}</span>`;
+        if (slot === 'fabrika') { const fs = factorySpot(); tag = fs?.owner ? `<span class="tag ${fs.mine ? 'mine' : ''}">${esc(fs.owner)}</span>` : `<span class="tag mine">${money(S.factory.price)}</span>`; }
         if (slot === 'kahvehane' && p.men_training) tag = `<span class="tag">${p.men_training} eğitimde</span>`;
         town += buildingHtml(slot, `buildings/${slot}`, b.emoji, b.name, tag);
       }
@@ -504,8 +512,12 @@ function hospitalSection() {
 
 function bankSection() {
   const p = S.player;
+  const rate = S.settings.bank_interest, cap = S.settings.bank_interest_cap;
+  const next = p.interest_at ? left(new Date(new Date(p.interest_at).getTime() + 86400e3).toISOString()) : 0;
   return `<p class="muted small">Bankadaki para öldürülünce kaybolmaz. Yatırırken %${Math.round(S.settings.bank_fee * 100)} komisyon.</p>
     ${card(`Hesap: ${money(p.bank)}`, `Cepte: ${money(p.cash)}`)}
+    ${rate ? `<p class="muted small">${ico('banka', '🏦')} Her gün hesabındaki paraya <b>%${+(rate * 100).toFixed(2)}</b> faiz eklenir
+      (günde en fazla ${money(cap)}).${p.bank > 0 && next ? ` Sıradaki faiz: ${fmt(next)} sonra.` : ''}</p>` : ''}
     <div class="form-row"><input id="f-bank" type="number" min="1" placeholder="Tutar" inputmode="numeric">
       <button class="btn primary" data-act="deposit">Yatır</button><button class="btn" data-act="withdraw">Çek</button></div>
     <h2>Para Gönder</h2>
@@ -521,7 +533,17 @@ function factorySection() {
       Bu saat alabileceğin: <b>${p.bullets_left_hour}</b></p>
     <div class="form-row"><input id="f-bullets" type="number" min="1" placeholder="Adet" inputmode="numeric">
       <button class="btn primary" data-act="bullets" ${dis(blocked())}>Satın al</button></div>
-    <p class="muted small">Fabrikayı bir aile satın alabilir; o zaman fiyatı aile belirler ve para aile kasasına gider (Aile sekmesi).</p>`;
+    <p class="muted small">Fabrikayı bir aile satın alabilir; o zaman fiyatı aile belirler ve para aile kasasına gider (Aile sekmesi).</p>` +
+    factoryOwnerSection();
+}
+
+// 036: fabrika mekân gibi baskınla el değiştirir; sahip aile tahkim eder, nöbetçi bırakır
+function factoryOwnerSection() {
+  const fs = factorySpot();
+  if (!fs) return '';
+  if (!fs.owner) return `<h2>Sahiplik</h2><p class="muted small">Fabrika şu an sahipsiz. Bir ailenin Don ya da Sottocapo'su Aile sekmesinden satın alabilir;
+    sahipsiz fabrika baskınla alınmaz.</p>`;
+  return `<h2>Sahiplik</h2>` + spotPanel(fs);
 }
 
 function gunsmithSection() {
@@ -955,10 +977,12 @@ function spotPanel(sp) {
   const role = S.player.family_role, canRaid = ['don', 'sottocapo', 'capo'].includes(role);
   const raidWait = extra.spots?.raid_ready_at && left(extra.spots.raid_ready_at);
   const prot = sp.protected_until && left(sp.protected_until);
-  let h = card(`${money(sp.income)}/saat haraç`,
+  let h = card(sp.kind === 'fabrika' ? 'Kurşun fabrikası' : `${money(sp.income)}/saat haraç`,
     `${sp.owner ? `Sahibi: <b>${esc(sp.owner)}</b>` : 'Sahipsiz'} · ${sp.mine ? `savunma ${sp.defense} kurşun` : `koruma: ${esc(sp.strength)}`}${prot ? ` · 🛡 ${fmt(prot)}` : ''}`);
   const M = extra.men;
   if (sp.mine) {
+    h += `<p class="muted small">${ico('kalkan', '🛡')} Sarhoş serseri çeteleri birkaç saatte bir sahipli mekânlara dadanır. Barikat ve nöbetçiler yeterse püskürtülür;
+      yetmezse barikat yıkılır ve ${sp.kind === 'fabrika' ? 'depodaki kurşunların yarısı' : 'bir saatlik haraç'} yağmalanır. Hiç korunmayan yer elden çıkar.</p>`;
     h += `<div class="form-row"><input id="f-fort-${sp.id}" type="number" min="1" placeholder="Bırakılacak kurşun" inputmode="numeric">
       <button class="btn" data-act="fortify" data-id="${sp.id}">Tahkim et</button></div>`;
     if (M) {
@@ -1241,7 +1265,7 @@ function familyTab() {
   const treasurer = ['don', 'sottocapo'].includes(role);
   let h = banner('ui/aile_bant', esc(F.family.name), `${ROLES[role]} olarak`, crest(F.family.name, 'on-banner', F.family.crest));
   if (isDon) h += crestPicker(F);
-  const mySpots = (extra.spots?.spots || []).filter(x => x.mine).length;
+  const mySpots = townSpots().filter(x => x.mine).length;
   h += `<div class="card vault"><div class="vault-head"><span class="muted small">Aile kasası</span>
       <b class="vault-sum">${money(F.family.bank)}</b></div>
     <p class="muted small vault-help">Ailenin ortak parası. Üyeler buraya para koyar; mekân haraçları, ailenin fabrikasının kurşun
@@ -1302,7 +1326,7 @@ function spotTile(sp) {
 }
 
 function spotsSection(role) {
-  const list = extra.spots?.spots;
+  const list = extra.spots ? townSpots() : null;
   if (!list) return '';
   const mine = list.filter(s => s.mine);
   let h = `<h2>Mekânlar</h2><p class="muted small">Mekân sahibi aile her saat haraç toplar (24 saate kadar birikir). Baskın ve tahkim için
