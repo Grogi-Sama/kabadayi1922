@@ -11,7 +11,7 @@ Canlıda, duyurulmadı:
 - Vurulunca, infaz edilince ve ailenin mekânına baskın yapılınca (düşse de püskürtülse de) gümrükteki gibi ayrı uyarı penceresi çıkar.
 - Oyunu açınca, sen yokken vurulduysan ya da mekânına baskın olduysa "Sen yokken" penceresinde görürsün.
 
-Yerelde, gönderilmedi:
+Canlıda (2026-11-16, 035 + 036), duyurulmadı:
 - Ailenin olmayan mekânlarda nöbette kalan adamlar eve döner; mekân el değiştirince ya da aileden ayrılınca nöbetçiler otomatik geri gelir.
 - (036, öneriler turu) Hapisteki oyuncu artık vurulamaz.
 - (036) Hastaneden çıkan oyuncu 30 dakika dokunulmaz; bir oyuncuyu öldüren, aynı kişiyi 12 saat boyunca yeniden vuramaz (başkaları vurabilir).
