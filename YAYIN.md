@@ -38,7 +38,11 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
   hesap silme sayfası da sitede. Siteyi Claude yayımlar (wrangler, XDG_CONFIG_HOME=D:/Omniyazilim/Anahtarlar/wrangler-omnipop)
 - Supabase: **şimdilik ücretsiz plan** (uyku riski kabul; oyuncu artınca Pro yeniden değerlendirilecek)
   - [x] Uyku önlemi: `.github/workflows/keepalive.yml` her gün `ping()` çağırır (038; anahtar gerekmez). Push sonrası Actions'ta çalışır
-  - [ ] Gece yedeği (pg_dump → GitHub artifact): kullanıcı onayı bekliyor (veritabanı kopyası GitHub'a gider)
+  - [ ] Gece yedeği (pg_dump → GitHub artifact): şimdilik yapılmıyor (kullanıcı kararı; veritabanı kopyası GitHub'a giderdi)
+- Web sürümü (GitHub Pages) **Google Play'de yayına girene kadar açık**, sonra kapatılır. Kapatmadan önce oyunculara
+  "Ayarlar → Hesap'tan e-postanı bağla" duyurusu (tarayıcıdaki misafir karakter uygulamaya kendiliğinden geçmez)
+- Mağaza sürümünden sonra: ekran (www) değişiklikleri yeni uygulama sürümü ister; sunucu (SQL) değişiklikleri eski
+  uygulama sürümlerini bozmamalı (RPC adı/argümanı silinmez, yenisi eklenir)
 
 ## Kullanıcının yapacakları
 - [ ] Firebase: omnipop-play GCP projesine Firebase (RotaMio planıyla ortak) → Android FCM; iOS için APNs anahtarı
