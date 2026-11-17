@@ -50,6 +50,7 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 - [ ] Firebase: omnipop-play GCP projesine Firebase (RotaMio planıyla ortak) → Android FCM; iOS için APNs anahtarı
 - [x] AdMob (17.11.2026): Android uygulaması `ca-app-pub-1839828127080159~4736107223` (AndroidManifest), ödüllü birim `ca-app-pub-1839828127080159/2391134588` "Hizlandirma - odullu" (www/js/ads.js). GDPR izin mesajına eklendi (8 uygulama). iOS uygulaması/birimi henüz yok. SSV (sunucu doğrulaması) sonraki adım; 039 ads_enabled=1
 - [x] Play Console (17.11.2026): uygulama oluşturuldu (app id 4976313001362011370), uygulama içeriği formlarının hepsi, mağaza ayarları (Rol Oyunu, destek@), Türkçe mağaza girişi + görseller (store/play/), üretim ülkeleri 177 (Güney Kore hariç: IARC reddetti). İçerik derecelendirmesi: PEGI 18, ESRB 13+
+- [x] **17.11.2026: 1.0.0 (versionCode 1) üretime, incelemeye gönderildi** (176 ülke; sürüm notu tr-TR). Sonraki yüklemede versionCode 2
 - [ ] Play Console'da yeni uygulama "Kabadayı" (`com.omnipopgames.kabadayi`), App Store Connect'te uygulama kaydı
 
 ## Play Console formları (Kabadayı'ya özel cevaplar)
