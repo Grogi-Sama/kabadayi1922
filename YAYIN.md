@@ -19,15 +19,17 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 - Oyun içinde 18+ uyarısı ve "oyun parası gerçek değere çevrilmez" metni var.
 
 ## Claude'un yapacakları (kod)
-- [ ] Uygulama kimliği `com.omnipopgames.kabadayi` (capacitor.config.json'da şu an `app.kabadayi.oyun`; ilk yüklemeden önce)
+- [x] Uygulama kimliği `com.omnipopgames.kabadayi`
 - [x] **Hesap silme** uygulama içi (Ayarlar → Hesap → Hesabımı sil, takma adla onay; 037). [x] Web sayfası: omnipopgames.com/kabadayi/delete-account
 - [x] E-postayla giriş: bağlantı yerine 6 haneli kod (Resend SMTP, noreply@omnipopgames.com; şablonlarda {{ .Token }}) (uygulamada bağlantılar tarayıcıya açılıyor; e-posta tarayıcıları bağlantıyı harcıyor)
-- [ ] Capacitor + Android projesi, simge/açılış, geri tuşu, güvenli alan, çevrimdışı ekranı; **AAB'de Capacitor JS çekirdeğinin olduğunu doğrula** (Snack Stack 1.0 dersi)
+- [x] Capacitor 8 + Android projesi (`android/`), simge/açılış (`resources/` → `npx capacitor-assets generate --android --assetPath resources`), geri tuşu (js/native.js), güvenli alan, dikey ekran. Emülatörde (Pixel_8) denendi: canlı sunucu, yeni karakter, geri tuşu, yasal bağlantı → Chrome, hesap silme. AAB'de `vendor/capacitor.js` var ✓
+  - Paket: `npm run app:sync` (www → app-www, admin paneli hariç) → `cd android && gradlew bundleRelease` (JAVA_HOME=jdk21, GRADLE_USER_HOME=D:/Omniyazilim/Dev/gradle) → `release/kabadayi-<sürüm>-code<N>.aab`. Her yüklemede versionCode artır (android/app/build.gradle)
+  - İlk paket: release/kabadayi-1.0.0-code1.aab (17.11.2026, reklamsız, bildirimsiz)
 - [ ] Uygulama içi bildirim: FCM (Android) / APNs (iOS); sunucudaki push_queue aynı kalır, Edge Function gönderimi değişir
-- [ ] Mağaza sürümünde satın alma düğmeleri: ödeme bağlanana kadar gizli (Apple "çalışmayan satın alma"yı reddeder)
+- [x] Mağaza sürümünde satın alma düğmeleri gizli ("Yakında"), Web Push kapalı ("çok yakında")
 - [ ] Yazı tipleri zaten pakette (www/vendor/fonts) ✓ · Supabase JS paketten ✓
 - [ ] Mağaza görselleri: 1080×1920 (Play), 1206×2622 (iOS), 1024×500 tanıtım görseli; TR + EN metinler
-- [ ] Play App Signing + yükleme anahtarı `D:/Omniyazilim/Anahtarlar/kabadayi-upload.jks`
+- [x] Yükleme anahtarı `D:/Omniyazilim/Anahtarlar/kabadayi-upload.jks` + `.properties` (gradle.properties'te `kabadayi.signing`); **yedeğini al**. Play App Signing açık kalır
 - [ ] Codemagic iş akışı (WitchBrew `codemagic.yaml` şablonu), profil `kabadayi_appstore`
 
 ## Kararlar (17.11.2026)

@@ -1,12 +1,11 @@
 {
-  "appId": "app.kabadayi.oyun",
+  "appId": "com.omnipopgames.kabadayi",
   "appName": "Kabadayı 1922",
-  "webDir": "www",
+  "webDir": "app-www",
   "backgroundColor": "#15110d",
-  "android": { "allowMixedContent": false },
-  "ios": { "contentInset": "always", "backgroundColor": "#15110d" },
+  "android": { "backgroundColor": "#15110d", "allowMixedContent": false },
+  "ios": { "backgroundColor": "#15110d", "contentInset": "never" },
   "plugins": {
-    "SplashScreen": { "launchShowDuration": 1200, "backgroundColor": "#15110d", "showSpinner": false },
-    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+    "SystemBars": { "style": "DARK" }
   }
 }

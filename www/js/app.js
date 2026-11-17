@@ -6,6 +6,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<'
 import { money, moneyText, richText } from './locale.js';
 import { sfx, setAudio, audioSettings } from './audio.js';
 import { pushState, enablePush, disablePush, registerSW } from './push.js';
+import { NATIVE, initNative } from './native.js';
 
 let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1, pickedGender = null;
 // Portreler: 1–4 erkek, 5–8 kadın
@@ -856,7 +857,9 @@ function shopView() {
   if (!X) return h + `<p class="muted">Yükleniyor…</p>`;
   const prod = (kind) => X.products.filter(x => x.kind === kind);
   const gift = X.club_gift_ready;
-  const buyBtn = (x) => `<button class="btn sm primary" data-act="shopbuy" data-id="${x.id}">${tl(x.price)}</button>`;
+  // Mağaza uygulamasında ödeme bağlanana kadar fiyat/satın alma düğmesi gösterilmez (Apple/Google çalışmayan satın almayı reddeder)
+  const buyBtn = (x) => NATIVE ? '<span class="muted small">Yakında</span>'
+    : `<button class="btn sm primary" data-act="shopbuy" data-id="${x.id}">${tl(x.price)}</button>`;
   // Kulüp
   const club = prod('club')[0];
   h += `<div class="card col club-card"><div class="title">★ Kabadayı Kulübü <span class="muted small">aylık</span></div>
@@ -2340,6 +2343,15 @@ function loadProgress(f, label) {
   if (label) txt.textContent = label;
 }
 
+// Android geri tuşu: açık pencere → açık bina paneli → Defter alt sayfası → Şehir sekmesi → uygulamayı arka plana al
+initNative({ onBack() {
+  if (!$('#modal').classList.contains('hidden')) { $('#modal-close').click(); return true; }
+  if (panel) { closePanel(); return true; }
+  if (tab === 'log' && logView !== 'main') { logView = 'main'; renderTab(); $('main').scrollTop = 0; return true; }
+  if (tab !== 'city' && S?.player) { $('[data-go="city"]').click(); return true; }
+  return false;
+} });
+
 try {
   [api] = await Promise.all([createBackend(loadProgress), probeAssets()]);
   if (api.mode === 'local') window.kbDev = api;   // sadece yerel deneme: konsoldan kbDev.sql(...) ile hızlı test
@@ -2351,7 +2363,7 @@ try {
   if (api.mode === 'local') Object.assign(window, { devApi: api, devRefresh: refresh });
   await refresh();
   if (S?.player) { startSince(); poll(); }   // bildirimlerin başlangıç noktası: son bakılan an (sen yokken olanlar)
-  registerSW();   // bildirimler ve Ana Ekrana ekleme için
+  if (!NATIVE) registerSW();   // bildirimler ve Ana Ekrana ekleme için (uygulamada yerel bildirim kullanılacak)
 } catch (e) {
   console.error(e);
   $('#loading').innerHTML = `<img class="logo-img" src="assets/ui/logo.png" alt="KABADAYI">

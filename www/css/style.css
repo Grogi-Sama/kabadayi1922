@@ -57,7 +57,7 @@ h2::after { background: linear-gradient(90deg, var(--gold), transparent); }
 .logo-sm { font: 22px var(--display); color: var(--gold); letter-spacing: 2px; }
 
 /* ─── Açılış ekranları ─── */
-.screen { min-height: 100%; padding: 24px 16px; }
+.screen { min-height: 100%; padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
 .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; }
 .splash-art { width: min(320px, 80vw); border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 5px var(--bg), 0 0 0 6px var(--gold); }
 .lead { max-width: 340px; }

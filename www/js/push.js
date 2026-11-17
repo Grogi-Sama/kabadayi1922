@@ -2,6 +2,7 @@
 // Android/masaüstü tarayıcılarda doğrudan çalışır; iPhone'da oyun Ana Ekrana eklenmiş olmalı (iOS 16.4+).
 // Telefon mağazası sürümünde (Capacitor) yerel bildirim altyapısına geçilecek; sunucu tarafı aynı kalır.
 import { VAPID_PUBLIC_KEY } from './config.js';
+import { NATIVE } from './native.js';
 
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -12,6 +13,8 @@ export async function registerSW() {
 }
 
 export async function pushState() {
+  // Uygulamada Web Push yok; yerel bildirim (FCM/APNs) bağlanana kadar kapalı
+  if (NATIVE) return { supported: false, reason: 'Telefon bildirimleri çok yakında geliyor.' };
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     return { supported: false, reason: isIOS && !standalone
       ? "iPhone'da bildirim almak için oyunu Ana Ekrana ekle: Safari'de Paylaş → Ana Ekrana Ekle, sonra oyunu oradan aç."
