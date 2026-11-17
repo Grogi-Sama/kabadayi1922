@@ -7,6 +7,7 @@ import { money, moneyText, richText } from './locale.js';
 import { sfx, setAudio, audioSettings } from './audio.js';
 import { pushState, enablePush, disablePush, registerSW } from './push.js';
 import { NATIVE, initNative } from './native.js';
+import { initAds, adsAvailable, showRewarded, adsPrivacyRequired, showAdsPrivacy } from './ads.js';
 
 let api, S, clockOffset = 0, busy = false, tab = 'city', panel = null, qty = 1, pickedAvatar = 1, pickedGender = null;
 // Portreler: 1–4 erkek, 5–8 kadın
@@ -797,6 +798,7 @@ async function openSettings() {
     <div class="card col"><div class="title">Başka cihazda karakterin mi var?</div>
       <div class="muted small">E-postasını bağladığın karakterle bu cihazda oynamak için e-postanla gir.</div>
       <button class="btn" data-act="acctlogin">E-postayla gir</button></div>
+    ${adsPrivacyRequired() ? `<h2>Reklamlar</h2><button class="btn" data-act="adsprivacy">Reklam gizlilik tercihleri</button>` : ''}
     <h2>Yasal</h2>
     <div class="menu-list"><a class="btn" href="${LEGAL}privacy?lang=tr" target="_blank" rel="noopener">Gizlilik Politikası</a>
       <a class="btn" href="${LEGAL}kvkk?lang=tr" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>
@@ -912,7 +914,7 @@ async function openBoost(target) {
   $('#modal-body').innerHTML = `<div class="ask-art"><span class="boost-big">⚡</span></div><div class="logo-sm">Hızlandır</div>
     <p class="small">Kalan bekleme süresi yarıya iner. Bugün kalan hakkın: <b>${X.today_left}</b>.</p>
     <div class="menu-list boost-list">
-      ${opt('ad', 'Reklam izle', X.ads_enabled ? `bugün ${X.ad_left} hak` : 'çok yakında', X.ads_enabled && X.ad_left > 0)}
+      ${opt('ad', 'Reklam izle', !X.ads_enabled ? 'çok yakında' : adsAvailable() ? `bugün ${X.ad_left} hak` : 'telefon uygulamasında', X.ads_enabled && adsAvailable() && X.ad_left > 0)}
       ${target === 'jail' ? `</div><p class="muted small">Hapis süresi sadece reklam izleyerek kısalır; jeton ve kulüp hakkı burada geçmez.</p>` : `
       ${X.club_until ? opt('club', 'Kulüp hakkı', `bugün ${X.club_left} hak`, X.club_left > 0) : ''}
       ${opt('token', 'Jeton kullan', `${X.tokens} jetonun var`, X.tokens > 0)}
@@ -2101,7 +2103,15 @@ document.addEventListener('click', async (e) => {
       return toast(r.ok ? 'Yeni kod gönderildi.' : r.msg, r.ok ? 'good' : 'bad');
     }
     case 'boost':      return openBoost(id);
-    case 'useboost':   closeModal(); return act('use_boost', { p_target: b.dataset.target, p_via: id });
+    case 'useboost': {
+      closeModal();
+      if (id === 'ad') {   // ödül, reklam sonuna kadar izlenince verilir
+        if (!adsAvailable()) return toast('Reklam izleyerek hızlandırma telefon uygulamasında.', 'bad');
+        if (!await showRewarded()) return toast('Reklam şu an gösterilemedi ya da yarıda kapandı. Biraz sonra tekrar dene.', 'bad');
+      }
+      return act('use_boost', { p_target: b.dataset.target, p_via: id });
+    }
+    case 'adsprivacy': return showAdsPrivacy();
     case 'clubgift':   return (await ask('Kulüp hediyesi', `<b>${esc(b.dataset.name)}</b> bu ayın hediyesi olarak senin olsun mu? Ayda bir hediye seçebilirsin.`, 'Al'))
                          && act('club_claim', { p_product: id }).then(loadShop);
     case 'wear':       return act('set_avatar', { p_avatar: +id }).then(loadShop);
@@ -2363,6 +2373,7 @@ try {
   if (api.mode === 'local') Object.assign(window, { devApi: api, devRefresh: refresh });
   await refresh();
   if (S?.player) { startSince(); poll(); }   // bildirimlerin başlangıç noktası: son bakılan an (sen yokken olanlar)
+  initAds();   // uygulamada: reklam izni (AB) ve ilk ödüllü reklamın yüklenmesi; oyunu bekletmez
   if (!NATIVE) registerSW();   // bildirimler ve Ana Ekrana ekleme için (uygulamada yerel bildirim kullanılacak)
 } catch (e) {
   console.error(e);

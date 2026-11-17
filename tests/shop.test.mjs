@@ -37,6 +37,7 @@ assert.equal((await as(A, `select do_crime('cep')`)).ok, true);
 await db.query(`update players set jail_until = now() where id = $1`, [A]);
 const cdBefore = (await db.query(`select ready_at - now() d from player_cooldowns where player_id = $1 and kind = 'crime:cep'`, [A])).rows[0].d;
 assert.match((await as(A, `select use_boost('crime:cep', 'token')`)).msg, /jetonun yok/);
+await db.exec(`update game_settings set value = 0 where key = 'ads_enabled'`);   // 039 açar; kapalıyken davranış
 assert.match((await as(A, `select use_boost('crime:cep', 'ad')`)).msg, /yakında/);
 await as(OWNER, `select admin_grant('Ahmet', 'boosts_10')`);
 assert.equal((await as(A, `select use_boost('crime:cep', 'token')`)).ok, true);

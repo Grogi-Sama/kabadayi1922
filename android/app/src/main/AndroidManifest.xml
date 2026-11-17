@@ -21,6 +21,11 @@
             </intent-filter>
         </activity>
 
+        <!-- AdMob uygulama kimliği (Kabadayı 1922, Android). Reklam birimi www/js/ads.js'te -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1839828127080159~4736107223"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

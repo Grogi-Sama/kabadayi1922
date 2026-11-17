@@ -22,7 +22,9 @@ await fs.mkdir(out, { recursive: true });
 for (const n of await fs.readdir(src)) await copy(n);
 
 // Paket güvenliği: bunlar eksikse uygulama sessizce bozuk çıkar
-const must = ['index.html', 'vendor/capacitor.js', 'vendor/supabase.js', 'js/native.js', 'js/config.js'];
+const must = ['index.html', 'vendor/capacitor.js', 'vendor/supabase.js', 'js/native.js', 'js/ads.js', 'js/config.js'];
+const adsSrc = await fs.readFile(path.join(src, 'js/ads.js'), 'utf8');
+if (/USE_TEST_ADS = true/.test(adsSrc)) console.warn('⚠️  js/ads.js: USE_TEST_ADS = true (test reklamları; mağazaya böyle gönderme)');
 const miss = [];
 for (const f of must) await fs.access(path.join(out, f)).catch(() => miss.push(f));
 const html = await fs.readFile(path.join(out, 'index.html'), 'utf8');
