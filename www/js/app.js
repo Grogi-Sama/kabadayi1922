@@ -817,8 +817,8 @@ let codeWait = null;
 function codeModal(kind, email) {
   codeWait = { kind, email };
   $('#modal-body').innerHTML = `<div class="logo-sm">${kind === 'login' ? 'E-postayla gir' : 'Hesabını koru'}</div>
-    <p class="small"><b>${esc(email)}</b> adresine bir kod gönderdik. Kodu buraya yaz.
-      Gelmediyse gereksiz/spam klasörüne bak.</p>
+    <p class="small"><b>${esc(email)}</b> adresine bir e-posta gönderdik. İçindeki kodu buraya yaz
+      ya da bağlantıyı bu cihazda aç. Gelmediyse gereksiz/spam klasörüne bak.</p>
     <div class="form-row"><input id="f-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Kod">
       <button class="btn primary" data-act="acctcode">Onayla</button></div>
     <p><button class="btn sm" data-act="acctresend">Kodu tekrar gönder</button></p>`;
