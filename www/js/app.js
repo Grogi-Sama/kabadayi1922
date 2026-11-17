@@ -797,9 +797,9 @@ async function openSettings() {
       <div class="muted small">E-postasını bağladığın karakterle bu cihazda oynamak için e-postanla gir.</div>
       <button class="btn" data-act="acctlogin">E-postayla gir</button></div>
     <h2>Yasal</h2>
-    <div class="menu-list"><a class="btn" href="gizlilik.html" target="_blank">Gizlilik Politikası</a>
-      <a class="btn" href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a>
-      <a class="btn" href="kullanim.html" target="_blank">Kullanım Şartları</a></div>`;
+    <div class="menu-list"><a class="btn" href="${LEGAL}privacy?lang=tr" target="_blank" rel="noopener">Gizlilik Politikası</a>
+      <a class="btn" href="${LEGAL}kvkk?lang=tr" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>
+      <a class="btn" href="${LEGAL}terms?lang=tr" target="_blank" rel="noopener">Kullanım Şartları</a></div>`;
   $('#modal').classList.remove('hidden');
 }
 document.addEventListener('input', (e) => {
@@ -810,6 +810,9 @@ document.addEventListener('change', (e) => {
   const k = e.target.dataset?.aud; if (!k || e.target.type !== 'checkbox') return;
   setAudio({ [k]: e.target.checked });
 });
+
+// Yasal metinler omnipopgames.com'da (tek kaynak; mağaza sayfaları da buraya bağlanır)
+const LEGAL = 'https://omnipopgames.com/kabadayi/';
 
 // ═════════════════ HESAP KORUMA ═════════════════
 // E-postaya giden 6 haneli kodu sorar (giriş ya da bağlama). Bağlantı da çalışır ama uygulamada kod daha güvenilir.

@@ -20,8 +20,8 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 
 ## Claude'un yapacakları (kod)
 - [ ] Uygulama kimliği `com.omnipopgames.kabadayi` (capacitor.config.json'da şu an `app.kabadayi.oyun`; ilk yüklemeden önce)
-- [x] **Hesap silme** uygulama içi (Ayarlar → Hesap → Hesabımı sil, takma adla onay; 037). [ ] Web sayfası omnipopgames.com'da (Google'ın istediği adres)
-- [ ] E-postayla giriş: bağlantı yerine 6 haneli kod (uygulamada bağlantılar tarayıcıya açılıyor; e-posta tarayıcıları bağlantıyı harcıyor)
+- [x] **Hesap silme** uygulama içi (Ayarlar → Hesap → Hesabımı sil, takma adla onay; 037). [x] Web sayfası: omnipopgames.com/kabadayi/delete-account
+- [x] E-postayla giriş: bağlantı yerine 6 haneli kod (Resend SMTP, noreply@omnipopgames.com; şablonlarda {{ .Token }}) (uygulamada bağlantılar tarayıcıya açılıyor; e-posta tarayıcıları bağlantıyı harcıyor)
 - [ ] Capacitor + Android projesi, simge/açılış, geri tuşu, güvenli alan, çevrimdışı ekranı; **AAB'de Capacitor JS çekirdeğinin olduğunu doğrula** (Snack Stack 1.0 dersi)
 - [ ] Uygulama içi bildirim: FCM (Android) / APNs (iOS); sunucudaki push_queue aynı kalır, Edge Function gönderimi değişir
 - [ ] Mağaza sürümünde satın alma düğmeleri: ödeme bağlanana kadar gizli (Apple "çalışmayan satın alma"yı reddeder)
@@ -34,7 +34,7 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 - Mağaza adı: **Kabadayı 1922: Mafya Oyunu** (EN: "Kabadayi 1922: Mafia Game"); uygulama kimliği `com.omnipopgames.kabadayi`
 - İlk sürümde gelir: **yalnız ödüllü reklam** (oyundaki "reklam izle, hızlandır", günde 8 hak); geçiş reklamı yok (bölüm yapısı yok);
   satın alma (dükkân, RevenueCat) ilk güncellemede
-- Yasal metinler: **omnipopgames.com/privacy ve /terms'e Kabadayı eklenir** (sunucu, hesap, sohbet/mesaj, e-posta, bildirim, simüle kumar);
+- Yasal metinler: **omnipopgames.com/kabadayi/ (privacy, terms, kvkk, delete-account) — yayında**; genel /privacy ve /terms buraya bağlanır; oyundaki bağlantılar da buraya (sunucu, hesap, sohbet/mesaj, e-posta, bildirim, simüle kumar);
   hesap silme sayfası da sitede. Siteyi Claude yayımlar (wrangler, XDG_CONFIG_HOME=D:/Omniyazilim/Anahtarlar/wrangler-omnipop)
 - Supabase: **şimdilik ücretsiz plan** (uyku riski kabul; oyuncu artınca Pro yeniden değerlendirilecek)
   - [x] Uyku önlemi: `.github/workflows/keepalive.yml` her gün `ping()` çağırır (038; anahtar gerekmez). Push sonrası Actions'ta çalışır
@@ -51,7 +51,8 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 
 ## Play Console formları (Kabadayı'ya özel cevaplar)
 - Oturum açma: misafir hesapla açılır (inceleme ekibine giriş bilgisi gerekmez); e-posta isteğe bağlı
-- Hesap silme adresi: (yapılacak sayfa)
+- Hesap silme adresi: https://omnipopgames.com/kabadayi/delete-account
+- Gizlilik: https://omnipopgames.com/kabadayi/privacy · Koşullar: https://omnipopgames.com/kabadayi/terms · KVKK: /kabadayi/kvkk
 - İçerik derecelendirmesi: şiddet (silahlı çatışma, metin tabanlı), simüle kumar = evet, kullanıcı etkileşimi/sohbet = evet
 - Hedef kitle: 18+
 - Veri güvenliği: e-posta (isteğe bağlı), takma ad, oyun içi mesajlar, oyun ilerlemesi, bildirim belirteci; hesap silinebilir
