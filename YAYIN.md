@@ -30,12 +30,17 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 - [ ] Play App Signing + yükleme anahtarı `D:/Omniyazilim/Anahtarlar/kabadayi-upload.jks`
 - [ ] Codemagic iş akışı (WitchBrew `codemagic.yaml` şablonu), profil `kabadayi_appstore`
 
-## Kullanıcının yapacakları / kararları
-- [ ] Mağaza adı (TR/EN) — ad müsait mi bakılacak
-- [ ] İlk sürümde gelir: reklamsız/ödemesiz mi, ödüllü reklamla mı
-- [ ] Supabase Pro (ücretsiz plan hareketsiz projeyi uyutur, yedek yok)
-- [ ] Yasal metinler: oyundaki gizlilik/koşullar mı, omnipopgames.com/privacy + /terms'e mi eklensin
-- [ ] Firebase projesi (bildirim için FCM)
+## Kararlar (17.11.2026)
+- Mağaza adı: **Kabadayı 1922: Mafya Oyunu** (EN: "Kabadayi 1922: Mafia Game"); uygulama kimliği `com.omnipopgames.kabadayi`
+- İlk sürümde gelir: **yalnız ödüllü reklam** (oyundaki "reklam izle, hızlandır", günde 8 hak); geçiş reklamı yok (bölüm yapısı yok);
+  satın alma (dükkân, RevenueCat) ilk güncellemede
+- Yasal metinler: **omnipopgames.com/privacy ve /terms'e Kabadayı eklenir** (sunucu, hesap, sohbet/mesaj, e-posta, bildirim, simüle kumar);
+  hesap silme sayfası da sitede. Siteyi Claude yayımlar (wrangler, XDG_CONFIG_HOME=D:/Omniyazilim/Anahtarlar/wrangler-omnipop)
+- Supabase: **şimdilik ücretsiz plan** (uyku riski kabul; oyuncu artınca Pro yeniden değerlendirilecek)
+
+## Kullanıcının yapacakları
+- [ ] Firebase: omnipop-play GCP projesine Firebase (RotaMio planıyla ortak) → Android FCM; iOS için APNs anahtarı
+- [ ] AdMob: Kabadayı (Android + iOS) uygulaması ve ödüllü birim (Claude adımları verir)
 - [ ] Play Console'da yeni uygulama "Kabadayı" (`com.omnipopgames.kabadayi`), App Store Connect'te uygulama kaydı
 
 ## Play Console formları (Kabadayı'ya özel cevaplar)
