@@ -40,6 +40,12 @@ async function supabaseBackend() {
       const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: returnUrl() } });
       return error ? { ok: false, msg: authMsg(error) } : { ok: true };
     },
+    // E-postadaki kodla onay (mobil uygulamada bağlantı tarayıcıda açılır; kod her yerde çalışır).
+    // kind: 'login' → o hesaba geç; 'link' → bu cihazdaki karakteri e-postaya bağla.
+    async verifyCode(kind, email, code) {
+      const { error } = await client.auth.verifyOtp({ email, token: code, type: kind === 'link' ? 'email_change' : 'email' });
+      return error ? { ok: false, msg: /expired|invalid|token/i.test(error.message) ? 'Kod yanlış ya da süresi dolmuş.' : authMsg(error) } : { ok: true };
+    },
   };
 }
 const returnUrl = () => location.origin + location.pathname;

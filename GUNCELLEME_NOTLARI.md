@@ -8,6 +8,7 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 
 Yerelde, gönderilmedi:
 - Ayarlar → Hesap → Hesabımı sil: karakterini ve bütün verilerini kalıcı olarak silebilirsin (takma adını yazarak onaylarsın; Donsan Donluk ailenin en kıdemli üyesine geçer).
+- E-postayla giriş ve hesap bağlama artık bağlantı yerine e-postaya gelen kodla yapılıyor: kodu oyuna yazman yeterli, bağlantıyı aynı cihazda açma derdi yok.
 
 ## Yayımlananlar
 

@@ -812,6 +812,19 @@ document.addEventListener('change', (e) => {
 });
 
 // ═════════════════ HESAP KORUMA ═════════════════
+// E-postaya giden 6 haneli kodu sorar (giriş ya da bağlama). Bağlantı da çalışır ama uygulamada kod daha güvenilir.
+let codeWait = null;
+function codeModal(kind, email) {
+  codeWait = { kind, email };
+  $('#modal-body').innerHTML = `<div class="logo-sm">${kind === 'login' ? 'E-postayla gir' : 'Hesabını koru'}</div>
+    <p class="small"><b>${esc(email)}</b> adresine bir kod gönderdik. Kodu buraya yaz.
+      Gelmediyse gereksiz/spam klasörüne bak.</p>
+    <div class="form-row"><input id="f-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Kod">
+      <button class="btn primary" data-act="acctcode">Onayla</button></div>
+    <p><button class="btn sm" data-act="acctresend">Kodu tekrar gönder</button></p>`;
+  $('#modal').classList.remove('hidden');
+  $('#f-code').focus();
+}
 // Hesap şimdilik bu cihaza bağlı (anonim). E-posta bağlanınca başka cihazdan da aynı karaktere girilir.
 function accountCard() {
   const A = extra.account;
@@ -820,7 +833,7 @@ function accountCard() {
       <div class="muted small">${esc(A.email)} adresine bağlı. Başka cihazdan girişte bu e-postayı kullan.</div></div></div>`;
   return `<div class="card col acct-card"><div class="title">🔐 Hesabını koru</div>
     <div class="muted small">Karakterin şu an sadece bu cihazda. Tarayıcı verisi silinirse ya da telefon değişirse kaybolur.
-      E-postanı bağla; başka cihazdan da aynı karaktere girebilirsin.${A.email ? ` <b>${esc(A.email)}</b> adresine onay bağlantısı gönderildi, mailine bak.` : ''}</div>
+      E-postanı bağla; başka cihazdan da aynı karaktere girebilirsin.</div>
     <div class="form-row"><input id="f-acct-email" type="email" placeholder="E-posta adresin" autocomplete="email" autocapitalize="off">
       <button class="btn primary" data-act="acctlink">Bağla</button></div></div>`;
 }
@@ -2024,15 +2037,13 @@ document.addEventListener('click', async (e) => {
       if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Geçerli bir e-posta yaz.', 'bad');
       const r = await api.linkEmail(email);
       if (!r.ok) return toast(r.msg, 'bad');
-      toast('E-postana bir onay bağlantısı gönderdik. Tıklayınca hesabın e-postana bağlanır.', 'good');
-      extra.account = await api.account();
-      return $('#modal').classList.contains('hidden') ? renderTab() : openSettings();
+      return codeModal('link', email);
     }
     case 'acctlogin': {
       const A = api.account ? await api.account().catch(() => null) : null;
       const risk = S?.player && A && (A.anonymous || !A.email);   // bu cihazdaki karakter korunmuyor
       $('#modal-body').innerHTML = `<div class="logo-sm">E-postayla gir</div>
-        <p class="small">Karakterine bağladığın e-postayı yaz. Sana bir giriş bağlantısı gönderelim; bu cihazda açınca o karakterle oyuna girersin.</p>
+        <p class="small">Karakterine bağladığın e-postayı yaz. Sana bir giriş kodu gönderelim; kodu buraya yazınca o karakterle oyuna girersin.</p>
         ${risk ? `<p class="small" style="color:#f3c2bb">Dikkat: bu cihazdaki karakterin <b>${esc(S.player.nick)}</b> bir e-postaya bağlı değil. Başka hesaba geçersen ona bir daha giremezsin. Önce Ayarlar'dan onu da bağlayabilirsin.</p>` : ''}
         <div class="form-row"><input id="f-login-email" type="email" placeholder="E-posta adresin" autocomplete="email" autocapitalize="off">
           <button class="btn primary" data-act="acctloginsend">Gönder</button></div>
@@ -2062,8 +2073,26 @@ document.addEventListener('click', async (e) => {
       const email = val('f-login-email');
       if (!/^\S+@\S+\.\S+$/.test(email)) return toast('Geçerli bir e-posta yaz.', 'bad');
       const r = await api.loginEmail(email);
-      $('#login-msg').textContent = r.ok ? 'E-postana bir giriş bağlantısı gönderdik. Bağlantıyı bu cihazda aç.' : r.msg;
-      return r.ok ? toast('Giriş bağlantısı gönderildi.', 'good') : toast(r.msg, 'bad');
+      if (!r.ok) { $('#login-msg').textContent = r.msg; return toast(r.msg, 'bad'); }
+      return codeModal('login', email);
+    }
+    case 'acctcode': {
+      const { kind, email } = codeWait || {};
+      const code = val('f-code').replace(/\D/g, '');
+      if (!email || code.length < 6) return toast('E-postadaki kodu yaz.', 'bad');
+      const r = await api.verifyCode(kind, email, code);
+      if (!r.ok) return toast(r.msg, 'bad');
+      codeWait = null;
+      if (kind === 'login') { toast('Giriş yapıldı.', 'good'); return location.reload(); }
+      toast('Hesabın e-postana bağlandı.', 'good');
+      extra.account = await api.account();
+      closeModal(); return renderTab();
+    }
+    case 'acctresend': {
+      const { kind, email } = codeWait || {};
+      if (!email) return;
+      const r = kind === 'login' ? await api.loginEmail(email) : await api.linkEmail(email);
+      return toast(r.ok ? 'Yeni kod gönderildi.' : r.msg, r.ok ? 'good' : 'bad');
     }
     case 'boost':      return openBoost(id);
     case 'useboost':   closeModal(); return act('use_boost', { p_target: b.dataset.target, p_via: id });
