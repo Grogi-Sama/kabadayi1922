@@ -899,3 +899,6 @@ nav button.has-dot::after { content: ''; position: absolute; top: 8px; right: ca
 .liman-btn:active .liman-img { transform: scale(.94); }
 .settings-btn .ico { width: 20px; height: 20px; vertical-align: -4px; }
 img.seized-art.wide { max-width: 100%; }   /* geniş uyarı görselleri (infaz, baskın) */
+
+/* Hesap silme bağlantısı: göze batmayan ama bulunur */
+.danger-link { background: none; border: 1px solid rgba(179,69,58,.5); color: #f3c2bb; margin-top: 8px; }

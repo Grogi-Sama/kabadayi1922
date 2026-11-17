@@ -20,7 +20,7 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 
 ## Claude'un yapacakları (kod)
 - [ ] Uygulama kimliği `com.omnipopgames.kabadayi` (capacitor.config.json'da şu an `app.kabadayi.oyun`; ilk yüklemeden önce)
-- [ ] **Hesap silme**: uygulama içi (Ayarlar → Hesap) + web sayfası (Google'ın istediği adres). İki mağaza da zorunlu tutuyor
+- [x] **Hesap silme** uygulama içi (Ayarlar → Hesap → Hesabımı sil, takma adla onay; 037). [ ] Web sayfası omnipopgames.com'da (Google'ın istediği adres)
 - [ ] E-postayla giriş: bağlantı yerine 6 haneli kod (uygulamada bağlantılar tarayıcıya açılıyor; e-posta tarayıcıları bağlantıyı harcıyor)
 - [ ] Capacitor + Android projesi, simge/açılış, geri tuşu, güvenli alan, çevrimdışı ekranı; **AAB'de Capacitor JS çekirdeğinin olduğunu doğrula** (Snack Stack 1.0 dersi)
 - [ ] Uygulama içi bildirim: FCM (Android) / APNs (iOS); sunucudaki push_queue aynı kalır, Edge Function gönderimi değişir
@@ -37,6 +37,8 @@ Sıra: önce Android, sonra iOS (Codemagic, Mac yok).
 - Yasal metinler: **omnipopgames.com/privacy ve /terms'e Kabadayı eklenir** (sunucu, hesap, sohbet/mesaj, e-posta, bildirim, simüle kumar);
   hesap silme sayfası da sitede. Siteyi Claude yayımlar (wrangler, XDG_CONFIG_HOME=D:/Omniyazilim/Anahtarlar/wrangler-omnipop)
 - Supabase: **şimdilik ücretsiz plan** (uyku riski kabul; oyuncu artınca Pro yeniden değerlendirilecek)
+  - [x] Uyku önlemi: `.github/workflows/keepalive.yml` her gün `ping()` çağırır (038; anahtar gerekmez). Push sonrası Actions'ta çalışır
+  - [ ] Gece yedeği (pg_dump → GitHub artifact): kullanıcı onayı bekliyor (veritabanı kopyası GitHub'a gider)
 
 ## Kullanıcının yapacakları
 - [ ] Firebase: omnipop-play GCP projesine Firebase (RotaMio planıyla ortak) → Android FCM; iOS için APNs anahtarı

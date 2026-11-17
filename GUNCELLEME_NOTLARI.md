@@ -6,7 +6,8 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 
 ## Bekleyen (henüz duyurulmadı)
 
-(şimdilik yok)
+Yerelde, gönderilmedi:
+- Ayarlar → Hesap → Hesabımı sil: karakterini ve bütün verilerini kalıcı olarak silebilirsin (takma adını yazarak onaylarsın; Donsan Donluk ailenin en kıdemli üyesine geçer).
 
 ## Yayımlananlar
 

@@ -1,0 +1,24 @@
+# Supabase ücretsiz planı bir hafta hareketsiz kalan projeyi uyutur. Bu görev her gün sunucuya küçük bir istek atar.
+# Anahtar gerekmez: oyundaki herkese açık (publishable) anahtar www/js/config.js'ten okunur; ping() hiçbir veri döndürmez (038).
+name: Sunucuyu uyanık tut
+on:
+  schedule:
+    - cron: '17 6 * * *'     # her gün 06:17 UTC (09:17 İstanbul)
+  workflow_dispatch: {}       # Actions sekmesinden elle de çalıştırılabilir
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: www/js/config.js
+          sparse-checkout-cone-mode: false
+      - name: ping()
+        run: |
+          URL=$(grep -oP "SUPABASE_URL = '\K[^']+" www/js/config.js)
+          KEY=$(grep -oP "SUPABASE_ANON_KEY = '\K[^']+" www/js/config.js)
+          CODE=$(curl -s -o out.txt -w '%{http_code}' -X POST "$URL/rest/v1/rpc/ping" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' -d '{}')
+          echo "HTTP $CODE: $(cat out.txt)"
+          test "$CODE" = "200"

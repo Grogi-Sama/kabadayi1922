@@ -792,6 +792,7 @@ async function openSettings() {
       : 'Oyun kapalıyken de önemli gelişmelerden haberin olsun.') : ps.reason}</p>
     ${ps.supported && !ps.denied ? (ps.on ? `<button class="btn" data-act="pushoff">Bildirimleri kapat</button>` : `<button class="btn primary" data-act="pushon">Bildirimleri aç</button>`) : ''}
     <h2>Hesap</h2>${accountCard()}
+    <button class="btn sm danger-link" data-act="acctdelete">Hesabımı sil</button>
     <div class="card col"><div class="title">Başka cihazda karakterin mi var?</div>
       <div class="muted small">E-postasını bağladığın karakterle bu cihazda oynamak için e-postanla gir.</div>
       <button class="btn" data-act="acctlogin">E-postayla gir</button></div>
@@ -2038,6 +2039,24 @@ document.addEventListener('click', async (e) => {
         <p class="muted small" id="login-msg"></p>`;
       $('#modal').classList.remove('hidden');
       return $('#f-login-email').focus();
+    }
+    // Mağaza zorunluluğu: hesap silme (037). Takma adı yazarak onay; sonra yeni misafir oturumu.
+    case 'acctdelete': {
+      $('#modal-body').innerHTML = `<div class="logo-sm">Hesabımı sil</div>
+        <p class="small">Karakterin <b>${esc(S.player.nick)}</b> ve ona ait her şey kalıcı olarak silinir: para, rütbe, arabalar, adamlar,
+          mesajların, önerilerin ve bağlı e-posta. <b>Geri alınamaz.</b>${S.player.family_role === 'don' ? ' Aile Donluğun ailenin en kıdemli üyesine geçer.' : ''}</p>
+        <p class="small">Onaylamak için takma adını yaz:</p>
+        <div class="form-row"><input id="f-del-nick" placeholder="${esc(S.player.nick)}" autocomplete="off" autocapitalize="off">
+          <button class="btn danger" data-act="acctdeleteok">Sil</button></div>`;
+      $('#modal').classList.remove('hidden');
+      return $('#f-del-nick').focus();
+    }
+    case 'acctdeleteok': {
+      const r = await api.rpc('delete_my_account', { p_confirm: val('f-del-nick') });
+      if (!r.ok) return toast(r.msg, 'bad');
+      try { localStorage.clear(); } catch {}
+      await api.signOut?.();
+      return location.reload();
     }
     case 'acctloginsend': {
       const email = val('f-login-email');
