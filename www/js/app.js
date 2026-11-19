@@ -254,7 +254,7 @@ function render() {
   const p = S.player, rank = S.ranks[p.rank], next = S.ranks[p.rank + 1];
   $('#h-avatar').innerHTML = portrait(p.avatar, 'avatar');
   $('#h-nick').textContent = p.nick;
-  $('#h-rank').textContent = rank.name + (next ? ` · ${p.xp}/${next.min_xp}` : ' · zirvede')
+  $('#h-rank').textContent = rank.name + (p.skill ? ` · Sv. ${p.skill.level}` : '') + (next ? ` · ${p.xp}/${next.min_xp}` : ' · zirvede')
     + (p.family ? ` · ${p.family}` : '') + (p.bounty > 0 ? ` · 🎯 ${money(p.bounty)}` : '');
   $('#h-cash').innerHTML = money(p.cash);
   $('#h-city').textContent = '📍 ' + cityName(p.city);
@@ -665,7 +665,7 @@ function maxFor(g, buying) {
   if (!buying) return g.qty;
   const held = S.market.reduce((a, x) => a + x.qty, 0);
   if ((S.player.trade_xp ?? 0) < (g.min_trade || 0)) return 0;
-  return Math.max(0, Math.min(S.ranks[S.player.rank].carry - held, Math.floor(S.player.cash / g.price)));
+  return Math.max(0, Math.min((S.player.carry ?? S.ranks[S.player.rank].carry) - held, Math.floor(S.player.cash / g.price)));
 }
 
 // Ticaret puanı: malı aldığın şehirden başka yerde satınca kazanılır, pahalı malları açar
@@ -684,7 +684,7 @@ function harborSection() {
   const cur = S.transports.find(t => t.id === S.player.transport);
   return `<h2>Kaçak Mal</h2>
     <p class="muted small">Fiyatlar her saat ve her şehirde değişir. Ucuza al, başka limanda pahalıya sat; aynı limanda satarsan alışın %${Math.round((1 - S.settings.trade_sell_rate) * 100)} altına gider.
-      Taşıyabileceğin: <b>${held}/${S.ranks[S.player.rank].carry}</b> kasa.</p>
+      Taşıyabileceğin: <b>${held}/${S.player.carry ?? S.ranks[S.player.rank].carry}</b> kasa.</p>
     ${tradeBar()}
     <div class="qtybar">${[1, 5, 10, 'max'].map(q => `<button class="btn sm ${qty === q ? 'on' : ''}" data-qty="${q}">${q === 'max' ? 'Hepsi' : q}</button>`).join('')}</div>` +
     S.market.map(g => {
@@ -842,6 +842,56 @@ function accountCard() {
       E-postanı bağla; başka cihazdan da aynı karaktere girebilirsin.</div>
     <div class="form-row"><input id="f-acct-email" type="email" placeholder="E-posta adresin" autocomplete="email" autocapitalize="off">
       <button class="btn primary" data-act="acctlink">Bağla</button></div></div>`;
+}
+
+// ═════════════════ YETENEK AĞACI (041) ═════════════════
+const BRANCHES = [
+  ['ticaret', '⚓ Ticaret', 'Kaçakçılık kârı, taşıma ve gümrük'],
+  ['yeralti', '🕶 Yeraltı', 'İşler, hapis ve araba'],
+  ['savas', '🔫 Savaş', 'Vuruş, dayanıklılık ve adamlar'],
+  ['liderlik', '👑 Liderlik', 'Adamlar, mekânlar ve banka'],
+];
+let skillBranch = 'ticaret';
+async function loadSkills() { extra.skills = await api.rpc('get_skills'); if (logView === 'skills') renderTab(); }
+async function openSkills() {
+  logView = 'skills';
+  if (tab !== 'log') $('[data-go="log"]').click(); else { renderTab(); $('main').scrollTop = 0; }
+  await loadSkills();
+}
+const skillText = (k, ranks) => {
+  const v = k.per * ranks, pct = k.per < 1;
+  return esc(k.descr).replace('{v}', pct ? String(Math.round(v * 100)) : String(Math.round(v)));
+};
+function skillsView() {
+  const X = extra.skills;
+  let h = banner('ui/defter_bant', 'Yetenekler', 'Seviye atladıkça puan kazan, bir yolda uzmanlaş') +
+    `<p><button class="btn sm" data-act="logmain">← Defter</button></p>`;
+  if (!X) return h + `<p class="muted">Yükleniyor…</p>`;
+  const P = X.points, span = Math.max(1, P.next_xp - P.cur_xp), prog = Math.min(1, Math.max(0, (S.player.xp - P.cur_xp) / span));
+  h += `<div class="card col"><div class="title">Seviye ${P.level} <span class="muted small">· ${P.free} puan dağıtılmayı bekliyor</span></div>
+    <div class="xp-track"><div style="width:${Math.round(prog * 100)}%"></div></div>
+    <div class="muted small">Sonraki seviye: ${P.next_xp.toLocaleString('tr-TR')} itibar. Her seviye 1 yetenek puanı verir.
+      Bir dalın alt satırları o dala verdiğin puanla açılır; sezon sonunda ağaç sıfırlanır.</div></div>`;
+  h += `<div class="chat-tabs skill-tabs">` + BRANCHES.map(([id, name]) =>
+    `<button class="${skillBranch === id ? 'on' : ''}" data-act="skillbranch" data-id="${id}">${name}<small>${X.branches[id] || 0}</small></button>`).join('') + `</div>`;
+  const [, bname, bsub] = BRANCHES.find(b => b[0] === skillBranch);
+  const spent = X.branches[skillBranch] || 0;
+  h += `<p class="muted small">${esc(bsub)} · bu dala verdiğin: <b>${spent}</b> puan</p>`;
+  h += X.skills.filter(k => k.branch === skillBranch).map(k => {
+    const locked = spent < k.need, maxed = k.rank >= k.max;
+    const pips = Array.from({ length: k.max }, (_, i) => `<span class="pip ${i < k.rank ? 'on' : ''}"></span>`).join('');
+    const now = k.rank ? `Şu an: ${skillText(k, k.rank)}` : skillText(k, 1).replace(/^/, '1. kademe: ');
+    const next = !maxed && k.rank ? `<div class="muted small">Sonraki kademe: ${skillText(k, k.rank + 1)}</div>` : '';
+    const btn = maxed ? '<span class="muted small">Tamam</span>'
+      : locked ? `<span class="muted small">${ico('kilit', '🔒')} dala ${k.need} puan</span>`
+      : `<button class="btn sm ${P.free > 0 ? 'primary' : ''}" data-act="learnskill" data-id="${k.id}" ${dis(P.free < 1)}>Geliştir</button>`;
+    return `<div class="card skill-card ${locked ? 'locked' : ''} ${k.tier === 5 ? 'capstone' : ''}"><div class="grow">
+      <div class="title">${esc(k.name)} <span class="pips">${pips}</span></div>
+      <div class="small">${now}</div>${next}</div>${btn}</div>`;
+  }).join('');
+  if (P.spent > 0) h += `<p class="muted small" style="margin-top:16px">Yanlış yola mı girdin? Puanlarını geri alabilirsin.
+    <button class="btn sm" data-act="resetskills">Sıfırla (${money(X.reset_cost)})</button></p>`;
+  return h;
 }
 
 // ═════════════════ MAĞAZA ═════════════════
@@ -1480,12 +1530,16 @@ function logTab() {
   if (logView === 'guide') return guideView();
   if (logView === 'events') return eventsView();
   if (logView === 'shop') return shopView();
+  if (logView === 'skills') return skillsView();
   if (logView === 'ann') return annView();
   const p = S.player, pl = extra.players;
   let h = banner('ui/defter_bant', 'Defter', 'Sicilin, sezon ve şehrin dedikodusu');
   h += `<div class="card clickable guide-link" data-act="guide">${uiIcon('rehber', '📖')}<div class="grow">
       <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
       <span class="muted">›</span></div>`;
+  if (p.skill) h += `<div class="card clickable guide-link skill-link" data-act="skills">${uiIcon('rehber', '⭐')}<div class="grow">
+      <div class="title">Yetenekler · Seviye ${p.skill.level} ${p.skill.free > 0 ? `<span class="skill-free">${p.skill.free} puan</span>` : ''}</div>
+      <div class="muted small">Ticaret, yeraltı, savaş ya da liderlikte uzmanlaş</div></div><span class="muted">›</span></div>`;
   h += `<div class="card clickable guide-link shop-link" data-act="shop">${uiIcon('magaza', '🛍')}<div class="grow">
       <div class="title">Mağaza ${p.club ? '<span class="club-badge">★ Kulüp</span>' : ''}</div>
       <div class="muted small">Özel portreler, aile armaları, Kabadayı Kulübü ve hızlandırma</div></div><span class="muted">›</span></div>`;
@@ -2034,6 +2088,13 @@ document.addEventListener('click', async (e) => {
     }
     case 'guide':      logView = 'guide'; renderTab(); $('main').scrollTop = 0; return;
     case 'shop':       return openShop();
+    case 'skills':     return openSkills();
+    case 'skillbranch': skillBranch = id; return renderTab();
+    case 'learnskill': { const r = await api.rpc('learn_skill', { p_skill: id }); toast(r.msg, r.ok ? 'good' : 'bad'); if (r.ok) { sfx.open?.(); await refresh(); } return loadSkills(); }
+    case 'resetskills': {
+      if (!await ask('Yetenekleri sıfırla', `Bütün yetenek puanların geri gelir. Ücreti: <b>${money(extra.skills?.reset_cost || 0)}</b>.`, 'Sıfırla')) return;
+      const r = await api.rpc('reset_skills'); toast(r.msg, r.ok ? 'good' : 'bad'); if (r.ok) await refresh(); return loadSkills();
+    }
     case 'settings':   return openSettings();
     case 'ann':        logView = 'ann'; extra.ann = null; renderTab(); $('main').scrollTop = 0;
                        extra.ann = await api.rpc('get_announcements');
@@ -2309,7 +2370,8 @@ function updateBadges() {
   if (tab === 'crime') setSeen('crew', heads.crew || 0);
   $('[data-go="family"]').classList.toggle('has-dot', tab !== 'family' && ['apps', 'famnews'].some(k => (heads[k] || 0) > getSeen(k)));
   $('[data-go="crime"]').classList.toggle('has-dot', tab !== 'crime' && (heads.crew || 0) > getSeen('crew'));
-  $('[data-go="log"]').classList.toggle('has-dot', !(tab === 'log' && logView === 'ann') && (heads.ann || 0) > getSeen('ann'));
+  $('[data-go="log"]').classList.toggle('has-dot', (!(tab === 'log' && logView === 'ann') && (heads.ann || 0) > getSeen('ann'))
+    || (S.player.skill?.free > 0 && !(tab === 'log' && logView === 'skills')));
   document.querySelectorAll('.chat-tabs [data-act="chatch"]').forEach(b => {
     const ch = b.dataset.id; if (ch === 'dm') return;
     const dot = b.querySelector('.new-dot'), want = chanNew(ch) && chatCh !== ch;

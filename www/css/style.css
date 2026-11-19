@@ -902,3 +902,17 @@ img.seized-art.wide { max-width: 100%; }   /* geniş uyarı görselleri (infaz, 
 
 /* Hesap silme bağlantısı: göze batmayan ama bulunur */
 .danger-link { background: none; border: 1px solid rgba(179,69,58,.5); color: #f3c2bb; margin-top: 8px; }
+
+/* ═══ Yetenek ağacı (041) ═══ */
+.skill-free { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 10px; background: var(--gold); color: #1a140d; font-size: 12px; font-weight: 700; }
+.xp-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; margin: 8px 0; }
+.xp-track > div { height: 100%; background: var(--gold); }
+.skill-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+.skill-tabs button { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; font-size: 13px; }
+.skill-tabs button small { opacity: .7; font-size: 11px; }
+.skill-card { align-items: center; gap: 10px; }
+.skill-card.locked { opacity: .55; }
+.skill-card.capstone { border-color: var(--gold); }
+.pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
+.pip { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--gold); }
+.pip.on { background: var(--gold); }
