@@ -1003,8 +1003,8 @@ function spotPanel(sp) {
     `${sp.owner ? `Sahibi: <b>${esc(sp.owner)}</b>` : 'Sahipsiz'} · ${sp.mine ? `savunma ${sp.defense} kurşun` : `koruma: ${esc(sp.strength)}`}${prot ? ` · 🛡 ${fmt(prot)}` : ''}`);
   const M = extra.men;
   if (sp.mine) {
-    h += `<p class="muted small">${ico('kalkan', '🛡')} Sarhoş serseri çeteleri birkaç saatte bir sahipli mekânlara dadanır. Barikat ve nöbetçiler yeterse püskürtülür;
-      yetmezse barikat yıkılır ve ${sp.kind === 'fabrika' ? 'depodaki kurşunların yarısı' : 'bir saatlik haraç'} yağmalanır. Hiç korunmayan yer elden çıkar.</p>`;
+    h += `<p class="muted small">${ico('kalkan', '🛡')} Sarhoş serseri çeteleri 6–12 saatte bir sahipli mekânlara dadanır. Barikat ve nöbetçiler yeterse püskürtülür;
+      yetmezse barikatın yarısı yıkılır ve ${sp.kind === 'fabrika' ? 'depodaki kurşunların dörtte biri' : 'yarım saatlik haraç'} yağmalanır. Hiç korunmayan yer elden çıkar.</p>`;
     h += `<div class="form-row"><input id="f-fort-${sp.id}" type="number" min="1" placeholder="Bırakılacak kurşun" inputmode="numeric">
       <button class="btn" data-act="fortify" data-id="${sp.id}">Tahkim et</button></div>`;
     if (M) {

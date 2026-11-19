@@ -7,6 +7,7 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 ## Bekleyen (henüz duyurulmadı)
 
 Yerelde, gönderilmedi:
+- Serseri çetesi baskınları yumuşadı: 6–12 saatte bir gelirler (eskiden 4–8), daha zayıftırlar; püskürtülünce barikattan daha az kurşun giderler. Barikat aşılırsa yarısı ayakta kalır ve yarım saatlik haraç (fabrikada stoğun dörtte biri) yağmalanır.
 - Ayarlar → Hesap → Hesabımı sil: karakterini ve bütün verilerini kalıcı olarak silebilirsin (takma adını yazarak onaylarsın; Donsan Donluk ailenin en kıdemli üyesine geçer).
 - E-postayla giriş ve hesap bağlama artık bağlantı yerine e-postaya gelen kodla yapılıyor: kodu oyuna yazman yeterli, bağlantıyı aynı cihazda açma derdi yok.
 

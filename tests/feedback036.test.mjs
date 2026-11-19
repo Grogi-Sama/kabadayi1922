@@ -99,18 +99,18 @@ await db.query(`update spots set owner_family = $1, defense = 500 where id = $2`
 await db.query(`update spots set npc_at = now() - interval '1 second' where id = $1`, [kordon.id]);
 await as(D2, `select get_state()`);
 let sp = (await db.query(`select * from spots where id = $1`, [kordon.id])).rows[0];
-assert.equal(Number(sp.owner_family), Number(fid2)); assert.equal(sp.defense, 500 - 150, 'barikattan güç×10×0,5 gider');
-assert.ok(new Date(sp.npc_at) > new Date(Date.now() + 3.9 * 3600e3), 'sıradaki baskın 4-8 saat sonra');
+assert.equal(Number(sp.owner_family), Number(fid2)); assert.equal(sp.defense, 500 - 90, 'barikattan güç×10×0,3 gider (040)');
+assert.ok(new Date(sp.npc_at) > new Date(Date.now() + 5.9 * 3600e3), 'sıradaki baskın 6-12 saat sonra (040)');
 
-// savunma var ama yetmez (10 can < 30): barikat yıkılır, bir saatlik haraç yağmalanır
+// savunma var ama yetmez (10 can < 30): barikatın yarısı kalır, yarım saatlik haraç yağmalanır (040)
 await db.query(`update spots set defense = 100, npc_at = now() - interval '1 second' where id = $1`, [kordon.id]);
 await as(D2, `select get_state()`);
 sp = (await db.query(`select * from spots where id = $1`, [kordon.id])).rows[0];
-assert.equal(sp.defense, 0); assert.equal(Number(sp.owner_family), Number(fid2));
-assert.equal(await bank2(), 100000 - 5000);
+assert.equal(sp.defense, 50); assert.equal(Number(sp.owner_family), Number(fid2));
+assert.equal(await bank2(), 100000 - 2500);
 
 // hiç savunma yok: mekân elden çıkar
-await db.query(`update spots set npc_at = now() - interval '1 second' where id = $1`, [kordon.id]);
+await db.query(`update spots set defense = 0, npc_at = now() - interval '1 second' where id = $1`, [kordon.id]);
 await as(D2, `select get_state()`);
 sp = (await db.query(`select * from spots where id = $1`, [kordon.id])).rows[0];
 assert.equal(sp.owner_family, null); assert.equal(sp.npc_at, null);
