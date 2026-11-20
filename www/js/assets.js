@@ -10,7 +10,10 @@ const JOBS = ['cep', 'dukkan', 'kumarhane', 'liman', 'kuyumcu', 'banka', 'soygun
 const DECOR = ['sarmasik', 'afis', 'kasa', 'fici', 'boyaci', 'incir', 'kedi'];
 const ICONS = ['lider', 'sofor', 'silahci', 'patlayici', 'sehir', 'isler', 'aile', 'defter', 'can', 'kursun', 'banka',
   'kilit', 'kum', 'uye', 'fabrika', 'mekan', 'sohbet', 'kalkan', 'tabut', 'yuzuk', 'engel', 'bayrak', 'saygi',
-  'rehber', 'magaza', 'duyuru', 'liman', 'takvim', 'oneri', 'ayarlar'];
+  'rehber', 'magaza', 'duyuru', 'liman', 'takvim', 'oneri', 'ayarlar', 'yetenek'];
+// Yetenek ağacı (041): her yeteneğin kendi simgesi
+export const SKILL_IDS = ['t_pazarlik', 't_satis', 't_ambar', 't_gumruk', 't_kaptan', 'y_usta', 'y_ganimet', 'y_kaygan', 'y_oto', 'y_golge',
+  's_nisan', 's_deri', 's_cephane', 's_adam', 's_bilek', 'l_kalabalik', 'l_maas', 'l_tahkim', 'l_faiz', 'l_talim'];
 const RESULTS = ['basari', 'hapis', 'kacti', 'vuruldu', 'yaris', 'gumruk', 'infaz', 'yaralandi', 'mekan_dustu', 'baskin_puskurtuldu'];
 
 export const ALL = [
@@ -18,8 +21,8 @@ export const ALL = [
   ...['rulet', 'zar1', 'zar6', 'kart', 'fis_bordo', 'fis_teal', 'fis_siyah', 'slot', 's_fes', 's_raki', 's_sikke', 's_tespih'].map(c => `casino/${c}`),
   ...['kitlik', 'altin_saat', 'baskin_gecesi', 'kelle_haftasi', 'fabrika_kazasi', 'polis_baskini', 'liman_firtinasi'].map(e => `events/${e}`), ...BUILDINGS.map(b => `buildings/${b}`),
   ...Array.from({ length: 16 }, (_, i) => `portraits/p${i + 1}`), ...['zorba', 'fedai', 'gozcu', 'nisanci'].map(m => `men/${m}`),
-  ...ITEMS.map(i => `items/${i}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
-  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant', 'ui/logo', 'ui/kumar_bant', 'ui/rehber_bant',
+  ...ITEMS.map(i => `items/${i}`), ...SKILL_IDS.map(k => `skills/${k}`), ...JOBS.map(j => `jobs/${j}`), ...RESULTS.map(r => `results/${r}`),
+  'ui/splash', 'ui/emblem', 'ui/isler_bant', 'ui/aile_bant', 'ui/defter_bant', 'ui/logo', 'ui/kumar_bant', 'ui/rehber_bant', 'ui/yetenek_bant',
   ...'basla rutbe suc araba liman silah olum kelle banka aile mekan ekip kumar sohbet etkinlik sezon'.split(' ').map(n => `rehber/${n}`),
 ];
 

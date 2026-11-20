@@ -148,3 +148,35 @@ Same style as the reference image. A single flat front elevation, like the build
 
 ## ✅ Liman panoramaları toplu sayfa — `art/sheets/limanlar.png` · dikey 9:16 · tek sütun, 5 satır
 Sonuç kartları geldi (✅ results/*). Kesim sırası yukarıdan aşağı: harbor/izmir, selanik, pire, iskenderiye, beyrut
+
+---
+
+## ⏳ Yetenek ağacı (041) — 3 görsel (2026-11-20)
+Ekran görüntüleri: `art/ekran/yetenekler/`. Dal sekmelerinde mevcut simgeler kullanılıyor (liman, isler, silahci, lider); yeni görsel gerekmez.
+Görsel gelene kadar yedekler görünür; dosyalar konunca kendiliğinden yerine oturur.
+
+### Y1) Defter kartı simgesi — `www/assets/ico/yetenek.png` · kare 1024×1024 → 192×192'ye küçültülür · **SAYDAM PNG**
+Mevcut ico/ setiyle aynı stil (kalın krem/altın dış çizgi, yapışkan etiket görünümü).
+```
+A single game UI icon: an Art Deco medal with a gold star and a small burgundy ribbon, beside it three short ascending gold bars like a level-up chart. Thick cream outline around the whole silhouette (sticker style), centered, filling most of the square. Transparent background.
+```
++ ortak stil.
+
+### Y2) Yetenekler başlık bandı — `www/assets/ui/yetenek_bant.png` · 1400×563 (geniş, ~5:2) · düz arka plan
+Defter/İşler/Aile bantlarıyla aynı kompozisyon: ortada yazı için boş, karanlık bir şerit bırakılsın (başlık kodla yazılıyor).
+```
+Wide banner illustration, 1920s Istanbul back-room at night: a wooden desk under a brass lamp with an open ledger, a pocket watch, a tespih (prayer beads) and a small chalkboard showing four empty chalk circles connected by lines like a plan; on the wall a cork board with four pinned items: a ship anchor, a carnival mask, a revolver silhouette and a fedora hat, joined with red string. Leave a calm dark horizontal band across the lower-middle for a title. 
+```
++ ortak stil.
+
+### Y3) 20 yetenek simgesi — `art/sheets/yetenekler.png` · **5 sütun × 4 satır** · yatay 5:4 (ör. 2560×2048) · **SAYDAM PNG**
+Her satır bir dal; soldan sağa yeteneğin sırası. Kesmeyi ben yaparım (`tools/slice_sheet.py`).
+```
+[ızgara kuralı]
+Row 1 (trade): a hand haggling over a coin stack; a smiling mouth with a gold coin (sweet talk); a large wooden cargo crate with rope; a customs officer's cap with a bribe envelope tucked in; a steamship captain's cap with an anchor badge.
+Row 2 (underworld): a pair of gloved hands with lock picks; a burlap loot sack with gold coins spilling; a slippery eel wrapped around broken handcuffs; a vintage 1920s car key with a tag; a shadowy figure in a fedora fading into smoke.
+Row 3 (combat): a sniper scope crosshair over a bullseye; a thick leather jacket with a bullet bouncing off; an ammunition crate with brass cartridges and a price tag; three tough men's silhouettes with brass knuckles; a strong forearm with an iron wrist cuff and a bandage.
+Row 4 (leadership): a crowd of five fedora silhouettes; a closed wallet with a padlock; a sandbag barricade with stacked bullets; a bank vault door with a rising gold arrow; a whistle and a drill sergeant's baton.
+Each icon: bold simple silhouette, thick cream outline (sticker style), same scale, centered in its cell. Transparent background.
+```
++ ortak stil.

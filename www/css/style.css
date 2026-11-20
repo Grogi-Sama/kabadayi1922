@@ -916,3 +916,6 @@ img.seized-art.wide { max-width: 100%; }   /* geniş uyarı görselleri (infaz, 
 .pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
 .pip { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--gold); }
 .pip.on { background: var(--gold); }
+.skill-tabs button .ico { width: 26px; height: 26px; margin-bottom: 2px; }
+.skill-ico { width: 52px; height: 52px; flex: none; object-fit: contain; }
+.skill-card.locked .skill-ico { filter: grayscale(1); }

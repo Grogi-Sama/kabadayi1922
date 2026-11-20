@@ -845,11 +845,12 @@ function accountCard() {
 }
 
 // ═════════════════ YETENEK AĞACI (041) ═════════════════
+// [id, ad, açıklama, dal simgesi (mevcut ico/ setinden), yedek emoji]
 const BRANCHES = [
-  ['ticaret', '⚓ Ticaret', 'Kaçakçılık kârı, taşıma ve gümrük'],
-  ['yeralti', '🕶 Yeraltı', 'İşler, hapis ve araba'],
-  ['savas', '🔫 Savaş', 'Vuruş, dayanıklılık ve adamlar'],
-  ['liderlik', '👑 Liderlik', 'Adamlar, mekânlar ve banka'],
+  ['ticaret', 'Ticaret', 'Kaçakçılık kârı, taşıma ve gümrük', 'liman', '⚓'],
+  ['yeralti', 'Yeraltı', 'İşler, hapis ve araba', 'isler', '🎭'],
+  ['savas', 'Savaş', 'Vuruş, dayanıklılık ve adamlar', 'silahci', '🎯'],
+  ['liderlik', 'Liderlik', 'Adamlar, mekânlar ve banka', 'lider', '🎩'],
 ];
 let skillBranch = 'ticaret';
 async function loadSkills() { extra.skills = await api.rpc('get_skills'); if (logView === 'skills') renderTab(); }
@@ -864,7 +865,7 @@ const skillText = (k, ranks) => {
 };
 function skillsView() {
   const X = extra.skills;
-  let h = banner('ui/defter_bant', 'Yetenekler', 'Seviye atladıkça puan kazan, bir yolda uzmanlaş') +
+  let h = banner(hasAsset('ui/yetenek_bant') ? 'ui/yetenek_bant' : 'ui/defter_bant', 'Yetenekler', 'Seviye atladıkça puan kazan, bir yolda uzmanlaş') +
     `<p><button class="btn sm" data-act="logmain">← Defter</button></p>`;
   if (!X) return h + `<p class="muted">Yükleniyor…</p>`;
   const P = X.points, span = Math.max(1, P.next_xp - P.cur_xp), prog = Math.min(1, Math.max(0, (S.player.xp - P.cur_xp) / span));
@@ -872,8 +873,8 @@ function skillsView() {
     <div class="xp-track"><div style="width:${Math.round(prog * 100)}%"></div></div>
     <div class="muted small">Sonraki seviye: ${P.next_xp.toLocaleString('tr-TR')} itibar. Her seviye 1 yetenek puanı verir.
       Bir dalın alt satırları o dala verdiğin puanla açılır; sezon sonunda ağaç sıfırlanır.</div></div>`;
-  h += `<div class="chat-tabs skill-tabs">` + BRANCHES.map(([id, name]) =>
-    `<button class="${skillBranch === id ? 'on' : ''}" data-act="skillbranch" data-id="${id}">${name}<small>${X.branches[id] || 0}</small></button>`).join('') + `</div>`;
+  h += `<div class="chat-tabs skill-tabs">` + BRANCHES.map(([id, name, , icon, emoji]) =>
+    `<button class="${skillBranch === id ? 'on' : ''}" data-act="skillbranch" data-id="${id}">${aic('ico/' + icon, emoji)}${name}<small>${X.branches[id] || 0}</small></button>`).join('') + `</div>`;
   const [, bname, bsub] = BRANCHES.find(b => b[0] === skillBranch);
   const spent = X.branches[skillBranch] || 0;
   h += `<p class="muted small">${esc(bsub)} · bu dala verdiğin: <b>${spent}</b> puan</p>`;
@@ -885,7 +886,7 @@ function skillsView() {
     const btn = maxed ? '<span class="muted small">Tamam</span>'
       : locked ? `<span class="muted small">${ico('kilit', '🔒')} dala ${k.need} puan</span>`
       : `<button class="btn sm ${P.free > 0 ? 'primary' : ''}" data-act="learnskill" data-id="${k.id}" ${dis(P.free < 1)}>Geliştir</button>`;
-    return `<div class="card skill-card ${locked ? 'locked' : ''} ${k.tier === 5 ? 'capstone' : ''}"><div class="grow">
+    return `<div class="card skill-card ${locked ? 'locked' : ''} ${k.tier === 5 ? 'capstone' : ''}">${img('skills/' + k.id, 'skill-ico', '')}<div class="grow">
       <div class="title">${esc(k.name)} <span class="pips">${pips}</span></div>
       <div class="small">${now}</div>${next}</div>${btn}</div>`;
   }).join('');
@@ -1537,7 +1538,7 @@ function logTab() {
   h += `<div class="card clickable guide-link" data-act="guide">${uiIcon('rehber', '📖')}<div class="grow">
       <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
       <span class="muted">›</span></div>`;
-  if (p.skill) h += `<div class="card clickable guide-link skill-link" data-act="skills">${uiIcon('rehber', '⭐')}<div class="grow">
+  if (p.skill) h += `<div class="card clickable guide-link skill-link" data-act="skills">${uiIcon('yetenek', '⭐')}<div class="grow">
       <div class="title">Yetenekler · Seviye ${p.skill.level} ${p.skill.free > 0 ? `<span class="skill-free">${p.skill.free} puan</span>` : ''}</div>
       <div class="muted small">Ticaret, yeraltı, savaş ya da liderlikte uzmanlaş</div></div><span class="muted">›</span></div>`;
   h += `<div class="card clickable guide-link shop-link" data-act="shop">${uiIcon('magaza', '🛍')}<div class="grow">
