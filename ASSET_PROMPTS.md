@@ -155,7 +155,7 @@ Sonuç kartları geldi (✅ results/*). Kesim sırası yukarıdan aşağı: harb
 Ekran görüntüleri: `art/ekran/yetenekler/`. Dal sekmelerinde mevcut simgeler kullanılıyor (liman, isler, silahci, lider); yeni görsel gerekmez.
 Görsel gelene kadar yedekler görünür; dosyalar konunca kendiliğinden yerine oturur.
 
-### Y1) Defter kartı simgesi — `www/assets/ico/yetenek.png` · kare 1024×1024 → 192×192'ye küçültülür · **SAYDAM PNG**
+### ✅ Y1) Defter kartı simgesi — `www/assets/ico/yetenek.png` · kare 1024×1024 → 192×192'ye küçültülür · **SAYDAM PNG**
 Mevcut ico/ setiyle aynı stil (kalın krem/altın dış çizgi, yapışkan etiket görünümü).
 ```
 A single game UI icon: an Art Deco medal with a gold star and a small burgundy ribbon, beside it three short ascending gold bars like a level-up chart. Thick cream outline around the whole silhouette (sticker style), centered, filling most of the square. Transparent background.
