@@ -37,6 +37,8 @@ export async function setup() {
   const set = async (uid, fields) => {
     const keys = Object.keys(fields);
     if (!keys.length) return;
+    // Test düzeltmesi oyuncunun kendi işlemi sayılmasın (042: oyuncunun kazandığı itibar rütbeye göre ölçeklenir)
+    await db.query(`select set_config('test.uid', '', false)`);
     await db.query(`update players set ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')} where id = $1`,
       [uid, ...keys.map(k => fields[k])]);
   };

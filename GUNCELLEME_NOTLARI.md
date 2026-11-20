@@ -7,6 +7,7 @@ onaya sunulur; onaylanınca Defter → Duyurular'a yeni bir "Güncelleme" başl�
 ## Bekleyen (henüz duyurulmadı)
 
 Yerelde, gönderilmedi:
+- Üst rütbelerde ilerleme yavaşladı: Tetikçi'den itibaren kazanılan itibar rütbeye göre azalır (Baba yolunda en hızlı oyuncu bile 2–3 hafta). İlk rütbeler eskisi gibi hızlı; kimsenin rütbesi düşmedi. İşler listesinde gördüğün itibar artık senin rütbene göre.
 - Yeni: Karakter seviyesi ve yetenek ağacı (Defter → Yetenekler). İtibar kazandıkça seviye atlarsın; her seviye 1 yetenek puanı. Dört dal: Ticaret (ucuz alış, pahalı satış, fazla kasa, gümrük), Yeraltı (iş şansı ve kazancı, kısa hapis, araba), Savaş (daha az kurşunla vur, zor düş, ucuz kurşun, güçlü adamlar), Liderlik (fazla adam, düşük maaş, tahkimat, faiz). Alt satırlar o dala verdiğin puanla açılır; puanlar parayla sıfırlanabilir, sezon sonunda ağaç sıfırlanır.
 - Serseri çetesi baskınları yumuşadı: 6–12 saatte bir gelirler (eskiden 4–8), daha zayıftırlar; püskürtülünce barikattan daha az kurşun giderler. Barikat aşılırsa yarısı ayakta kalır ve yarım saatlik haraç (fabrikada stoğun dörtte biri) yağmalanır.
 - Ayarlar → Hesap → Hesabımı sil: karakterini ve bütün verilerini kalıcı olarak silebilirsin (takma adını yazarak onaylarsın; Donsan Donluk ailenin en kıdemli üyesine geçer).

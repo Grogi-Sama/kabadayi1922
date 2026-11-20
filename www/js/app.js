@@ -1538,7 +1538,7 @@ function logTab() {
   h += `<div class="card clickable guide-link" data-act="guide">${uiIcon('rehber', '📖')}<div class="grow">
       <div class="title">Rehber</div><div class="muted small">Bütün kurallar: rütbeler, ölüm ve infaz, aileler, mekânlar…</div></div>
       <span class="muted">›</span></div>`;
-  if (p.skill) h += `<div class="card clickable guide-link skill-link" data-act="skills">${uiIcon('yetenek', '⭐')}<div class="grow">
+  if (p.skill) h += `<div class="card clickable guide-link skill-link" data-act="skills">${uiIcon(hasAsset('ico/yetenek') ? 'yetenek' : 'saygi', '⭐')}<div class="grow">
       <div class="title">Yetenekler · Seviye ${p.skill.level} ${p.skill.free > 0 ? `<span class="skill-free">${p.skill.free} puan</span>` : ''}</div>
       <div class="muted small">Ticaret, yeraltı, savaş ya da liderlikte uzmanlaş</div></div><span class="muted">›</span></div>`;
   h += `<div class="card clickable guide-link shop-link" data-act="shop">${uiIcon('magaza', '🛍')}<div class="grow">
