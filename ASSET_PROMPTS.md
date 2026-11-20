@@ -162,7 +162,7 @@ A single game UI icon: an Art Deco medal with a gold star and a small burgundy r
 ```
 + ortak stil.
 
-### Y2) Yetenekler başlık bandı — `www/assets/ui/yetenek_bant.png` · 1400×563 (geniş, ~5:2) · düz arka plan
+### ✅ Y2) Yetenekler başlık bandı — `www/assets/ui/yetenek_bant.png` · 1400×563 (geniş, ~5:2) · düz arka plan
 Defter/İşler/Aile bantlarıyla aynı kompozisyon: ortada yazı için boş, karanlık bir şerit bırakılsın (başlık kodla yazılıyor).
 ```
 Wide banner illustration, 1920s Istanbul back-room at night: a wooden desk under a brass lamp with an open ledger, a pocket watch, a tespih (prayer beads) and a small chalkboard showing four empty chalk circles connected by lines like a plan; on the wall a cork board with four pinned items: a ship anchor, a carnival mask, a revolver silhouette and a fedora hat, joined with red string. Leave a calm dark horizontal band across the lower-middle for a title. 
