@@ -151,7 +151,7 @@ Sonuç kartları geldi (✅ results/*). Kesim sırası yukarıdan aşağı: harb
 
 ---
 
-## ⏳ Yetenek ağacı (041) — 3 görsel (2026-11-20)
+## ✅ Yetenek ağacı (041) — 3 görsel (2026-11-20)
 Ekran görüntüleri: `art/ekran/yetenekler/`. Dal sekmelerinde mevcut simgeler kullanılıyor (liman, isler, silahci, lider); yeni görsel gerekmez.
 Görsel gelene kadar yedekler görünür; dosyalar konunca kendiliğinden yerine oturur.
 
@@ -169,7 +169,7 @@ Wide banner illustration, 1920s Istanbul back-room at night: a wooden desk under
 ```
 + ortak stil.
 
-### Y3) 20 yetenek simgesi — `art/sheets/yetenekler.png` · **5 sütun × 4 satır** · yatay 5:4 (ör. 2560×2048) · **SAYDAM PNG**
+### ✅ Y3) 20 yetenek simgesi — `art/sheets/yetenekler.png` · **5 sütun × 4 satır** · yatay 5:4 (ör. 2560×2048) · **SAYDAM PNG**
 Her satır bir dal; soldan sağa yeteneğin sırası. Kesmeyi ben yaparım (`tools/slice_sheet.py`).
 ```
 [ızgara kuralı]
